@@ -826,14 +826,19 @@ class QuoteCalculator {
     }
     
     validateParties() {
+        // Fönsterpartier från formuläret
         const windowSections = parseInt(document.getElementById('window_sections')?.value) || 0;
+        
+        // Totala luftare = vanliga luftare + källare/glugg + pardörr balkong
         const totalLuftare = 
             (parseInt(document.getElementById('antal_1_luftare')?.value) || 0) +
             (parseInt(document.getElementById('antal_2_luftare')?.value) || 0) +
             (parseInt(document.getElementById('antal_3_luftare')?.value) || 0) +
             (parseInt(document.getElementById('antal_4_luftare')?.value) || 0) +
             (parseInt(document.getElementById('antal_5_luftare')?.value) || 0) +
-            (parseInt(document.getElementById('antal_6_luftare')?.value) || 0);
+            (parseInt(document.getElementById('antal_6_luftare')?.value) || 0) +
+            (parseInt(document.getElementById('antal_kallare_glugg')?.value) || 0) +
+            (parseInt(document.getElementById('antal_pardorr_balkong')?.value) || 0);
         
         // Kontrollera spröjs-validering
         const windowsWithSprojs = parseInt(document.getElementById('antal_fonster_med_sprojs')?.value) || 0;
@@ -1009,8 +1014,8 @@ class QuoteCalculator {
             luftare5: getNumericValue('antal_5_luftare'),
             luftare6: getNumericValue('antal_6_luftare'),
             
-            // Totalt antal fönster (för vissa beräkningar)
-            totalWindows: getNumericValue('window_sections'),
+            // Totalt antal fönster (för vissa beräkningar) - inkluderar fönsterpartier + källare/glugg + pardörr balkong
+            totalWindows: getNumericValue('window_sections') + getNumericValue('antal_kallare_glugg') + getNumericValue('antal_pardorr_balkong'),
             
             // Renoveringstyp (dropdown)
             renovationType: document.getElementById('typ_av_renovering')?.value || '',
@@ -1212,14 +1217,8 @@ class QuoteCalculator {
         this.finalCustomerPriceElement.innerHTML = `<strong>${this.formatPrice(prices.finalCustomerPrice)}</strong>`;
         this.materialDeductionElement.textContent = this.formatPrice(prices.materialDeduction);
         
-        // Källare/Glugg - visa/dölj beroende på om det finns några
-        if (prices.kallareGluggCount && prices.kallareGluggCount > 0) {
-            this.kallareGluggRowElement.style.display = 'block';
-            const kallareCost = prices.kallareGluggCount * CONFIG.UNIT_PRICES['antal_kallare_glugg'];
-            this.kallareGluggCostElement.textContent = this.formatPrice(kallareCost);
-        } else {
-            this.kallareGluggRowElement.style.display = 'none';
-        }
+        // Källare/Glugg - dölj separata prisvisningar (ingår i totalpriset)
+        this.kallareGluggRowElement.style.display = 'none';
         
         // ROT-avdrag - visa/dölj beroende på om det är valt
         const rotPreliminaryTextElement = document.getElementById('rot-preliminary-text');
