@@ -829,22 +829,27 @@ class QuoteCalculator {
         // Fönsterpartier från formuläret
         const windowSections = parseInt(document.getElementById('window_sections')?.value) || 0;
         
-        // Totala luftare = vanliga luftare + källare/glugg + pardörr balkong
+        // Totala luftare = vanliga luftare
         const totalLuftare = 
             (parseInt(document.getElementById('antal_1_luftare')?.value) || 0) +
             (parseInt(document.getElementById('antal_2_luftare')?.value) || 0) +
             (parseInt(document.getElementById('antal_3_luftare')?.value) || 0) +
             (parseInt(document.getElementById('antal_4_luftare')?.value) || 0) +
             (parseInt(document.getElementById('antal_5_luftare')?.value) || 0) +
-            (parseInt(document.getElementById('antal_6_luftare')?.value) || 0) +
+            (parseInt(document.getElementById('antal_6_luftare')?.value) || 0);
+        
+        // Totala fönsterpartier = dörrpartier + källare/glugg + pardörr balkong + luftare
+        const totalParties = 
+            (parseInt(document.getElementById('antal_dorrpartier')?.value) || 0) +
             (parseInt(document.getElementById('antal_kallare_glugg')?.value) || 0) +
-            (parseInt(document.getElementById('antal_pardorr_balkong')?.value) || 0);
+            (parseInt(document.getElementById('antal_pardorr_balkong')?.value) || 0) +
+            totalLuftare;
         
         // Kontrollera spröjs-validering
         const windowsWithSprojs = parseInt(document.getElementById('antal_fonster_med_sprojs')?.value) || 0;
         const hasSprojs = this.form.querySelector('input[name="sprojs_choice"]:checked')?.value === 'Ja';
         
-        console.log('Validating parties:', { windowSections, totalLuftare, windowsWithSprojs, hasSprojs });
+        console.log('Validating parties:', { windowSections, totalParties, totalLuftare, windowsWithSprojs, hasSprojs });
         
         // Prioriterad validering: Spröjs först (om aktivt)
         if (hasSprojs && windowsWithSprojs > 0) {
@@ -859,19 +864,19 @@ class QuoteCalculator {
             }
         }
         
-        // Sedan validera luftare vs fönsterpartier
-        if (windowSections > 0 || totalLuftare > 0) {
-            if (windowSections !== totalLuftare) {
+        // Sedan validera totala partier vs fönsterpartier
+        if (windowSections > 0 || totalParties > 0) {
+            if (windowSections !== totalParties) {
                 this.partiesValidationText.textContent = 
-                    `Totalt antal luftare (${totalLuftare}) matchar inte antal fönsterpartier (${windowSections})`;
+                    `Totalt antal partier (${totalParties}) matchar inte antal fönsterpartier (${windowSections})`;
                 this.partiesValidation.className = 'validation-message error';
                 this.partiesValidation.style.display = 'block';
                 this.submitBtn.disabled = true;
                 this.submitBtn.style.opacity = '0.5';
                 return false;
-            } else if (windowSections > 0 && totalLuftare > 0) {
+            } else if (windowSections > 0 && totalParties > 0) {
                 // Visa framgångsmeddelande som inkluderar spröjs-info om relevant
-                let successMessage = `✓ Antal luftare (${totalLuftare}) matchar antal fönsterpartier (${windowSections})`;
+                let successMessage = `✓ Antal partier (${totalParties}) matchar antal fönsterpartier (${windowSections})`;
                 if (hasSprojs && windowsWithSprojs > 0) {
                     successMessage += ` • Spröjs på ${windowsWithSprojs} fönster ✓`;
                 }
