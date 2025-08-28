@@ -551,6 +551,14 @@
                                     <input type="text" id="arb_company" name="arb_company" readonly>
                                 </div>
                             </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="arb_contact_person">Kontaktperson</label>
+                                    <input type="text" id="arb_contact_person" name="arb_contact_person" readonly>
+                                </div>
+                            </div>
+
                             <div class="form-row">
                                 <div class="form-group half-width">
                                     <label for="arb_email">E-post</label>
@@ -561,56 +569,38 @@
                                     <input type="tel" id="arb_phone" name="arb_phone" readonly>
                                 </div>
                             </div>
+
                             <div class="form-row">
-                                <div class="form-group">
+                                <div class="form-group half-width">
                                     <label for="arb_address">Adress</label>
                                     <input type="text" id="arb_address" name="arb_address" readonly>
                                 </div>
-                            </div>
-                        </section>
-
-                        <!-- Renoveringstyp -->
-                        <section class="form-section">
-                            <h3>Typ av renovering</h3>
-                            
-                            <div class="form-group">
-                                <label for="arb_typ_av_renovering">Välj renoveringstyp *</label>
-                                <select id="arb_typ_av_renovering" name="arb_typ_av_renovering" class="form-select" required>
-                                    <option value="">Välj renoveringstyp...</option>
-                                    <option value="Traditionell - Linoljebehandling">Traditionell - Linoljebehandling</option>
-                                    <option value="Modern - Alcro bestå">Modern - Alcro bestå</option>
-                                </select>
-                                <div class="error-message" id="arb_typ_av_renovering-error"></div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Arbetsbeskrivning *</label>
-                                <div class="radio-group">
-                                    <label class="radio-label">
-                                        <input type="radio" name="arb_arbetsbeskrivning" value="Utvändig renovering" required>
-                                        <span class="radio-custom"></span>
-                                        Utvändig renovering
-                                    </label>
-                                    <label class="radio-label">
-                                        <input type="radio" name="arb_arbetsbeskrivning" value="Invändig renovering" required>
-                                        <span class="radio-custom"></span>
-                                        Invändig renovering
-                                    </label>
-                                    <label class="radio-label">
-                                        <input type="radio" name="arb_arbetsbeskrivning" value="Utvändig renovering samt målning av innerbågens insida" required>
-                                        <span class="radio-custom"></span>
-                                        Utvändig renovering samt målning av innerbågens insida
-                                    </label>
+                                <div class="form-group half-width">
+                                    <label for="arb_fastighetsbeteckning">Fastighetsbeteckning</label>
+                                    <input type="text" id="arb_fastighetsbeteckning" name="arb_fastighetsbeteckning" readonly>
                                 </div>
-                                <div class="error-message" id="arb_arbetsbeskrivning-error"></div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group half-width">
+                                    <label for="arb_postal_code">Postnummer</label>
+                                    <input type="text" id="arb_postal_code" name="arb_postal_code" readonly>
+                                </div>
+                                <div class="form-group half-width">
+                                    <label for="arb_city">Ort</label>
+                                    <input type="text" id="arb_city" name="arb_city" readonly>
+                                </div>
                             </div>
                         </section>
 
-                        <!-- Moment-checklista (dynamiskt baserat på renoveringstyp) -->
-                        <section class="form-section" id="moment-checklista-section" style="display: none;">
-                            <h3>Arbetsbeskrivning - Detaljerad checklista</h3>
-                            <div id="moment-checklista-container">
-                                <!-- Checklistor läggs till dynamiskt -->
+
+                        <!-- Automatisk arbetsbeskrivning (dynamiskt baserat på val) -->
+                        <section class="form-section" id="dynamic-work-description-section">
+                            <h3>Automatisk Arbetsbeskrivning</h3>
+                            <div id="generated-work-description" class="work-description-content">
+                                <div class="info-message">
+                                    <p>Arbetsbeskrivningen genereras automatiskt baserat på dina val från Anbud-fliken.</p>
+                                </div>
                             </div>
                         </section>
 

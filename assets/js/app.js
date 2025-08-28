@@ -431,9 +431,10 @@ class QuoteCalculator {
                 const targetTab = button.getAttribute('data-tab');
                 this.switchTab(targetTab);
                 
-                // Copy customer data when switching to arbetsbeskrivning
+                // Copy customer data and update work description when switching to arbetsbeskrivning
                 if (targetTab === 'arbetsbeskrivning') {
                     this.copyCustomerData();
+                    this.updateWorkDescription();
                 }
             });
         });
@@ -472,9 +473,13 @@ class QuoteCalculator {
         // Customer info mapping
         const dataMapping = [
             ['company', 'arb_company'],
+            ['contact_person', 'arb_contact_person'],
             ['email', 'arb_email'],
             ['phone', 'arb_phone'],
-            ['address', 'arb_address']
+            ['address', 'arb_address'],
+            ['fastighetsbeteckning', 'arb_fastighetsbeteckning'],
+            ['postal_code', 'arb_postal_code'],
+            ['city', 'arb_city']
         ];
         
         dataMapping.forEach(([sourceId, targetId]) => {
@@ -572,157 +577,191 @@ class QuoteCalculator {
             });
         }
         
-        // Add event listener for renoveringstyp dropdown
-        const renovationTypeSelect = document.getElementById('arb_typ_av_renovering');
-        if (renovationTypeSelect) {
-            renovationTypeSelect.addEventListener('change', () => {
-                this.updateMomentChecklista(renovationTypeSelect.value);
+        // Add event listeners for dynamic work description updates
+        const mainRenovationTypeSelect = document.getElementById('typ_av_renovering');
+        if (mainRenovationTypeSelect) {
+            mainRenovationTypeSelect.addEventListener('change', () => {
+                this.updateWorkDescription();
             });
         }
-    }
-    
-    updateMomentChecklista(renovationType) {
-        console.log('🔄 Updating moment checklista for:', renovationType);
         
-        const checklistaSection = document.getElementById('moment-checklista-section');
-        const checklistaContainer = document.getElementById('moment-checklista-container');
-        
-        if (!checklistaSection || !checklistaContainer) {
-            console.error('Checklista elements not found');
-            return;
-        }
-        
-        if (!renovationType) {
-            checklistaSection.style.display = 'none';
-            return;
-        }
-        
-        checklistaSection.style.display = 'block';
-        
-        // Get moment data
-        const momentData = this.getMomentData(renovationType);
-        
-        // Clear existing content
-        checklistaContainer.innerHTML = '';
-        
-        // Build checklista HTML
-        Object.entries(momentData).forEach(([category, items]) => {
-            const categoryDiv = document.createElement('div');
-            categoryDiv.className = 'moment-category';
-            
-            const categoryTitle = document.createElement('h4');
-            categoryTitle.textContent = category;
-            categoryDiv.appendChild(categoryTitle);
-            
-            items.forEach((item, index) => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'moment-item';
-                
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `moment_${category.replace(/\s/g, '_')}_${index}`;
-                checkbox.name = `moment_${category.replace(/\s/g, '_')}_${index}`;
-                checkbox.value = item;
-                
-                const label = document.createElement('label');
-                label.htmlFor = checkbox.id;
-                label.textContent = item;
-                
-                itemDiv.appendChild(checkbox);
-                itemDiv.appendChild(label);
-                categoryDiv.appendChild(itemDiv);
+        // Listen to arbetsbeskrivning radio button changes
+        const arbetsbeskrivningRadios = document.querySelectorAll('input[name="arbetsbeskrivning"]');
+        arbetsbeskrivningRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                this.updateWorkDescription();
             });
-            
-            checklistaContainer.appendChild(categoryDiv);
         });
-        
-        console.log('✅ Moment checklista updated for:', renovationType);
     }
     
-    getMomentData(renovationType) {
-        if (renovationType === 'Traditionell - Linoljebehandling') {
-            return {
-                'Fönsterkarm': [
-                    'Tvättning',
-                    'Skrapning/slipning',
-                    'Färgkanter',
-                    'Demontering beslag/tätningslist',
-                    'Montering ny tätningslist',
-                    'Uppskrapning fönsterbleck',
-                    'Grundning Engwall & Claesson Linoljefärg',
-                    'Fogning',
-                    '2 ggr strykning'
-                ],
-                'Ytterbåge': [
-                    'Rengöring till träyta',
-                    'Kittborttagning',
-                    'Kittning linoljekitt',
-                    'Grundning/strykning Engwall & Claesson'
-                ],
-                'Innerbågens kanter': [
-                    'Skrapning/slipning',
-                    'Grundning/strykning Engwall & Claesson'
-                ],
-                'Mellansidor': [
-                    'Ytterbåge (skrapning, toppförsegling, grundning/strykning Alcro Bestå)',
-                    'Innerbåge (skrapning, grundning Alcro, strykning Alcro Bestå)'
-                ],
-                'Invändigt karm': [
-                    'Ingen åtgärd',
-                    'Alt. skrapning/grundning/strykning Alcro vslip/Vmill'
-                ],
-                'Invändigt fönsterbågar': [
-                    'Ingen åtgärd',
-                    'Alt. skrapning/påspackling/grundning/strykning Alcro'
-                ],
-                'Fönsterfoder': [
-                    'Ingen åtgärd',
-                    'Alt. skrapning/grundning/strykning Engwall & Claesson'
-                ]
-            };
-        } else if (renovationType === 'Modern - Alcro bestå') {
-            return {
-                'Fönsterkarm': [
-                    'Tvättning',
-                    'Skrapning/slipning',
-                    'Färgkanter',
-                    'Demontering beslag/tätningslist',
-                    'Montering ny tätningslist',
-                    'Uppskrapning fönsterbleck',
-                    'Grundning/strykning Alcro/Alcro Bestå Utsikt',
-                    'Fogning',
-                    '2 ggr strykning'
-                ],
-                'Ytterbåge': [
-                    'Rengöring',
-                    'Komplettering kittning',
-                    'Kittning LASeal',
-                    'Grundning/strykning Alcro Bestå'
-                ],
-                'Innerbågens kanter': [
-                    'Skrapning/grundning/strykning Alcro Bestå'
-                ],
-                'Mellansidor': [
-                    'Ytterbåge (skrapning, toppförsegling, grundning/strykning Alcro)',
-                    'Innerbåge (skrapning, grundning Alcro, strykning Alcro)'
-                ],
-                'Invändigt karm': [
-                    'Mer omfattande arbete med Alcro Vslip/V mill'
-                ],
-                'Invändigt fönsterbågar': [
-                    'Skrapning/påspackling/grundning/strykning Alcro'
-                ],
-                'Fönsterfoder': [
-                    'Skrapning/grundning/strykning Alcro Bestå',
-                    'Extra foder enligt samtal'
-                ],
-                'Övrigt': [
-                    'Demontage gamla persienner'
-                ]
-            };
+    updateWorkDescription() {
+        console.log('🔄 Updating automatic work description...');
+        
+        const workDescriptionContainer = document.getElementById('generated-work-description');
+        
+        if (!workDescriptionContainer) {
+            console.error('Work description container not found');
+            return;
         }
         
-        return {};
+        // Get current selections from anbud tab
+        const renovationType = this.form.querySelector('select[name="typ_av_renovering"]')?.value || '';
+        const workDescription = this.form.querySelector('input[name="arbetsbeskrivning"]:checked')?.value || '';
+        
+        console.log('Current selections:', { renovationType, workDescription });
+        
+        if (!renovationType || !workDescription) {
+            workDescriptionContainer.innerHTML = `
+                <div class="info-message">
+                    <p>Arbetsbeskrivningen genereras automatiskt baserat på dina val från Anbud-fliken.</p>
+                    <p>Gå till Anbud-fliken och välj renoveringstyp och arbetsbeskrivning för att se den detaljerade beskrivningen.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Generate work description based on selections
+        const generatedDescription = this.generateWorkDescription(renovationType, workDescription);
+        
+        workDescriptionContainer.innerHTML = `
+            <div class="selected-options">
+                <h4>Valda alternativ:</h4>
+                <p><strong>Renoveringstyp:</strong> ${renovationType}</p>
+                <p><strong>Arbetsbeskrivning:</strong> ${workDescription}</p>
+            </div>
+            <div class="work-description-text">
+                ${generatedDescription}
+            </div>
+        `;
+        
+        console.log('✅ Work description updated');
+    }
+    
+    generateWorkDescription(renovationType, workDescription) {
+        console.log('🎯 Generating work description for:', { renovationType, workDescription });
+        
+        let description = '';
+        
+        // Traditionell Linoljebehandling + Utvändig renovering
+        if (renovationType === 'Traditionell - Linoljebehandling' && workDescription === 'Utvändig renovering') {
+            description = `
+                <h4>Traditionell Linoljebehandling - Utvändigt</h4>
+                
+                <div class="work-section">
+                    <h5>Fönsterkarm:</h5>
+                    <ul>
+                        <li>Tvättning och rengöring av befintlig yta</li>
+                        <li>Uppskrapning och slipning till fast sittande underlag</li>
+                        <li>Färgkanter slipas ner för jämn övergång</li>
+                        <li>Demontering av gamla beslag, spikar och metalldelar</li>
+                        <li>Demontering av gammal tätningslist</li>
+                        <li>Montering av ny tätningslist för optimal tätning</li>
+                        <li>Uppskrapning av fönsterbleck, slipning till fast sittande underlag</li>
+                        <li>1 gång grundning av trä med Engwall & Claesson Linoljefärg</li>
+                        <li>Fogning mellan fönsterbleck och karm samt hål och sprickor</li>
+                        <li>2 gånger strykning med Engwall & Claesson Linoljefärg</li>
+                    </ul>
+                </div>
+                
+                <div class="work-section">
+                    <h5>Ytterbåge fönster:</h5>
+                    <ul>
+                        <li>Hel rengöring till träytan av yttersida samt fyra kanter</li>
+                        <li>Hel kittborttagning från glaspartier</li>
+                        <li>Ny kittning med linoljekitt för långvarig tätning</li>
+                        <li>1 gång grundning med Engwall & Claesson Linoljefärg</li>
+                        <li>2 gånger strykning med Engwall & Claesson Linoljefärg</li>
+                    </ul>
+                </div>
+                
+                <div class="work-section">
+                    <h5>Innerbågens fyra kanter:</h5>
+                    <ul>
+                        <li>Skrapning och slipning till fast sittande underlag</li>
+                        <li>1 gång grundning med Engwall & Claesson Linoljefärg</li>
+                        <li>2 gånger strykning med Engwall & Claesson Linoljefärg</li>
+                    </ul>
+                </div>
+            `;
+        }
+        // Modern - Alcro bestå (alla varianter)
+        else if (renovationType === 'Modern - Alcro bestå') {
+            description = `
+                <h4>Modern Renovering - Alcro Bestå</h4>
+                
+                <div class="work-section">
+                    <h5>Fönsterkarm:</h5>
+                    <ul>
+                        <li>Tvättning och rengöring av befintlig yta</li>
+                        <li>Uppskrapning och slipning till fast sittande underlag</li>
+                        <li>Färgkanter slipas ner för jämn övergång</li>
+                        <li>Demontering av gamla beslag och tätningslist</li>
+                        <li>Montering av ny tätningslist</li>
+                        <li>Uppskrapning av fönsterbleck</li>
+                        <li>1 gång grundning med Alcro primer</li>
+                        <li>Fogning mellan bleck och karm</li>
+                        <li>2 gånger strykning med Alcro Bestå Utsikt</li>
+                    </ul>
+                </div>
+                
+                <div class="work-section">
+                    <h5>Ytterbåge fönster:</h5>
+                    <ul>
+                        <li>Rengöring och förberedelser</li>
+                        <li>Komplettering av befintlig kittning vid behov</li>
+                        <li>Ny kittning med LASeal för modern finish</li>
+                        <li>1 gång grundning med Alcro primer</li>
+                        <li>2 gånger strykning med Alcro Bestå</li>
+                    </ul>
+                </div>
+                
+                <div class="work-section">
+                    <h5>Innerbågens kanter:</h5>
+                    <ul>
+                        <li>Skrapning och slipning till fast underlag</li>
+                        <li>1 gång grundning med Alcro primer</li>
+                        <li>2 gånger strykning med Alcro Bestå</li>
+                    </ul>
+                </div>
+            `;
+        }
+        
+        // Lägg till invändig renovering om valt
+        if (workDescription === 'Invändig renovering' || workDescription === 'Utvändig renovering samt målning av innerbågens insida') {
+            description += `
+                <div class="work-section">
+                    <h4>Invändig Renovering:</h4>
+                    
+                    <h5>Invändig karm:</h5>
+                    <ul>
+                        <li>Skrapning och slipning till fast sittande underlag</li>
+                        <li>I- och påspackling av ojämnheter</li>
+                        <li>1 gång grundning med Alcro Vslip</li>
+                        <li>1-2 gånger strykning med Alcro Vmill</li>
+                    </ul>
+                    
+                    <h5>Invändiga fönsterbågar:</h5>
+                    <ul>
+                        <li>Skrapning och slipning till fast sittande underlag</li>
+                        <li>Pågrundning av träytan för bättre vidhäftning</li>
+                        <li>I- och påspackling för jämn yta</li>
+                        <li>1 gång grundning med Alcro Vslip</li>
+                        <li>1 gång strykning med Alcro Vmill</li>
+                    </ul>
+                </div>
+            `;
+        }
+        
+        if (!description) {
+            description = `
+                <div class="info-message">
+                    <p>Ingen arbetsbeskrivning tillgänglig för denna kombination.</p>
+                    <p>Kontakta Sternbecks Måleri för mer information om ditt specifika projekt.</p>
+                </div>
+            `;
+        }
+        
+        return description;
     }
     
     testBasicCalculation() {
@@ -1785,7 +1824,6 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         
         // Validera obligatoriska fält
         const requiredFields = [
-            { id: 'arb_typ_av_renovering', message: 'Vänligen välj renoveringstyp' },
             { id: 'arb-gdpr-consent', message: 'Du måste godkänna behandling av personuppgifter', type: 'checkbox' }
         ];
         
@@ -1819,23 +1857,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
             }
         });
         
-        // Validera arbetsbeskrivning radio buttons
-        const arbetsRadios = arbetsForm.querySelectorAll('input[name="arb_arbetsbeskrivning"]');
-        const arbetsSelected = Array.from(arbetsRadios).some(radio => radio.checked);
-        const arbetsErrorElement = document.getElementById('arb_arbetsbeskrivning-error');
-        
-        if (!arbetsSelected) {
-            isValid = false;
-            if (arbetsErrorElement) {
-                arbetsErrorElement.textContent = 'Vänligen välj arbetsbeskrivning';
-                arbetsErrorElement.classList.add('show');
-            }
-        } else {
-            if (arbetsErrorElement) {
-                arbetsErrorElement.textContent = '';
-                arbetsErrorElement.classList.remove('show');
-            }
-        }
+        // Arbetsbeskrivning validering borttagen - styrs nu från Anbud-fliken
         
         return isValid;
     }
@@ -1881,19 +1903,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         return formData;
     }*/
     
-    collectMomentChecklistaData() {
-        const checklistaContainer = document.getElementById('moment-checklista-container');
-        if (!checklistaContainer) return '';
-        
-        const checkedItems = [];
-        const checkboxes = checklistaContainer.querySelectorAll('input[type="checkbox"]:checked');
-        
-        checkboxes.forEach(checkbox => {
-            checkedItems.push(checkbox.value);
-        });
-        
-        return checkedItems.length > 0 ? checkedItems.join('\n') : '';
-    }
+    // Removed: collectMomentChecklistaData() - replaced with dynamic work description
     
     // BORTTAGET: Google Forms arbetsbeskrivning submission
     /*async submitArbetsbeskrivningToGoogleForms(formData) {
@@ -1946,10 +1956,14 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         localStorage.removeItem('sternbecks_anbud_data');
         localStorage.removeItem('sternbecks_arbetsbeskrivning_data');
         
-        // Hide moment checklista
-        const checklistaSection = document.getElementById('moment-checklista-section');
-        if (checklistaSection) {
-            checklistaSection.style.display = 'none';
+        // Clear dynamic work description
+        const workDescriptionContainer = document.getElementById('generated-work-description');
+        if (workDescriptionContainer) {
+            workDescriptionContainer.innerHTML = `
+                <div class="info-message">
+                    <p>Arbetsbeskrivningen genereras automatiskt baserat på dina val från Anbud-fliken.</p>
+                </div>
+            `;
         }
         
         // Switch back to anbud tab
@@ -2323,8 +2337,8 @@ class PasswordProtection {
         const typAvRenovering = document.getElementById('typ_av_renovering');
         if (typAvRenovering) {
             const oldValue = typAvRenovering.value;
-            typAvRenovering.value = 'Modern - Alcro bestå';
-            console.log(`  ✅ typ_av_renovering: "${oldValue}" → "Modern - Alcro bestå"`);
+            typAvRenovering.value = '';
+            console.log(`  ✅ typ_av_renovering: "${oldValue}" → "Välj renoveringstyp..."`);
         } else {
             console.log('  ❌ typ_av_renovering hittades inte');
         }
