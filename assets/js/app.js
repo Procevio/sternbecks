@@ -16,10 +16,10 @@ const CONFIG = {
         'antal_pardorr_balkong': 10000, // Pardörr balkong/altan: 10000kr/st (exkl. moms)
         'antal_1_luftare': 3500,    // 1 luftare: 3500kr/st (exkl. moms)
         'antal_2_luftare': 5500,    // 2 luftare: 5500kr/st (exkl. moms)
-        'antal_3_luftare': 6500,    // 3 luftare: 6500kr/st (exkl. moms)
-        'antal_4_luftare': 8000,    // 4 luftare: 8000kr/st (exkl. moms)
-        'antal_5_luftare': 9000,    // 5 luftare: 9000kr/st (exkl. moms)
-        'antal_6_luftare': 11000    // 6 luftare: 11000kr/st (exkl. moms)
+        'antal_3_luftare': 8250,    // 3 luftare: 8250kr/st (exkl. moms)
+        'antal_4_luftare': 11000,   // 4 luftare: 11000kr/st (exkl. moms)
+        'antal_5_luftare': 13750,   // 5 luftare: 13750kr/st (exkl. moms)
+        'antal_6_luftare': 16500    // 6 luftare: 16500kr/st (exkl. moms)
     },
     
     // Renoveringstyp-påslag (Typ av renovering dropdown)
