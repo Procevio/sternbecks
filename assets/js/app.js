@@ -1285,8 +1285,8 @@ class QuoteCalculator {
         this.subtotalPriceElement.innerHTML = `<strong>${this.formatPrice(prices.subtotalExclVat)}</strong>`;
         this.subtotalPriceDisplayElement.textContent = this.formatPrice(prices.subtotalExclVat);
         this.vatCostElement.textContent = this.formatPrice(prices.vatCost);
-        this.totalWithVatElement.innerHTML = `<strong>${this.formatPrice(prices.subtotalExclVat)}</strong>`; // Ändrat: visa exkl moms
-        this.finalCustomerPriceElement.innerHTML = `<strong>${this.formatPrice(prices.finalCustomerPrice)}</strong>`; // Slutsumma: inkl moms
+        this.totalWithVatElement.innerHTML = `<strong>${this.formatPrice(prices.totalInclVat)}</strong>`; // Total inkl moms
+        this.finalCustomerPriceElement.innerHTML = `<strong>${this.formatPrice(prices.finalCustomerPrice)}</strong>`; // Slutsumma: inkl moms (efter ROT)
         this.materialDeductionElement.textContent = this.formatPrice(prices.materialDeduction);
         
         // Källare/Glugg - dölj separata prisvisningar (ingår i totalpriset)
@@ -2854,6 +2854,14 @@ class PasswordProtection {
     resetApp() {
         console.log('🔄 Nollställer hela applikationen...');
         
+        // Rensa individuella partier FÖRST
+        console.log('📋 Rensar individuella partier...');
+        partisState.partis = [];
+        if (window.quoteCalculator) {
+            window.quoteCalculator.renderParties();
+            window.quoteCalculator.syncLegacyFields();
+        }
+        
         // Rensa alla textinput-fält med KORREKTA ID:n
         const textInputs = [
             'company', 'contact_person', 'address', 'phone', 'email', 'city', 'postal_code', 
@@ -3200,7 +3208,7 @@ class PasswordProtection {
         }
         
         // Initialisera huvudklasser först
-        new QuoteCalculator();
+        window.quoteCalculator = new QuoteCalculator();
         new AccessibilityEnhancer();
         new ThemeToggle();
         
