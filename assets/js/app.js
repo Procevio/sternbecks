@@ -119,8 +119,13 @@ const OPEN_DIR = [
  */
 
 let partisState = { 
-    partis: /** @type {Parti[]} */([])
+    partis: /** @type {Parti[]} */([]),
+    isDuplicating: false  // Flagga för att förhindra oönskade re-creates under duplicering
 };
+
+let partiListenersBound = false; // Skydd mot dubletter av event listeners
+let windowSectionsListenerBound = false; // Skydd mot dubbla window_sections listeners
+let createPartiesDebounce = null; // Debounce för input-lyssnaren
 
 class QuoteCalculator {
     constructor() {
@@ -224,14 +229,7 @@ class QuoteCalculator {
                 
                 // Special handling for window_sections - triggers parti creation
                 if (fieldId === 'window_sections') {
-                    field.addEventListener('input', () => {
-                        console.log(`🏠 Window sections changed: ${field.value}`);
-                        this.handleWindowSectionsChange();
-                    });
-                    field.addEventListener('change', () => {
-                        console.log(`🏠 Window sections changed: ${field.value}`);
-                        this.handleWindowSectionsChange();
-                    });
+                    this.setupWindowSectionsListener(field);
                 } else {
                     field.addEventListener('input', () => {
                         console.log(`🔥 Price affecting field INPUT changed: ${fieldId}`, field.value);
@@ -1014,23 +1012,23 @@ class QuoteCalculator {
         
         // Beräkna grundkomponenter (luftare + dörrar)
         const baseComponentsPrice = this.calculateBaseComponents(data);
-        console.log('Base components price:', baseComponentsPrice);
+        console.log('Base components price (excl VAT):', baseComponentsPrice);
         
         // Beräkna renoveringstyp-tillägg (från dropdown)
         const renovationTypeCost = this.calculateRenovationTypeCost(data, baseComponentsPrice);
-        console.log('Renovation type cost:', renovationTypeCost);
+        console.log('Renovation type cost (excl VAT):', renovationTypeCost);
         
         // Beräkna fönstertyp-tillägg
         const windowTypeCost = this.calculateWindowTypeCost(data, baseComponentsPrice);
-        console.log('Window type cost:', windowTypeCost);
+        console.log('Window type cost (excl VAT):', windowTypeCost);
         
         // Beräkna spröjs och E-glas
         const extrasCost = this.calculateExtrasCost(data);
-        console.log('Extras cost:', extrasCost);
+        console.log('Extras cost (excl VAT):', extrasCost);
         
         // Beräkna prisjusteringar
         const priceAdjustment = data.priceAdjustmentPlus - data.priceAdjustmentMinus;
-        console.log('Price adjustment:', priceAdjustment);
+        console.log('Price adjustment (excl VAT):', priceAdjustment);
         
         // Beräkna summa utan materialkostnad (material bara för ROT-beräkning)
         const subtotalBeforeMaterial = baseComponentsPrice + renovationTypeCost + windowTypeCost + extrasCost + priceAdjustment;
@@ -1050,7 +1048,7 @@ class QuoteCalculator {
         
         // Total inklusive moms (det kunden betalar utan ROT)
         const totalInclVat = subtotalExclVat + vatCost;
-        console.log('Total incl VAT (full customer price):', totalInclVat);
+        console.log('Total incl VAT (customer price):', totalInclVat); // Bara här visas inkl moms
         
         // Materialkostnad för ROT-beräkning (endast för att identifiera materialandel)
         const materialCostForRot = totalInclVat * (data.materialPercentage / 100);
@@ -1316,7 +1314,7 @@ class QuoteCalculator {
     }
     
     updatePriceDisplay(prices) {
-        // Uppdatera alla priselement
+        // Uppdatera alla priselement (alla exkl moms förutom slutsumman)
         this.baseComponentsPriceElement.textContent = this.formatPrice(prices.baseComponentsPrice);
         this.windowTypeCostElement.textContent = this.formatPrice(prices.windowTypeCost);
         this.extrasCostElement.textContent = this.formatPrice(prices.extrasCost);
@@ -1325,8 +1323,8 @@ class QuoteCalculator {
         this.subtotalPriceElement.innerHTML = `<strong>${this.formatPrice(prices.subtotalExclVat)}</strong>`;
         this.subtotalPriceDisplayElement.textContent = this.formatPrice(prices.subtotalExclVat);
         this.vatCostElement.textContent = this.formatPrice(prices.vatCost);
-        this.totalWithVatElement.innerHTML = `<strong>${this.formatPrice(prices.totalInclVat)}</strong>`;
-        this.finalCustomerPriceElement.innerHTML = `<strong>${this.formatPrice(prices.finalCustomerPrice)}</strong>`;
+        this.totalWithVatElement.innerHTML = `<strong>${this.formatPrice(prices.subtotalExclVat)}</strong>`; // Ändrat: visa exkl moms
+        this.finalCustomerPriceElement.innerHTML = `<strong>${this.formatPrice(prices.finalCustomerPrice)}</strong>`; // Slutsumma: inkl moms
         this.materialDeductionElement.textContent = this.formatPrice(prices.materialDeduction);
         
         // Källare/Glugg - dölj separata prisvisningar (ingår i totalpriset)
@@ -2115,9 +2113,26 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         }
     }
 
+    // ============= HELPER FUNCTIONS =============
+    
+    getLuftareCount(parti) {
+        // Exempel: "2_luftare" → 2
+        const m = String(parti.luftareType ?? '').match(/\d+/);
+        return m ? parseInt(m[0], 10) : 0;
+    }
+    
     // ============= PARTI MANAGEMENT FUNCTIONS =============
     
     createParties(n) {
+        console.log(`🏭 createParties(${n}) ANROPAD - isDuplicating: ${partisState.isDuplicating}`);
+        console.log(`🏭 Partier FÖRE createParties: ${partisState.partis.length}`);
+        
+        // Extra skydd: skippa om vi redan har rätt antal
+        if (Array.isArray(partisState.partis) && partisState.partis.length === n) {
+            console.log(`🏭 Hoppar över createParties - har redan ${n} partier`);
+            return;
+        }
+        
         partisState.partis = Array.from({length: n}, (_, i) => ({
             id: i + 1,
             partiType: "",
@@ -2162,8 +2177,18 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         return `
             <div class="parti-header">
                 <h4>Parti ${parti.id}</h4>
-                <div class="price-display-inline">
-                    <strong>${this.formatSEK(parti.pris || 0)}</strong>
+                <div class="parti-actions">
+                    <button type="button" class="btn-small duplicate-btn" data-action="duplicate" data-parti-id="${parti.id}" title="Kopiera föregående parti">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Kopiera föregående
+                    
+                    </button>
+                    <div class="price-display-inline">
+                        <strong>${this.formatSEK(parti.pris || 0)}</strong>
+                    </div>
                 </div>
             </div>
             
@@ -2311,26 +2336,26 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         }
         // Utåtgående: 0 kr (baspris) - ingen förändring
         
-        // Spröjs tillägg (pris per spröjs × antal spröjs × antal luftare)
-        if (Number.isInteger(parti.sprojs) && parti.sprojs > 0) {
-            const prisPerSpröjs = parti.sprojs <= CONFIG.EXTRAS.SPROJS_THRESHOLD ? 
-                                 CONFIG.EXTRAS.SPROJS_LOW_PRICE : 
-                                 CONFIG.EXTRAS.SPROJS_HIGH_PRICE;
-            
-            // Få antal luftare (default 1 för icke-fönster)
-            let antalLuftare = 1;
-            if (parti.partiType === "fonster" && parti.luftareType) {
-                antalLuftare = parseInt(parti.luftareType.split('_')[0]) || 1;
-            }
-            
-            // Multiplicera: pris per spröjs × antal spröjs × antal luftare
-            bas += prisPerSpröjs * parti.sprojs * antalLuftare;
+        // === Spröjs per parti ===
+        // Regel: 
+        // - 1–3 spröjs: 250 kr per spröjs
+        // - 4+ spröjs: 400 kr per spröjs (på ALLA)
+        const luftareAntal = this.getLuftareCount(parti); // 1..6
+        let sprojsAdd = 0;
+
+        if (Number.isInteger(parti.sprojs) && parti.sprojs > 0 && luftareAntal > 0) {
+            const rate = parti.sprojs >= 4 ? 400 : 250;
+            sprojsAdd = rate * parti.sprojs * luftareAntal;
         }
+
+        bas += sprojsAdd;
         
         return Math.round(bas);
     }
 
     syncLegacyFields() {
+        console.log('🔧 syncLegacyFields ANROPAD - isDuplicating:', partisState.isDuplicating);
+        
         const f = partisState.partis;
         
         // Räkna olika parti-typer
@@ -2388,6 +2413,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
     setHidden(id, value) {
         const element = document.getElementById(id);
         if (element) {
+            console.log(`🔧 setHidden: ${id} = ${value} (isDuplicating: ${partisState.isDuplicating})`);
             element.value = value;
         } else {
             console.warn(`Hidden field not found: ${id}`);
@@ -2397,7 +2423,31 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
     setupPartiEventListeners() {
         const container = document.getElementById('parties-container');
         if (!container) return;
+        if (partiListenersBound) return; // Skydd mot dubletter
+        partiListenersBound = true;
 
+        // Event listener för kopiera föregående-knappar
+        container.addEventListener('click', (e) => {
+            // Hitta knappen i händelsekedjan (e.target kan vara SVG eller text)
+            const button = e.target.closest('[data-action]');
+            if (!button) return; // Viktigt: gör INGENTING för icke-knappar
+            
+            const action = button.dataset.action;
+            if (action === 'duplicate') {
+                e.preventDefault();
+                e.stopPropagation(); // Endast för just knappen
+                console.log('🔄 Kopiera-knapp klickad:', button);
+                const partiId = parseInt(button.dataset.partiId);
+                if (partiId) {
+                    console.log('🔄 Kopierar parti med ID:', partiId);
+                    this.duplicatePrevParti(partiId);
+                } else {
+                    console.error('🔄 Inget parti-ID hittades i knappen');
+                }
+            }
+        });
+
+        // Event listener för ändringar
         container.addEventListener('change', (e) => {
             if (e.target.tagName === 'SELECT' || e.target.type === 'number') {
                 const match = e.target.name.match(/^(partiType|luftareType|workDesc|openDir|winType|sprojs_select|sprojs_custom)_(\d+)$/) ||
@@ -2470,22 +2520,95 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         });
     }
 
-    handleWindowSectionsChange() {
-        const windowSectionsField = document.getElementById('window_sections');
-        const windowSections = parseInt(windowSectionsField?.value) || 0;
+    setupWindowSectionsListener(field) {
+        if (windowSectionsListenerBound) return;
+        windowSectionsListenerBound = true;
         
-        console.log(`handleWindowSectionsChange: input value = "${windowSectionsField?.value}", parsed = ${windowSections}`);
+        console.log('🔧 Binding window_sections listeners (only once)');
         
-        if (windowSections > 0) {
-            this.createParties(windowSections);
-            this.setupPartiEventListeners();
-        } else {
-            partisState.partis = [];
-            this.renderParties();
-            this.syncLegacyFields();
+        // A. Direkt uppdatering medan man skriver (debouncad)
+        field.addEventListener('input', (e) => {
+            const n = parseInt(e.target.value, 10) || 0;
+            console.log(`🏠 Window sections input: ${n} (current: ${partisState.partis.length})`);
+            
+            // Idempotent: gör inget om n redan stämmer
+            if (n === partisState.partis.length) {
+                console.log('🏠 Samma antal, hoppar över debounce');
+                return;
+            }
+
+            clearTimeout(createPartiesDebounce);
+            createPartiesDebounce = setTimeout(() => {
+                if (n === partisState.partis.length) {
+                    console.log('🏠 Dubbelkoll: samma antal, hoppar över createParties');
+                    return; // dubbelkoll
+                }
+                console.log('🏠 Debouncad uppdatering till', n, 'partier');
+                this.createParties(n);
+                this.setupPartiEventListeners();
+                this.syncLegacyFields();
+                this.updatePriceCalculation();
+            }, 120); // lagom snällt för UI:t
+        });
+
+        // B. Fallback när man lämnar fältet
+        field.addEventListener('change', (e) => {
+            console.log(`🏠 Window sections changed: ${e.target.value}`);
+            this.handleWindowSectionsChange(e);
+        });
+    }
+
+    handleWindowSectionsChange(e) {
+        // Förhindra skapande av partier under duplicering
+        if (partisState.isDuplicating) {
+            console.log('🚨 handleWindowSectionsChange BLOCKERAD under duplicering');
+            return;
         }
         
+        const n = parseInt(e.target.value, 10) || 0;
+        console.log('🚨 handleWindowSectionsChange … parsed =', n, ' current =', partisState.partis.length);
+        
+        // Idempotent: gör inget om n redan stämmer
+        if (n === partisState.partis.length) {
+            console.log('🚨 Samma antal partier, hoppar över createParties');
+            return;
+        }
+        
+        this.createParties(n);
+        this.setupPartiEventListeners();
+        this.syncLegacyFields();
         this.updatePriceCalculation();
+    }
+
+    duplicatePrevParti(currentId) {
+        console.log('🔄 ANROPAD duplicatePrevParti med currentId:', currentId);
+
+        // Hitta index för aktuell rad
+        const idx = partisState.partis.findIndex(p => p.id === currentId);
+        if (idx <= 0) {
+            console.error('🔄 Ingen föregående parti att kopiera (idx:', idx, ')');
+            return;
+        }
+
+        const src = partisState.partis[idx - 1];       // föregående
+        const target = partisState.partis[idx];        // nuvarande som ska fyllas
+
+        console.log('🔄 Kopierar från föregående parti:', JSON.stringify(src, null, 2));
+        console.log('🔄 Till nuvarande parti:', JSON.stringify(target, null, 2));
+
+        // Kopiera endast relevanta fält (behåll id)
+        const fields = ['partiType','luftareType','workDesc','openDir','winType','sprojs'];
+        fields.forEach(f => { target[f] = src[f]; });
+
+        // Räkna om priset för målpartiet
+        target.pris = this.computePris(target);
+
+        // Rendera om UI + synka/pris
+        this.renderParties();
+        this.syncLegacyFields();
+        this.updatePriceCalculation();
+
+        console.log('🔄 KLAR - Föregående kopierat in i nuvarande parti:', JSON.stringify(target, null, 2));
     }
 }
 

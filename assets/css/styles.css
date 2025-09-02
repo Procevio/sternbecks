@@ -456,6 +456,11 @@ input[readonly] {
     transform: translateY(-1px);
 }
 
+/* Fixar dubbelklick på select: ingen förflyttning på fokus */
+.form-select:focus {
+    transform: none;
+}
+
 .form-group input:hover,
 .form-group textarea:hover,
 .form-select:hover {
@@ -1656,6 +1661,42 @@ body.dark .moment-item label:hover {
     border-bottom: 1px solid var(--border-light);
 }
 
+.parti-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.btn-small {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-sm);
+    background: var(--white);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.btn-small svg {
+    flex-shrink: 0;
+}
+
+.btn-small:hover {
+    background: var(--surface-light);
+    border-color: var(--accent-beige);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.btn-small:active {
+    transform: translateY(0);
+}
+
 .parti-header h4 {
     font-size: 1rem;
     font-weight: 600;
@@ -1716,11 +1757,18 @@ body.dark .moment-item label:hover {
     .parti-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: var(--spacing-xs);
+        gap: var(--spacing-sm);
     }
     
-    .price-display-inline {
-        align-self: flex-end;
+    .parti-actions {
+        align-self: stretch;
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .btn-small {
+        font-size: 0.75rem;
+        padding: var(--spacing-xs);
     }
 }
 
