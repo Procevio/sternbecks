@@ -1010,34 +1010,22 @@ class QuoteCalculator {
         const data = this.collectPricingData();
         console.log('Collected data:', data);
         
-        // Beräkna grundkomponenter (luftare + dörrar)
-        const baseComponentsPrice = this.calculateBaseComponents(data);
-        console.log('Base components price (excl VAT):', baseComponentsPrice);
-        
-        // Beräkna renoveringstyp-tillägg (från dropdown)
-        const renovationTypeCost = this.calculateRenovationTypeCost(data, baseComponentsPrice);
-        console.log('Renovation type cost (excl VAT):', renovationTypeCost);
-        
-        // Beräkna fönstertyp-tillägg
-        const windowTypeCost = this.calculateWindowTypeCost(data, baseComponentsPrice);
-        console.log('Window type cost (excl VAT):', windowTypeCost);
-        
-        // Beräkna spröjs och E-glas
-        const extrasCost = this.calculateExtrasCost(data);
-        console.log('Extras cost (excl VAT):', extrasCost);
-        
-        // Summera individuella partier (där spröjs nu beräknas)
+        // Summera individuella partier (innehåller alla parti-specifika kostnader: bas, fönstertyp, spröjs, etc.)
         const partierTotalCost = partisState.partis.reduce((sum, parti) => {
             return sum + (parti.pris || 0);
         }, 0);
         console.log('Partier total cost (excl VAT):', partierTotalCost);
         
+        // E-glas (inte parti-specifik) 
+        const extrasCost = this.calculateExtrasCost(data);
+        console.log('Extras cost (excl VAT):', extrasCost);
+        
         // Beräkna prisjusteringar
         const priceAdjustment = data.priceAdjustmentPlus - data.priceAdjustmentMinus;
         console.log('Price adjustment (excl VAT):', priceAdjustment);
         
-        // Beräkna summa utan materialkostnad (material bara för ROT-beräkning)
-        const subtotalBeforeMaterial = baseComponentsPrice + renovationTypeCost + windowTypeCost + extrasCost + partierTotalCost + priceAdjustment;
+        // Beräkna summa utan materialkostnad (partier innehåller redan allt parti-relaterat)
+        const subtotalBeforeMaterial = partierTotalCost + extrasCost + priceAdjustment;
         console.log('Subtotal before work markup:', subtotalBeforeMaterial);
         
         // Beräkna arbetsbeskrivning-pålägg (utan materialavdrag)
@@ -1084,8 +1072,8 @@ class QuoteCalculator {
         
         // Uppdatera alla priselement
         this.updatePriceDisplay({
-            baseComponentsPrice,
-            windowTypeCost: renovationTypeCost + windowTypeCost,
+            baseComponentsPrice: partierTotalCost, // Nu kommer från partier istället
+            windowTypeCost: 0, // Ingår redan i partier
             extrasCost,
             renovationMarkup: workDescriptionMarkup,
             priceAdjustment,
@@ -2090,9 +2078,20 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
     // ============= HELPER FUNCTIONS =============
     
     getLuftareCount(parti) {
-        // Exempel: "2_luftare" → 2
-        const m = String(parti.luftareType ?? '').match(/\d+/);
-        return m ? parseInt(m[0], 10) : 0;
+        // "luftare" som används i spröjsformeln beror på parti-typ:
+        switch (parti.partiType) {
+            case "dorr":
+            case "kallare_glugg":
+                return 1; // Räkna som 1-luftare
+            case "pardorr_balkong":
+                return 2; // Räkna som 2-luftare
+            case "fonster":
+                // Använd valt antal luftare i partiet
+                const m = String(parti.luftareType ?? '').match(/\d+/);
+                return m ? parseInt(m[0], 10) : 0;
+            default:
+                return 0; // Ingen spröjs om parti-typ inte är vald
+        }
     }
     
     // ============= PARTI MANAGEMENT FUNCTIONS =============
@@ -2107,6 +2106,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
             return;
         }
         
+        console.log(`🏭 Skapar ${n} nya tomma partier`);
         partisState.partis = Array.from({length: n}, (_, i) => ({
             id: i + 1,
             partiType: "",
@@ -2117,6 +2117,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
             sprojs: null,
             pris: null
         }));
+        console.log('🏭 Nya partier skapade:', partisState.partis);
         this.renderParties();
         this.syncLegacyFields();
     }
@@ -2542,9 +2543,19 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         const n = parseInt(e.target.value, 10) || 0;
         console.log('🚨 handleWindowSectionsChange … parsed =', n, ' current =', partisState.partis.length);
         
-        // Idempotent: gör inget om n redan stämmer
+        // Idempotent: gör inget om n redan stämmer  
         if (n === partisState.partis.length) {
             console.log('🚨 Samma antal partier, hoppar över createParties');
+            return;
+        }
+        
+        // Specialfall: när n = 0, rensa alltid partier
+        if (n === 0) {
+            console.log('🚨 Rensar alla partier (n=0)');
+            partisState.partis = [];
+            this.renderParties();
+            this.syncLegacyFields();
+            this.updatePriceCalculation();
             return;
         }
         
