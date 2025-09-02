@@ -1026,12 +1026,18 @@ class QuoteCalculator {
         const extrasCost = this.calculateExtrasCost(data);
         console.log('Extras cost (excl VAT):', extrasCost);
         
+        // Summera individuella partier (där spröjs nu beräknas)
+        const partierTotalCost = partisState.partis.reduce((sum, parti) => {
+            return sum + (parti.pris || 0);
+        }, 0);
+        console.log('Partier total cost (excl VAT):', partierTotalCost);
+        
         // Beräkna prisjusteringar
         const priceAdjustment = data.priceAdjustmentPlus - data.priceAdjustmentMinus;
         console.log('Price adjustment (excl VAT):', priceAdjustment);
         
         // Beräkna summa utan materialkostnad (material bara för ROT-beräkning)
-        const subtotalBeforeMaterial = baseComponentsPrice + renovationTypeCost + windowTypeCost + extrasCost + priceAdjustment;
+        const subtotalBeforeMaterial = baseComponentsPrice + renovationTypeCost + windowTypeCost + extrasCost + partierTotalCost + priceAdjustment;
         console.log('Subtotal before work markup:', subtotalBeforeMaterial);
         
         // Beräkna arbetsbeskrivning-pålägg (utan materialavdrag)
@@ -1249,40 +1255,8 @@ class QuoteCalculator {
         
         let total = 0;
         
-        // Spröjs: Ny beräkningslogik baserad på antal luftare och antal fönster med spröjs
-        if (data.hasSprojs && data.sprojsPerWindow > 0 && data.windowsWithSprojs > 0) {
-            let sprojsCost = 0;
-            
-            // Beräkna genomsnittligt antal luftare per fönster
-            const totalWindowCount = (data.luftare1 || 0) + (data.luftare2 || 0) + (data.luftare3 || 0) + 
-                                   (data.luftare4 || 0) + (data.luftare5 || 0) + (data.luftare6 || 0);
-            const totalLuftare = (data.luftare1 || 0) * 1 + (data.luftare2 || 0) * 2 + (data.luftare3 || 0) * 3 + 
-                                (data.luftare4 || 0) * 4 + (data.luftare5 || 0) * 5 + (data.luftare6 || 0) * 6;
-            
-            // Om vi har fönster och fönster med spröjs
-            if (totalWindowCount > 0 && data.windowsWithSprojs > 0) {
-                // Beräkna genomsnittligt antal luftare per fönster
-                const avgLuftarePerWindow = totalLuftare / totalWindowCount;
-                
-                // Ny tierad beräkning (inte kumulativ)
-                let sprojsLowTier = Math.min(data.sprojsPerWindow, CONFIG.EXTRAS.SPROJS_THRESHOLD); // Första 1-3 spröjs
-                let sprojsHighTier = Math.max(0, data.sprojsPerWindow - CONFIG.EXTRAS.SPROJS_THRESHOLD); // 4+ spröjs
-                
-                // Beräkna kostnad för varje tier
-                const lowTierCost = sprojsLowTier * CONFIG.EXTRAS.SPROJS_LOW_PRICE * avgLuftarePerWindow * data.windowsWithSprojs;
-                const highTierCost = sprojsHighTier * CONFIG.EXTRAS.SPROJS_HIGH_PRICE * avgLuftarePerWindow * data.windowsWithSprojs;
-                
-                sprojsCost = lowTierCost + highTierCost;
-                
-                console.log(`🖼️ Spröjs-beräkning (tierad):`);
-                console.log(`   Tier 1 (1-3): ${sprojsLowTier} × ${CONFIG.EXTRAS.SPROJS_LOW_PRICE}kr × ${avgLuftarePerWindow.toFixed(1)} × ${data.windowsWithSprojs} = ${lowTierCost}kr`);
-                console.log(`   Tier 2 (4+): ${sprojsHighTier} × ${CONFIG.EXTRAS.SPROJS_HIGH_PRICE}kr × ${avgLuftarePerWindow.toFixed(1)} × ${data.windowsWithSprojs} = ${highTierCost}kr`);
-                console.log(`   Total: ${sprojsCost}kr`);
-            }
-            
-            console.log(`🖼️ Total spröjs-kostnad: ${sprojsCost}kr (tierad: 1-3 = 250kr/ruta, 4+ = 400kr/ruta)`);
-            total += sprojsCost;
-        }
+        // Spröjs-beräkning görs nu per parti i computePris() - ingen extra beräkning här
+        console.log('💎 Spröjs beräknas nu per parti, inte centralt');
         
         // E-glas: 2500kr/kvm
         if (data.hasEGlass && data.eGlassSqm > 0) {
