@@ -1,6 +1,6 @@
 // Lösenordsskydd konfiguration
 const PASSWORD_CONFIG = {
-    CORRECT_PASSWORD: 'sternbecks2025',
+    CORRECT_PASSWORD: '123',
     MAX_ATTEMPTS: 3,
     SESSION_KEY: 'sternbecks_auth_session'
 };
@@ -11,10 +11,11 @@ const CONFIG = {
     
     // Prissättning per enhet (exkl. moms)
     UNIT_PRICES: {
-        'antal_dorrpartier': 6000,  // Dörrpartier: 6000kr/st (exkl. moms)
-        'antal_kallare_glugg': 3000, // Källare/Glugg: 3000kr/st (exkl. moms)
-        'antal_pardorr_balkong': 10000, // Pardörr balkong/altan: 10000kr/st (exkl. moms)
-        'antal_1_luftare': 3500,    // 1 luftare: 3500kr/st (exkl. moms)
+        'antal_dorrpartier': 5000,  // Dörrpartier: 5000kr/st (exkl. moms)
+        'antal_kallare_glugg': 3500, // Källare/Glugg: 3500kr/st (exkl. moms)
+        'antal_pardorr_balkong': 9000, // Pardörr balkong/altan: 9000kr/st (exkl. moms)
+        'antal_flak': 6000,         // Flak: 6000kr/st (exkl. moms)
+        'antal_1_luftare': 4000,    // 1 luftare: 4000kr/st (exkl. moms)
         'antal_2_luftare': 5500,    // 2 luftare: 5500kr/st (exkl. moms)
         'antal_3_luftare': 8250,    // 3 luftare: 8250kr/st (exkl. moms)
         'antal_4_luftare': 11000,   // 4 luftare: 11000kr/st (exkl. moms)
@@ -83,7 +84,8 @@ const PARTI_TYPES = [
   { value: "fonster", label: "Fönsterparti" },
   { value: "dorr", label: "Dörrparti" },
   { value: "kallare_glugg", label: "Källare/Glugg" },
-  { value: "pardorr_balkong", label: "Pardörr balkong/altan" }
+  { value: "pardorr_balkong", label: "Pardörr balkong/altan" },
+  { value: "flak", label: "Flak" }
 ];
 
 const LUFTARE_TYPES = [
@@ -93,6 +95,15 @@ const LUFTARE_TYPES = [
   { value: "4_luftare", label: "4 luftare" },
   { value: "5_luftare", label: "5 luftare" },
   { value: "6_luftare", label: "6 luftare" }
+];
+
+const EXTRA_LUFTARE_TYPES = [
+  { value: 0, label: "0 extra luftare" },
+  { value: 1, label: "1 extra luftare" },
+  { value: 2, label: "2 extra luftare" },
+  { value: 3, label: "3 extra luftare" },
+  { value: 4, label: "4 extra luftare" },
+  { value: 5, label: "5 extra luftare" }
 ];
 
 const WORK_DESC = [
@@ -109,8 +120,9 @@ const OPEN_DIR = [
 /**
  * @typedef {Object} Parti
  * @property {number} id 1..N
- * @property {"fonster"|"dorr"|"kallare_glugg"|"pardorr_balkong"|""} partiType
+ * @property {"fonster"|"dorr"|"kallare_glugg"|"pardorr_balkong"|"flak"|""} partiType
  * @property {"1_luftare"|"2_luftare"|"3_luftare"|"4_luftare"|"5_luftare"|"6_luftare"|""} luftareType
+ * @property {number|null} extraLuftare For flak: 0-5 extra luftare
  * @property {"utvandig"|"invandig"|"utv_plus_innermal"|""} workDesc
  * @property {"inatgaende"|"utatgaende"|""} openDir
  * @property {"kopplade_standard"|"isolerglas"|"kopplade_isolerglas"|"insats_yttre"|"insats_inre"|"insats_komplett"|""} winType
@@ -931,8 +943,116 @@ class QuoteCalculator {
     }
     
     validateParties() {
-        // Fönsterpartier från formuläret
+        // Validera individuella partier först
+        if (partisState.partis.length > 0) {
+            for (let i = 0; i < partisState.partis.length; i++) {
+                const parti = partisState.partis[i];
+                const partiNumber = i + 1;
+                
+                // Kontrollera att partiType är vald
+                if (!parti.partiType) {
+                    this.partiesValidationText.textContent = 
+                        `Parti ${partiNumber}: Du måste välja en partiTyp`;
+                    this.partiesValidation.className = 'validation-message error';
+                    this.partiesValidation.style.display = 'block';
+                    this.submitBtn.disabled = true;
+                    this.submitBtn.style.opacity = '0.5';
+                    this.scrollToParti(parti.id);
+                    return false;
+                }
+                
+                // Kontrollera luftare för fönster
+                if (parti.partiType === 'fonster' && !parti.luftareType) {
+                    this.partiesValidationText.textContent = 
+                        `Parti ${partiNumber}: Du måste välja antal luftare för fönsterparti`;
+                    this.partiesValidation.className = 'validation-message error';
+                    this.partiesValidation.style.display = 'block';
+                    this.submitBtn.disabled = true;
+                    this.submitBtn.style.opacity = '0.5';
+                    this.scrollToParti(parti.id);
+                    return false;
+                }
+                
+                // Kontrollera extra luftare för flak och pardörr balkong/altan
+                if ((parti.partiType === 'flak' || parti.partiType === 'pardorr_balkong') && (parti.extraLuftare === null || parti.extraLuftare === undefined)) {
+                    const partiTypeName = parti.partiType === 'flak' ? 'flak' : 'pardörr balkong/altan';
+                    this.partiesValidationText.textContent = 
+                        `Parti ${partiNumber}: Du måste välja antal extra luftare för ${partiTypeName}`;
+                    this.partiesValidation.className = 'validation-message error';
+                    this.partiesValidation.style.display = 'block';
+                    this.submitBtn.disabled = true;
+                    this.submitBtn.style.opacity = '0.5';
+                    this.scrollToParti(parti.id);
+                    return false;
+                }
+                
+                // Kontrollera arbetsbeskrivning
+                if (!parti.workDesc) {
+                    this.partiesValidationText.textContent = 
+                        `Parti ${partiNumber}: Du måste välja arbetsbeskrivning`;
+                    this.partiesValidation.className = 'validation-message error';
+                    this.partiesValidation.style.display = 'block';
+                    this.submitBtn.disabled = true;
+                    this.submitBtn.style.opacity = '0.5';
+                    this.scrollToParti(parti.id);
+                    return false;
+                }
+                
+                // Kontrollera öppningsriktning
+                if (!parti.openDir) {
+                    this.partiesValidationText.textContent = 
+                        `Parti ${partiNumber}: Du måste välja öppningsriktning`;
+                    this.partiesValidation.className = 'validation-message error';
+                    this.partiesValidation.style.display = 'block';
+                    this.submitBtn.disabled = true;
+                    this.submitBtn.style.opacity = '0.5';
+                    this.scrollToParti(parti.id);
+                    return false;
+                }
+                
+                // Kontrollera typ av fönster/beslag
+                if (!parti.winType) {
+                    this.partiesValidationText.textContent = 
+                        `Parti ${partiNumber}: Du måste välja typ av ${parti.partiType === 'fonster' ? 'fönster' : 'beslag/glas'}`;
+                    this.partiesValidation.className = 'validation-message error';
+                    this.partiesValidation.style.display = 'block';
+                    this.submitBtn.disabled = true;
+                    this.submitBtn.style.opacity = '0.5';
+                    this.scrollToParti(parti.id);
+                    return false;
+                }
+            }
+        }
+        
+        // Kontrollera att antal konfigurerade partier matchar valt antal
         const windowSections = parseInt(document.getElementById('window_sections')?.value) || 0;
+        if (windowSections > 0 && partisState.partis.length !== windowSections) {
+            this.partiesValidationText.textContent = 
+                `Du har valt att konfigurera ${windowSections} partier men har bara ${partisState.partis.length} parti(er) konfigurerade. Fyll i alla partier.`;
+            this.partiesValidation.className = 'validation-message error';
+            this.partiesValidation.style.display = 'block';
+            this.submitBtn.disabled = true;
+            this.submitBtn.style.opacity = '0.5';
+            return false;
+        }
+        
+        // Om alla individuella partier är ifyllda, visa framgångsmeddelande
+        if (windowSections > 0 && partisState.partis.length > 0 && partisState.partis.length === windowSections) {
+            // Kontrollera att alla partier har beräknade priser
+            const allPartisValid = partisState.partis.every(parti => parti.pris != null && parti.pris > 0);
+            if (allPartisValid) {
+                this.partiesValidationText.textContent = 
+                    `✓ Alla ${windowSections} partier är korrekt ifyllda och prissatta`;
+                this.partiesValidation.className = 'validation-message success';
+                this.partiesValidation.style.display = 'block';
+                this.submitBtn.disabled = false;
+                this.submitBtn.style.opacity = '1';
+                return true;
+            }
+        }
+        
+        // Legacy validation (behålls för bakåtkompatibilitet)
+        // Använd redan hämtade windowSections-värdet
         
         // Totala luftare = vanliga luftare
         const totalLuftare = 
@@ -1024,9 +1144,14 @@ class QuoteCalculator {
         const priceAdjustment = data.priceAdjustmentPlus - data.priceAdjustmentMinus;
         console.log('Price adjustment (excl VAT):', priceAdjustment);
         
-        // Beräkna summa utan materialkostnad (partier innehåller redan allt parti-relaterat)
-        const subtotalBeforeMaterial = partierTotalCost + extrasCost + priceAdjustment;
-        console.log('Subtotal before work markup:', subtotalBeforeMaterial);
+        // Applicera renoveringstyp-pålägg
+        const renovationTypeMultiplier = CONFIG.RENOVATION_TYPE_MULTIPLIERS[data.renovationType] || 1.0;
+        const renovationAdjustedTotal = (partierTotalCost + extrasCost + priceAdjustment) * renovationTypeMultiplier;
+        console.log('Renovation type multiplier:', renovationTypeMultiplier, 'for type:', data.renovationType);
+        
+        // Beräkna summa utan materialkostnad (partier innehåller redan allt parti-relaterat + renoveringstyp-pålägg)
+        const subtotalBeforeMaterial = renovationAdjustedTotal;
+        console.log('Subtotal before work markup (after renovation type):', subtotalBeforeMaterial);
         
         // Beräkna arbetsbeskrivning-pålägg (utan materialavdrag)
         const workDescriptionMarkup = this.calculateWorkDescriptionMarkup(data, subtotalBeforeMaterial, priceAdjustment, 0);
@@ -1447,6 +1572,11 @@ class QuoteCalculator {
     
     validateForm() {
         let isFormValid = true;
+        
+        // Validera individuella partier först
+        if (!this.validateParties()) {
+            isFormValid = false;
+        }
         
         // Kontrollera att minst ett antal-fält har värde > 0
         const quantityFields = [
@@ -2075,6 +2205,25 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         }
     }
 
+    scrollToParti(partiId) {
+        // Hitta parti-sektionen med det givna ID:t
+        const partiSections = document.querySelectorAll('.parti-section');
+        const targetIndex = partisState.partis.findIndex(p => p.id === partiId);
+        
+        if (targetIndex >= 0 && partiSections[targetIndex]) {
+            partiSections[targetIndex].scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+            });
+            
+            // Lägg till visuell highlight för att visa vilket parti som har problem
+            partiSections[targetIndex].style.border = '2px solid #ff4444';
+            setTimeout(() => {
+                partiSections[targetIndex].style.border = '';
+            }, 3000);
+        }
+    }
+
     // ============= HELPER FUNCTIONS =============
     
     getLuftareCount(parti) {
@@ -2083,8 +2232,12 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
             case "dorr":
             case "kallare_glugg":
                 return 1; // Räkna som 1-luftare
+            case "flak":
+                // Flak: 1 bas-luftare + extra luftare
+                return 1 + (Number.isInteger(parti.extraLuftare) ? parti.extraLuftare : 0);
             case "pardorr_balkong":
-                return 2; // Räkna som 2-luftare
+                // Pardörr balkong/altan: 2 bas-luftare + extra luftare
+                return 2 + (Number.isInteger(parti.extraLuftare) ? parti.extraLuftare : 0);
             case "fonster":
                 // Använd valt antal luftare i partiet
                 const m = String(parti.luftareType ?? '').match(/\d+/);
@@ -2189,6 +2342,17 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                     </select>
                 </div>
 
+                <!-- Extra Luftare - för flak och pardörr balkong/altan -->
+                <div class="form-group compact" style="display: ${(parti.partiType === 'flak' || parti.partiType === 'pardorr_balkong') ? 'block' : 'none'};" id="extraLuftareGroup_${parti.id}">
+                    <label for="extraLuftareType_${parti.id}">Antal extra luftare *</label>
+                    <select id="extraLuftareType_${parti.id}" name="extraLuftareType_${parti.id}" class="form-select" ${(parti.partiType === 'flak' || parti.partiType === 'pardorr_balkong') ? 'required' : ''}>
+                        <option value="">Välj antal extra luftare...</option>
+                        ${EXTRA_LUFTARE_TYPES.map(extra => `
+                            <option value="${extra.value}" ${parti.extraLuftare === extra.value ? 'selected' : ''}>${extra.label}</option>
+                        `).join('')}
+                    </select>
+                </div>
+
                 <!-- Arbetsbeskrivning - för alla typer -->
                 <div class="form-group compact">
                     <label for="workDesc_${parti.id}">Arbetsbeskrivning *</label>
@@ -2270,46 +2434,67 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 break;
             case "pardorr_balkong":
                 bas = CONFIG.UNIT_PRICES['antal_pardorr_balkong'] || 0;
+                // Lägg till extra luftare-kostnad (2750kr per extra luftare)
+                if (Number.isInteger(parti.extraLuftare) && parti.extraLuftare > 0) {
+                    bas += parti.extraLuftare * 2750;
+                }
+                break;
+            case "flak":
+                bas = CONFIG.UNIT_PRICES['antal_flak'] || 0;
+                // Lägg till extra luftare-kostnad (2750kr per extra luftare)
+                if (Number.isInteger(parti.extraLuftare) && parti.extraLuftare > 0) {
+                    bas += parti.extraLuftare * 2750;
+                }
                 break;
             default:
                 bas = 0;
         }
         
-        // Fönstertyp-tillägg enligt nya specifikationen
+        // Arbetsbeskrivning påverkan - pålägg på baspriset
+        if (parti.workDesc === "invandig") {
+            // Invändig renovering: +25% på baspriset
+            bas = Math.round(bas * 1.25);
+        } else if (parti.workDesc === "utv_plus_innermal") {
+            // Utvändig renovering samt målning av innerbågens insida: +5% på baspriset
+            bas = Math.round(bas * 1.05);
+        }
+        
+        // Fönstertyp-tillägg per luftare enligt nya specifikationen
         if (parti.winType) {
+            const luftareAntal = this.getLuftareCount(parti);
             switch (parti.winType) {
                 case "kopplade_standard":
                     // 0 kr (baspris)
                     break;
                 case "isolerglas":
-                    // +400 kr per fönster
-                    bas += 400;
+                    // -400 kr per luftare
+                    bas += -400 * luftareAntal;
                     break;
                 case "kopplade_isolerglas":
-                    // Samma som isolerglas
-                    bas += 400;
+                    // +500 kr per luftare
+                    bas += 500 * luftareAntal;
                     break;
                 case "insats_yttre":
+                    // -400 kr per luftare
+                    bas += -400 * luftareAntal;
+                    break;
                 case "insats_inre":
+                    // -1250 kr per luftare
+                    bas += -1250 * luftareAntal;
+                    break;
                 case "insats_komplett":
-                    // +300 kr per båge (antal luftare = antal bågar)
-                    if (parti.partiType === "fonster" && parti.luftareType) {
-                        const antalBagar = parseInt(parti.luftareType.split('_')[0]) || 0;
-                        bas += 300 * antalBagar;
-                    } else {
-                        // För icke-fönster, anta 1 båge
-                        bas += 300;
-                    }
+                    // +1000 kr per luftare
+                    bas += 1000 * luftareAntal;
                     break;
             }
         }
         
         // Öppningsriktning påverkan - NY LOGIK
-        if (parti.openDir === "inatgaende") {
-            // Inåtgående: -5% på totalsumman
-            bas = Math.round(bas * 0.95);
+        if (parti.openDir === "utatgaende") {
+            // Utåtgående: +5% på totalsumman
+            bas = Math.round(bas * 1.05);
         }
-        // Utåtgående: 0 kr (baspris) - ingen förändring
+        // Inåtgående: 0% (baspris) - ingen förändring
         
         // === Spröjs per parti ===
         // Regel: 
@@ -2338,6 +2523,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         const antalDorr = f.filter(p => p.partiType === 'dorr').length;
         const antalKallareGlugg = f.filter(p => p.partiType === 'kallare_glugg').length;
         const antalPardorrBalkong = f.filter(p => p.partiType === 'pardorr_balkong').length;
+        const antalFlak = f.filter(p => p.partiType === 'flak').length;
         
         // Räkna luftare per typ (endast för fönster)
         const luftareCounts = {
@@ -2380,7 +2566,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         this.setHidden("antal_sprojs_per_bage", antalSprojsPerBage);
 
         console.log('Legacy fields updated:', {
-            antalFonster, antalDorr, antalKallareGlugg, antalPardorrBalkong,
+            antalFonster, antalDorr, antalKallareGlugg, antalPardorrBalkong, antalFlak,
             luftareCounts, antalMedSprojs, antalSprojsPerBage
         });
     }
@@ -2425,8 +2611,8 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         // Event listener för ändringar
         container.addEventListener('change', (e) => {
             if (e.target.tagName === 'SELECT' || e.target.type === 'number') {
-                const match = e.target.name.match(/^(partiType|luftareType|workDesc|openDir|winType|sprojs_select|sprojs_custom)_(\d+)$/) ||
-                             e.target.id.match(/^(partiType|luftareType|workDesc|openDir|winType|sprojs_select|sprojs_custom)_(\d+)$/);
+                const match = e.target.name.match(/^(partiType|luftareType|extraLuftareType|workDesc|openDir|winType|sprojs_select|sprojs_custom)_(\d+)$/) ||
+                             e.target.id.match(/^(partiType|luftareType|extraLuftareType|workDesc|openDir|winType|sprojs_select|sprojs_custom)_(\d+)$/);
                 if (match) {
                     const field = match[1];
                     const partiId = parseInt(match[2]);
@@ -2438,6 +2624,8 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                             
                             // Visa/dölj endast luftare-fält (andra fält visas för alla typer nu)
                             const isWindowType = e.target.value === 'fonster';
+                            const isExtraLuftareType = e.target.value === 'flak' || e.target.value === 'pardorr_balkong';
+                            
                             const luftareGroup = document.getElementById(`luftareGroup_${partiId}`);
                             if (luftareGroup) {
                                 luftareGroup.style.display = isWindowType ? 'block' : 'none';
@@ -2451,9 +2639,25 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                                 }
                             }
                             
-                            // Rensa endast luftare-värde om inte fönster
+                            const extraLuftareGroup = document.getElementById(`extraLuftareGroup_${partiId}`);
+                            if (extraLuftareGroup) {
+                                extraLuftareGroup.style.display = isExtraLuftareType ? 'block' : 'none';
+                                const select = extraLuftareGroup.querySelector('select');
+                                if (select) {
+                                    if (isExtraLuftareType) {
+                                        select.setAttribute('required', '');
+                                    } else {
+                                        select.removeAttribute('required');
+                                    }
+                                }
+                            }
+                            
+                            // Rensa värden när de inte gäller
                             if (!isWindowType) {
                                 parti.luftareType = "";
+                            }
+                            if (!isExtraLuftareType) {
+                                parti.extraLuftare = null;
                             }
                             
                         } else if (field === 'sprojs_select') {
@@ -2470,12 +2674,18 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                             // Map field names correctly
                             const fieldMap = {
                                 'luftareType': 'luftareType',
+                                'extraLuftareType': 'extraLuftare',
                                 'workDesc': 'workDesc',
                                 'openDir': 'openDir', 
                                 'winType': 'winType'
                             };
                             const mappedField = fieldMap[field] || field;
-                            parti[mappedField] = e.target.value;
+                            
+                            if (field === 'extraLuftareType') {
+                                parti[mappedField] = parseInt(e.target.value) || 0;
+                            } else {
+                                parti[mappedField] = e.target.value;
+                            }
                         }
                         
                         // Uppdatera pris och rendera endast pris-displayen
@@ -2582,7 +2792,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         console.log('🔄 Till nuvarande parti:', JSON.stringify(target, null, 2));
 
         // Kopiera endast relevanta fält (behåll id)
-        const fields = ['partiType','luftareType','workDesc','openDir','winType','sprojs'];
+        const fields = ['partiType','luftareType','extraLuftare','workDesc','openDir','winType','sprojs'];
         fields.forEach(f => { target[f] = src[f]; });
 
         // Räkna om priset för målpartiet
