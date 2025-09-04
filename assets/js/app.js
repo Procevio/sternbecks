@@ -38,7 +38,7 @@ const CONFIG = {
         'Kopplade isolerglas': 0,                 // Ingen rabatt (standardpris)
         'Insatsbågar yttre': -400,                // -400kr per båge
         'Insatsbågar inre': -1250,                // -1250kr per båge
-        'Insatsbågar komplett': 0,                // Ingen rabatt (standardpris)
+        'Insatsbågar komplett': 1000,             // +1000kr per båge
     },
     
     // Fönsteröppning-multiplikatorer (påverkar luftare-grundpriset)
