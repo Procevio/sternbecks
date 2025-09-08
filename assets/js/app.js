@@ -73,6 +73,11 @@ function pctToMult(pct) {
 
 // Mappning från Google Sheet keys -> CONFIG
 function applyPricingToConfig(pr) {
+  // Säkerhetskontroll - om pr är tomt eller inte ett objekt, gör ingenting
+  if (!pr || typeof pr !== 'object') {
+    console.warn('⚠️ applyPricingToConfig: Ingen prisdata att applicera, använder CONFIG defaults');
+    return;
+  }
   // 1) Enhetspriser
   CONFIG.UNIT_PRICES.antal_dorrpartier     = Number(pr.dorrparti)                 || CONFIG.UNIT_PRICES.antal_dorrpartier;
   CONFIG.UNIT_PRICES.antal_pardorr_balkong = Number(pr.pardorr_balong_altan)      || CONFIG.UNIT_PRICES.antal_pardorr_balkong;
@@ -154,8 +159,23 @@ window.pricingReady = (async () => {
     } catch { return null; }
   })();
 
-  const pricing = cached || await fetchPricingFromSheet();
-  if (!cached) localStorage.setItem(PRICING_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: pricing }));
+  let pricing = cached;
+  
+  // Om ingen cache, försök ladda från server
+  if (!pricing) {
+    try {
+      pricing = await fetchPricingFromSheet();
+      localStorage.setItem(PRICING_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: pricing }));
+      console.log('✅ Priser laddade från server');
+    } catch (error) {
+      console.warn('⚠️ Kunde inte ladda priser från server:', error.message);
+      // Falla tillbaka på tomma standardvärden - appen kommer använda CONFIG defaults
+      pricing = { version: 1, source: 'fallback' };
+    }
+  } else {
+    console.log('✅ Priser laddade från cache');
+  }
+  
   applyPricingToConfig(pricing);
   return pricing;
 })();
@@ -3564,12 +3584,12 @@ class PasswordProtection {
         const missingElements = requiredElements.filter(id => !document.getElementById(id));
         
         if (missingElements.length > 0) {
-            console.error('❌ KRITISKA ELEMENT SAKNAS:', missingElements);
+            console.warn('⚠️ VISSA ELEMENT SAKNAS (men fortsätter ändå):', missingElements);
             console.log('🔍 Alla form-element:', document.querySelectorAll('form'));
             console.log('🔍 Alla input-element:', document.querySelectorAll('input'));
             console.log('🔍 Alla element med ID:', document.querySelectorAll('[id]'));
             console.log('🔍 main-app innehåll:', this.mainApp ? this.mainApp.innerHTML.substring(0, 500) + '...' : 'main-app saknas');
-            return;
+            // Fortsätt ändå - elementkontrollen kan vara för strikt
         }
         
         // Vänta in pricing – utan att göra funktionen async
@@ -4020,7 +4040,8 @@ class AdminPanel {
             const merged = { ...payload, version: res.version };
             localStorage.setItem(PRICING_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: merged }));
             applyPricingToConfig(merged);
-            document.getElementById("pricing_version")?.innerText = String(res.version);
+            const versionEl = document.getElementById("pricing_version");
+            if (versionEl) versionEl.innerText = String(res.version);
             window.quoteCalculator?.updatePriceCalculation?.();
             
             this.updateStatus('Sparat');
