@@ -118,6 +118,55 @@ h3 {
     display: flex; /* Visas endast när användaren är inloggad */
 }
 
+/* Header top layout */
+.header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 100%;
+    position: relative;
+    padding: 15px 0 0 15px;
+}
+
+.logo-section {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+/* Kompakt logout button */
+.logout-btn-compact {
+    display: none; /* Dold som standard */
+    align-self: flex-start;
+    margin-right: auto;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--white);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.logout-btn-compact.visible {
+    display: flex;
+}
+
+.logout-btn-compact svg {
+    width: 18px;
+    height: 18px;
+}
+
+.logout-btn-compact:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
 .nav-btn {
     display: flex;
     flex-direction: column;
@@ -277,6 +326,10 @@ h3 {
     .admin-actions .btn {
         padding: 12px 16px;
         font-size: 13px;
+    }
+    
+    .header-top {
+        padding: 10px 0 0 10px;
     }
 }
 
@@ -1008,6 +1061,7 @@ body.dark .theme-icon::before {
 body.dark .theme-icon {
     font-size: 0;
 }
+
 
 /* Keep form header dark text in dark theme */
 body.dark .form-header h2 {

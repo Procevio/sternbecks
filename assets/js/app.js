@@ -8,7 +8,7 @@ const PASSWORD_CONFIG = {
 // --- Sternbeck Pricing API ---
 const PRICING_API_URL = "https://script.google.com/macros/s/AKfycbwdJe2jnRtq4sewClA-O38q8l24B3WIjR3byAY92cSteuaHPxDwwxAiV2ULtnzpWNXU0A/exec";
 const PRICING_API_TOKEN = "N7g4x9wqPzVh2sLfBt8yR3mKdXe6UcJoQ1Zi0HpGa5WlMnTv";
-const PRICING_CACHE_KEY = "sternbeck_pricing_cache_v4";
+const PRICING_CACHE_KEY = "sternbeck_pricing_cache_v5";
 const PRICING_TTL_MS = 10 * 60 * 1000;
 
 // --- Local cache helpers ---
@@ -49,20 +49,28 @@ async function savePricingToSheet(kvObject) {
   return json; // ⟵ vi vill kunna läsa serverns version
 }
 
-// --- numerik & procent ↔ multiplikator ---
+// --- Numerik & procent ↔ multiplikator (robust mot 0, 15, 0.05, 1.05, "1,05") ---
 function toNumberLoose(v) {
-  // tillåt "01.05" och svenska kommatecken
   const s = String(v ?? '').trim().replace(',', '.');
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
 }
 
+// Tolka vad som än råkat hamna i Sheet: procenttal, bråkprocent, eller multiplikator
+function toMultiplier(v) {
+  const n = toNumberLoose(v);
+  if (n == null) return null;
+  if (n === 0) return 1;                 // 0% → 1.00
+  if (Math.abs(n) >= 3) return 1 + n/100; // 15 → 1.15, -10 → 0.90, 152 → 2.52
+  if (n > 0 && n < 0.5) return 1 + n;     // 0.05 → 1.05 (felinmatad bråkprocent)
+  return n;                               // redan multiplikator (≈1.x)
+}
+
 function multToPct(mult) {
-  const n = toNumberLoose(mult);
+  const n = toMultiplier(mult);
   if (n == null) return '';
-  // visa som procent (utan ".00" om onödigt)
   const p = (n - 1) * 100;
-  return Number.isFinite(p) ? String(+p.toFixed(2)).replace(/\.00$/, '') : '';
+  return String(+p.toFixed(2)).replace(/\.00$/, '');
 }
 
 function pctToMult(pct) {
@@ -71,78 +79,57 @@ function pctToMult(pct) {
   return 1 + (n / 100);
 }
 
-// Mappning från Google Sheet keys -> CONFIG
 function applyPricingToConfig(pr) {
-  // Säkerhetskontroll - om pr är tomt eller inte ett objekt, gör ingenting
-  if (!pr || typeof pr !== 'object') {
-    console.warn('⚠️ applyPricingToConfig: Ingen prisdata att applicera, använder CONFIG defaults');
-    return;
-  }
-  // 1) Enhetspriser
-  CONFIG.UNIT_PRICES.antal_dorrpartier     = Number(pr.dorrparti)                 || CONFIG.UNIT_PRICES.antal_dorrpartier;
-  CONFIG.UNIT_PRICES.antal_pardorr_balkong = Number(pr.pardorr_balong_altan)      || CONFIG.UNIT_PRICES.antal_pardorr_balkong;
-  CONFIG.UNIT_PRICES.antal_kallare_glugg   = Number(pr.kallare_glugg)             || CONFIG.UNIT_PRICES.antal_kallare_glugg;
-  CONFIG.UNIT_PRICES.antal_flak            = Number(pr.flak_bas)                  || CONFIG.UNIT_PRICES.antal_flak;
+  // --- Enhetspriser (kr) ---
+  if (pr.dorrparti != null)               CONFIG.UNIT_PRICES.antal_dorrpartier     = Number(pr.dorrparti) || 0;
+  if (pr.pardorr_balong_altan != null)    CONFIG.UNIT_PRICES.antal_pardorr_balkong = Number(pr.pardorr_balong_altan) || 0;
+  if (pr.kallare_glugg != null)           CONFIG.UNIT_PRICES.antal_kallare_glugg   = Number(pr.kallare_glugg) || 0;
+  if (pr.flak_bas != null)                CONFIG.UNIT_PRICES.antal_flak            = Number(pr.flak_bas) || 0;
 
-  CONFIG.UNIT_PRICES.antal_1_luftare = Number(pr.luftare_1_pris) || CONFIG.UNIT_PRICES.antal_1_luftare;
-  CONFIG.UNIT_PRICES.antal_2_luftare = Number(pr.luftare_2_pris) || CONFIG.UNIT_PRICES.antal_2_luftare;
-  CONFIG.UNIT_PRICES.antal_3_luftare = Number(pr.luftare_3_pris) || CONFIG.UNIT_PRICES.antal_3_luftare;
-  CONFIG.UNIT_PRICES.antal_4_luftare = Number(pr.luftare_4_pris) || CONFIG.UNIT_PRICES.antal_4_luftare;
-  CONFIG.UNIT_PRICES.antal_5_luftare = Number(pr.luftare_5_pris) || CONFIG.UNIT_PRICES.antal_5_luftare;
-  CONFIG.UNIT_PRICES.antal_6_luftare = Number(pr.luftare_6_pris) || CONFIG.UNIT_PRICES.antal_6_luftare;
+  if (pr.luftare_1_pris != null) CONFIG.UNIT_PRICES.antal_1_luftare = Number(pr.luftare_1_pris) || 0;
+  if (pr.luftare_2_pris != null) CONFIG.UNIT_PRICES.antal_2_luftare = Number(pr.luftare_2_pris) || 0;
+  if (pr.luftare_3_pris != null) CONFIG.UNIT_PRICES.antal_3_luftare = Number(pr.luftare_3_pris) || 0;
+  if (pr.luftare_4_pris != null) CONFIG.UNIT_PRICES.antal_4_luftare = Number(pr.luftare_4_pris) || 0;
+  if (pr.luftare_5_pris != null) CONFIG.UNIT_PRICES.antal_5_luftare = Number(pr.luftare_5_pris) || 0;
+  if (pr.luftare_6_pris != null) CONFIG.UNIT_PRICES.antal_6_luftare = Number(pr.luftare_6_pris) || 0;
 
-  // 2) Renoveringstyp (multiplikatorer)
-  const trad = toNumberLoose(pr.renov_trad_linolja_mult);
-  if (trad != null) CONFIG.RENOVATION_TYPE_MULTIPLIERS['Traditionell - Linoljebehandling'] = trad;
-  const modern = toNumberLoose(pr.renov_modern_alcro_mult);
-  if (modern != null) CONFIG.RENOVATION_TYPE_MULTIPLIERS['Modern - Alcro bestå'] = modern;
+  // --- Renovering (multiplikatorer) ---
+  const trad   = toMultiplier(pr.renov_trad_linolja_mult);
+  const modern = toMultiplier(pr.renov_modern_alcro_mult);
+  if (trad   != null) CONFIG.RENOVATION_TYPE_MULTIPLIERS['Traditionell - Linoljebehandling'] = trad;
+  if (modern != null) CONFIG.RENOVATION_TYPE_MULTIPLIERS['Modern - Alcro bestå']             = modern;
 
-  // 3) Fönsteröppning (multiplikatorer)
-  const inat = toNumberLoose(pr.oppning_inat_mult);
+  // --- Fönsteröppning (multiplikatorer) ---
+  const inat = toMultiplier(pr.oppning_inat_mult);
+  const utat = toMultiplier(pr.oppning_utat_mult);
   if (inat != null) CONFIG.WINDOW_OPENING_MULTIPLIERS['Inåtgående'] = inat;
-  const utat = toNumberLoose(pr.oppning_utat_mult);
   if (utat != null) CONFIG.WINDOW_OPENING_MULTIPLIERS['Utåtgående'] = utat;
 
-  // 4) Fönstertyper (rabatter/tillägg per båge)
-  if (pr.typ_kopplade_standard_delta != null)
-    CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Kopplade standard'] = Number(pr.typ_kopplade_standard_delta);
-  if (pr.typ_isolerglas_delta != null)
-    CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Isolerglas'] = Number(pr.typ_isolerglas_delta);
-  if (pr.typ_kopplade_isolerglas_delta != null)
-    CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Kopplade isolerglas'] = Number(pr.typ_kopplade_isolerglas_delta);
-  if (pr.typ_insats_yttre_delta != null)
-    CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Insatsbågar yttre'] = Number(pr.typ_insats_yttre_delta);
-  if (pr.typ_insats_inre_delta != null)
-    CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Insatsbågar inre'] = Number(pr.typ_insats_inre_delta);
-  if (pr.typ_insats_komplett_delta != null)
-    CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Insatsbågar komplett'] = Number(pr.typ_insats_komplett_delta);
+  // --- Fönstertyp (delta per båge, kr) ---
+  if (pr.typ_kopplade_standard_delta      != null) CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Kopplade standard']   = Number(pr.typ_kopplade_standard_delta) || 0;
+  if (pr.typ_isolerglas_delta             != null) CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Isolerglas']          = Number(pr.typ_isolerglas_delta) || 0;
+  if (pr.typ_kopplade_isolerglas_delta    != null) CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Kopplade isolerglas'] = Number(pr.typ_kopplade_isolerglas_delta) || 0;
+  if (pr.typ_insats_yttre_delta           != null) CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Insatsbågar yttre']   = Number(pr.typ_insats_yttre_delta) || 0;
+  if (pr.typ_insats_inre_delta            != null) CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Insatsbågar inre']    = Number(pr.typ_insats_inre_delta) || 0;
+  if (pr.typ_insats_komplett_delta        != null) CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Insatsbågar komplett']= Number(pr.typ_insats_komplett_delta) || 0;
 
-  // 5) Arbetsbeskrivning (multiplikatorer)
-  const a1 = toNumberLoose(pr.arb_utvandig_mult);
-  if (a1 != null) CONFIG.WORK_DESCRIPTION_MULTIPLIERS['Utvändig renovering'] = a1;
-  const a2 = toNumberLoose(pr.arb_invandig_mult);
-  if (a2 != null) CONFIG.WORK_DESCRIPTION_MULTIPLIERS['Invändig renovering'] = a2;
-  const a3 = toNumberLoose(pr.arb_utv_plus_innermal_mult);
-  if (a3 != null) CONFIG.WORK_DESCRIPTION_MULTIPLIERS['Utvändig renovering samt målning av innerbågens insida'] = a3;
+  // --- Arbetsbeskrivning (multiplikatorer) ---
+  const aUtv  = toMultiplier(pr.arb_utvandig_mult);
+  const aInv  = toMultiplier(pr.arb_invandig_mult);
+  const aPlus = toMultiplier(pr.arb_utv_plus_innermal_mult);
+  if (aUtv  != null) CONFIG.WORK_DESCRIPTION_MULTIPLIERS['Utvändig renovering'] = aUtv;
+  if (aInv  != null) CONFIG.WORK_DESCRIPTION_MULTIPLIERS['Invändig renovering'] = aInv;
+  if (aPlus != null) CONFIG.WORK_DESCRIPTION_MULTIPLIERS['Utvändig renovering samt målning av innerbågens insida'] = aPlus;
 
-  // 6) Spröjs + LE-glas
-  if (pr.sprojs_low_price != null)  CONFIG.EXTRAS.SPROJS_LOW_PRICE  = Number(pr.sprojs_low_price);
-  if (pr.sprojs_high_price != null) CONFIG.EXTRAS.SPROJS_HIGH_PRICE = Number(pr.sprojs_high_price);
-  if (pr.sprojs_threshold != null)  CONFIG.EXTRAS.SPROJS_THRESHOLD  = Number(pr.sprojs_threshold);
-  if (pr.le_glas_per_kvm != null)   CONFIG.EXTRAS.E_GLASS_PER_SQM   = Number(pr.le_glas_per_kvm);
+  // --- Spröjs / LE-glas / moms ---
+  if (pr.sprojs_low_price  != null) CONFIG.EXTRAS.SPROJS_LOW_PRICE  = Number(pr.sprojs_low_price)  || 0;
+  if (pr.sprojs_high_price != null) CONFIG.EXTRAS.SPROJS_HIGH_PRICE = Number(pr.sprojs_high_price) || 0;
+  if (pr.sprojs_threshold  != null) CONFIG.EXTRAS.SPROJS_THRESHOLD  = Number(pr.sprojs_threshold)  || 0;
+  if (pr.le_glas_per_kvm   != null) CONFIG.EXTRAS.E_GLASS_PER_SQM   = Number(pr.le_glas_per_kvm)   || 0;
 
-  // 7) Extra flak (adminpanelens p_extra_1..5)
-  if (!CONFIG.EXTRAS.EXTRA_LUFTARE) CONFIG.EXTRAS.EXTRA_LUFTARE = {};
-  if (pr.flak_extra_1 != null) CONFIG.EXTRAS.EXTRA_LUFTARE[1] = Number(pr.flak_extra_1);
-  if (pr.flak_extra_2 != null) CONFIG.EXTRAS.EXTRA_LUFTARE[2] = Number(pr.flak_extra_2);
-  if (pr.flak_extra_3 != null) CONFIG.EXTRAS.EXTRA_LUFTARE[3] = Number(pr.flak_extra_3);
-  if (pr.flak_extra_4 != null) CONFIG.EXTRAS.EXTRA_LUFTARE[4] = Number(pr.flak_extra_4);
-  if (pr.flak_extra_5 != null) CONFIG.EXTRAS.EXTRA_LUFTARE[5] = Number(pr.flak_extra_5);
-
-  // 8) Moms (sheet: 'vat' som 25 → CONFIG: 0.25)
-  const vatPct = toNumberLoose(pr.vat);
-  if (vatPct != null) {
-    CONFIG.EXTRAS.VAT_RATE = vatPct > 1 ? (vatPct / 100) : vatPct;
+  if (pr.vat != null) {
+    const pct = toNumberLoose(pr.vat);
+    if (pct != null) CONFIG.EXTRAS.VAT_RATE = pct > 1 ? pct/100 : pct; // Sheet: 25 → 0.25
   }
 }
 
@@ -3618,6 +3605,8 @@ class PasswordProtection {
     showNavigationBar() {
         console.log('🔄 showNavigationBar() anropad');
         const navigationBar = document.querySelector('.navigation-bar');
+        const logoutBtn = document.querySelector('.logout-btn-compact');
+        
         if (navigationBar) {
             console.log('📍 Navigation bar element hittat:', navigationBar);
             navigationBar.classList.add('visible');
@@ -3634,13 +3623,27 @@ class PasswordProtection {
             console.log('🔍 Alla nav element:', document.querySelectorAll('nav'));
             console.log('🔍 Alla .navigation-bar element:', document.querySelectorAll('.navigation-bar'));
         }
+        
+        // Visa logout-knappen också
+        if (logoutBtn) {
+            logoutBtn.classList.add('visible');
+            console.log('✅ Logout-knapp visas');
+        } else {
+            console.error('❌ Logout-knappen hittades inte!');
+        }
     }
     
     hideNavigationBar() {
         const navigationBar = document.querySelector('.navigation-bar');
+        const logoutBtn = document.querySelector('.logout-btn-compact');
+        
         if (navigationBar) {
             navigationBar.classList.remove('visible');
             console.log('✅ Navigationsknappar dolda');
+        }
+        if (logoutBtn) {
+            logoutBtn.classList.remove('visible');
+            console.log('✅ Logout-knapp dold');
         }
     }
     
