@@ -51,6 +51,21 @@
                     </svg>
                     <span class="nav-label">Tema</span>
                 </button>
+                
+                <button id="admin-btn" class="nav-btn admin-btn" title="Adminpanel">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="4" y1="21" x2="4" y2="14"></line>
+                        <line x1="4" y1="10" x2="4" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12" y2="3"></line>
+                        <line x1="20" y1="21" x2="20" y2="16"></line>
+                        <line x1="20" y1="12" x2="20" y2="3"></line>
+                        <line x1="1" y1="14" x2="7" y2="14"></line>
+                        <line x1="9" y1="8" x2="15" y2="8"></line>
+                        <line x1="17" y1="16" x2="23" y2="16"></line>
+                    </svg>
+                    <span class="nav-label">Admin</span>
+                </button>
             </nav>
         </header>
 
@@ -554,6 +569,229 @@
             </div>
             <div class="gdpr-modal-footer">
                 <button class="gdpr-modal-ok" id="gdpr-modal-ok">Stäng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Adminpanel -->
+    <div class="admin-panel hidden" id="adminPanel">
+        <div class="admin-content">
+            <div class="admin-header">
+                <h2>Administrationspanel - Sternbecks Måleri</h2>
+                <button class="admin-close-btn" id="btn_close_admin" aria-label="Stäng adminpanel">×</button>
+            </div>
+            
+            <div class="admin-status">
+                <div class="status-info">
+                    <span>Status: <strong id="admin_status">Redo</strong></span>
+                    <span>Senast uppdaterad: <strong id="last_updated">--</strong></span>
+                    <span>Version: <strong id="current_version">--</strong></span>
+                </div>
+            </div>
+
+            <div class="admin-form">
+                <div class="form-section">
+                    <h3>Fönster och Dörrar</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_dorrpartier">Dörrpartier</label>
+                            <input id="p_dorrpartier" type="number" placeholder="5000" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_pardorr_balkong">Pardörr Balkong/Altan</label>
+                            <input id="p_pardorr_balkong" type="number" placeholder="9000" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_kallare_glugg">Källare/Glugg</label>
+                            <input id="p_kallare_glugg" type="number" placeholder="3500" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_flak">Flak</label>
+                            <input id="p_flak" type="number" placeholder="6000" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Luftare-priser</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_1_luftare">1 luftare</label>
+                            <input id="p_1_luftare" type="number" placeholder="4000" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_2_luftare">2 luftare</label>
+                            <input id="p_2_luftare" type="number" placeholder="5500" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_3_luftare">3 luftare</label>
+                            <input id="p_3_luftare" type="number" placeholder="8250" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_4_luftare">4 luftare</label>
+                            <input id="p_4_luftare" type="number" placeholder="11000" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_5_luftare">5 luftare</label>
+                            <input id="p_5_luftare" type="number" placeholder="13750" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_6_luftare">6 luftare</label>
+                            <input id="p_6_luftare" type="number" placeholder="16500" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Renoveringstyper (påslag totalpris %)</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_modern_renovering">Modern - Alcro bestå (%)</label>
+                            <input id="p_modern_renovering" type="number" placeholder="0" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_traditionell_renovering">Traditionell - Linoljebehandling (%)</label>
+                            <input id="p_traditionell_renovering" type="number" placeholder="15" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Fönsteröppning (påslag per luftare %)</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_inatgaende">Inåtgående (%)</label>
+                            <input id="p_inatgaende" type="number" placeholder="0" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_utatgaende">Utåtgående (%)</label>
+                            <input id="p_utatgaende" type="number" placeholder="5" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Fönstertyp (prisändring per båge)</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_kopplade_standard">Kopplade standard</label>
+                            <input id="p_kopplade_standard" type="number" placeholder="0" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_kopplade_isolerglas">Kopplade isolerglas</label>
+                            <input id="p_kopplade_isolerglas" type="number" placeholder="500" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_isolerglas">Isolerglas</label>
+                            <input id="p_isolerglas" type="number" placeholder="-400" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_insats_yttre">Insatsbågar yttre</label>
+                            <input id="p_insats_yttre" type="number" placeholder="-400" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_insats_inre">Insatsbågar inre</label>
+                            <input id="p_insats_inre" type="number" placeholder="-1250" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_insats_komplett">Insatsbågar komplett</label>
+                            <input id="p_insats_komplett" type="number" placeholder="1000" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Arbetsbeskrivning (påslag totalpris %)</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_utvandig_renovering">Utvändig renovering (%)</label>
+                            <input id="p_utvandig_renovering" type="number" placeholder="0" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_invandig_renovering">Invändig renovering (%)</label>
+                            <input id="p_invandig_renovering" type="number" placeholder="25" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_utv_plus_inner">Utvändig + innerbågens insida (%)</label>
+                            <input id="p_utv_plus_inner" type="number" placeholder="5" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Spröjs (pris per ruta)</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_sprojs_under4">Spröjs under 4 st</label>
+                            <input id="p_sprojs_under4" type="number" placeholder="250" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_sprojs_over4">Spröjs 4 och över</label>
+                            <input id="p_sprojs_over4" type="number" placeholder="400" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>LE-glas och Extra luftare</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_le_glas">LE-glas per kvm</label>
+                            <input id="p_le_glas" type="number" placeholder="2500" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_extra_1">1 extra luftare (flak)</label>
+                            <input id="p_extra_1" type="number" placeholder="2750" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_extra_2">2 extra luftare (flak)</label>
+                            <input id="p_extra_2" type="number" placeholder="5500" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_extra_3">3 extra luftare (flak)</label>
+                            <input id="p_extra_3" type="number" placeholder="8250" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_extra_4">4 extra luftare (flak)</label>
+                            <input id="p_extra_4" type="number" placeholder="11000" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_extra_5">5 extra luftare (flak)</label>
+                            <input id="p_extra_5" type="number" placeholder="13750" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Skatter och avdrag</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_vat">Moms (%)</label>
+                            <input id="p_vat" type="number" placeholder="25" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_rot">ROT-avdrag (%)</label>
+                            <input id="p_rot" type="number" placeholder="50" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_ver">Konfiguration version</label>
+                            <input id="p_ver" type="number" placeholder="1" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-actions">
+                    <button class="btn secondary" id="btn_admin_fill">Fyll från nuvarande</button>
+                    <button class="btn secondary" id="btn_admin_close">Stäng</button>
+                    <button class="btn primary" id="btn_admin_save">Spara till Google Sheets</button>
+                </div>
+            </div>
+
+            <div class="admin-logs">
+                <h3>Aktivitetslogg</h3>
+                <div class="logs-container" id="admin_logs">
+                    <div class="log-entry">Adminpanel öppnad</div>
+                </div>
             </div>
         </div>
     </div>

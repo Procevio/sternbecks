@@ -5,6 +5,162 @@ const PASSWORD_CONFIG = {
     SESSION_KEY: 'sternbecks_auth_session'
 };
 
+// --- Sternbeck Pricing API ---
+const PRICING_API_URL = "https://script.google.com/macros/s/AKfycbwdJe2jnRtq4sewClA-O38q8l24B3WIjR3byAY92cSteuaHPxDwwxAiV2ULtnzpWNXU0A/exec";
+const PRICING_API_TOKEN = "N7g4x9wqPzVh2sLfBt8yR3mKdXe6UcJoQ1Zi0HpGa5WlMnTv"; // oförändrad
+const PRICING_CACHE_KEY = "sternbeck_pricing_cache_v3"; // nytt namn för att nolla gammal cache
+const PRICING_TTL_MS = 10 * 60 * 1000;
+
+// --- Local cache helpers ---
+function getCachedPricing() {
+  try {
+    const raw = localStorage.getItem(PRICING_CACHE_KEY);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj || !obj.data || !obj.ts) return null;
+    if (Date.now() - obj.ts > PRICING_TTL_MS) return null;
+    return obj.data;
+  } catch { return null; }
+}
+
+function setCachedPricing(data) {
+  try {
+    localStorage.setItem(PRICING_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+  } catch {}
+}
+
+// --- API IO ---
+async function fetchPricingFromSheet() {
+  const url = PRICING_API_URL + "?nocache=" + Date.now();
+  const res = await fetch(url, { method: "GET" });
+  const json = await res.json();
+  if (!json?.ok) throw new Error(json?.error || "Pricing GET failed");
+  return json.data || {};
+}
+
+async function savePricingToSheet(kvObject) {
+  const body = { token: PRICING_API_TOKEN, pricing: kvObject };
+  const res = await fetch(PRICING_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: JSON.stringify(body)
+  });
+  const json = await res.json();
+  if (!json?.ok) throw new Error(json?.error || "Pricing POST failed");
+  return true;
+}
+
+// --- numerik & procent ↔ multiplikator ---
+function toNumberLoose(v) {
+  // tillåt "01.05" och svenska kommatecken
+  const s = String(v ?? '').trim().replace(',', '.');
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+function multToPct(mult) {
+  const n = toNumberLoose(mult);
+  if (n == null) return '';
+  // visa som procent (utan ".00" om onödigt)
+  const p = (n - 1) * 100;
+  return Number.isFinite(p) ? String(+p.toFixed(2)).replace(/\.00$/, '') : '';
+}
+
+function pctToMult(pct) {
+  const n = toNumberLoose(pct);
+  if (n == null) return null;
+  return 1 + (n / 100);
+}
+
+// Mappning från Google Sheet keys -> CONFIG
+function applyPricingToConfig(pr) {
+  // 1) Enhetspriser
+  CONFIG.UNIT_PRICES.antal_dorrpartier     = Number(pr.dorrparti)                 || CONFIG.UNIT_PRICES.antal_dorrpartier;
+  CONFIG.UNIT_PRICES.antal_pardorr_balkong = Number(pr.pardorr_balong_altan)      || CONFIG.UNIT_PRICES.antal_pardorr_balkong;
+  CONFIG.UNIT_PRICES.antal_kallare_glugg   = Number(pr.kallare_glugg)             || CONFIG.UNIT_PRICES.antal_kallare_glugg;
+  CONFIG.UNIT_PRICES.antal_flak            = Number(pr.flak_bas)                  || CONFIG.UNIT_PRICES.antal_flak;
+
+  CONFIG.UNIT_PRICES.antal_1_luftare = Number(pr.luftare_1_pris) || CONFIG.UNIT_PRICES.antal_1_luftare;
+  CONFIG.UNIT_PRICES.antal_2_luftare = Number(pr.luftare_2_pris) || CONFIG.UNIT_PRICES.antal_2_luftare;
+  CONFIG.UNIT_PRICES.antal_3_luftare = Number(pr.luftare_3_pris) || CONFIG.UNIT_PRICES.antal_3_luftare;
+  CONFIG.UNIT_PRICES.antal_4_luftare = Number(pr.luftare_4_pris) || CONFIG.UNIT_PRICES.antal_4_luftare;
+  CONFIG.UNIT_PRICES.antal_5_luftare = Number(pr.luftare_5_pris) || CONFIG.UNIT_PRICES.antal_5_luftare;
+  CONFIG.UNIT_PRICES.antal_6_luftare = Number(pr.luftare_6_pris) || CONFIG.UNIT_PRICES.antal_6_luftare;
+
+  // 2) Renoveringstyp (multiplikatorer)
+  const trad = toNumberLoose(pr.renov_trad_linolja_mult);
+  if (trad != null) CONFIG.RENOVATION_TYPE_MULTIPLIERS['Traditionell - Linoljebehandling'] = trad;
+  const modern = toNumberLoose(pr.renov_modern_alcro_mult);
+  if (modern != null) CONFIG.RENOVATION_TYPE_MULTIPLIERS['Modern - Alcro bestå'] = modern;
+
+  // 3) Fönsteröppning (multiplikatorer)
+  const inat = toNumberLoose(pr.oppning_inat_mult);
+  if (inat != null) CONFIG.WINDOW_OPENING_MULTIPLIERS['Inåtgående'] = inat;
+  const utat = toNumberLoose(pr.oppning_utat_mult);
+  if (utat != null) CONFIG.WINDOW_OPENING_MULTIPLIERS['Utåtgående'] = utat;
+
+  // 4) Fönstertyper (rabatter/tillägg per båge)
+  if (pr.typ_kopplade_standard_delta != null)
+    CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Kopplade standard'] = Number(pr.typ_kopplade_standard_delta);
+  if (pr.typ_isolerglas_delta != null)
+    CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Isolerglas'] = Number(pr.typ_isolerglas_delta);
+  if (pr.typ_kopplade_isolerglas_delta != null)
+    CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Kopplade isolerglas'] = Number(pr.typ_kopplade_isolerglas_delta);
+  if (pr.typ_insats_yttre_delta != null)
+    CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Insatsbågar yttre'] = Number(pr.typ_insats_yttre_delta);
+  if (pr.typ_insats_inre_delta != null)
+    CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Insatsbågar inre'] = Number(pr.typ_insats_inre_delta);
+  if (pr.typ_insats_komplett_delta != null)
+    CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE['Insatsbågar komplett'] = Number(pr.typ_insats_komplett_delta);
+
+  // 5) Arbetsbeskrivning (multiplikatorer)
+  const a1 = toNumberLoose(pr.arb_utvandig_mult);
+  if (a1 != null) CONFIG.WORK_DESCRIPTION_MULTIPLIERS['Utvändig renovering'] = a1;
+  const a2 = toNumberLoose(pr.arb_invandig_mult);
+  if (a2 != null) CONFIG.WORK_DESCRIPTION_MULTIPLIERS['Invändig renovering'] = a2;
+  const a3 = toNumberLoose(pr.arb_utv_plus_innermal_mult);
+  if (a3 != null) CONFIG.WORK_DESCRIPTION_MULTIPLIERS['Utvändig renovering samt målning av innerbågens insida'] = a3;
+
+  // 6) Spröjs + LE-glas
+  if (pr.sprojs_low_price != null)  CONFIG.EXTRAS.SPROJS_LOW_PRICE  = Number(pr.sprojs_low_price);
+  if (pr.sprojs_high_price != null) CONFIG.EXTRAS.SPROJS_HIGH_PRICE = Number(pr.sprojs_high_price);
+  if (pr.sprojs_threshold != null)  CONFIG.EXTRAS.SPROJS_THRESHOLD  = Number(pr.sprojs_threshold);
+  if (pr.le_glas_per_kvm != null)   CONFIG.EXTRAS.E_GLASS_PER_SQM   = Number(pr.le_glas_per_kvm);
+
+  // 7) Extra flak (adminpanelens p_extra_1..5)
+  if (!CONFIG.EXTRAS.EXTRA_LUFTARE) CONFIG.EXTRAS.EXTRA_LUFTARE = {};
+  if (pr.flak_extra_1 != null) CONFIG.EXTRAS.EXTRA_LUFTARE[1] = Number(pr.flak_extra_1);
+  if (pr.flak_extra_2 != null) CONFIG.EXTRAS.EXTRA_LUFTARE[2] = Number(pr.flak_extra_2);
+  if (pr.flak_extra_3 != null) CONFIG.EXTRAS.EXTRA_LUFTARE[3] = Number(pr.flak_extra_3);
+  if (pr.flak_extra_4 != null) CONFIG.EXTRAS.EXTRA_LUFTARE[4] = Number(pr.flak_extra_4);
+  if (pr.flak_extra_5 != null) CONFIG.EXTRAS.EXTRA_LUFTARE[5] = Number(pr.flak_extra_5);
+
+  // 8) Moms (sheet: 'vat' som 25 → CONFIG: 0.25)
+  const vatPct = toNumberLoose(pr.vat);
+  if (vatPct != null) {
+    CONFIG.EXTRAS.VAT_RATE = vatPct > 1 ? (vatPct / 100) : vatPct;
+  }
+}
+
+// Ladda priser en gång och cacha
+window.pricingReady = (async () => {
+  const cached = (() => {
+    try {
+      const raw = localStorage.getItem(PRICING_CACHE_KEY);
+      if (!raw) return null;
+      const { ts, data } = JSON.parse(raw);
+      if (!ts || !data) return null;
+      if (Date.now() - ts > PRICING_TTL_MS) return null;
+      return data;
+    } catch { return null; }
+  })();
+
+  const pricing = cached || await fetchPricingFromSheet();
+  if (!cached) localStorage.setItem(PRICING_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: pricing }));
+  applyPricingToConfig(pricing);
+  return pricing;
+})();
+
 // Konfiguration för applikationen
 const CONFIG = {
     BASE_PRICE: 0, // Grundpris baserat på komponenter, inte fast summa
@@ -3417,16 +3573,27 @@ class PasswordProtection {
             return;
         }
         
-        // Initialisera huvudklasser först
-        window.quoteCalculator = new QuoteCalculator();
-        new AccessibilityEnhancer();
-        new ThemeToggle();
-        
-        // Visa och initialisera navigationsknappar (logout och reset)
-        this.showNavigationBar();
-        this.initializeNavigationButtons();
-        
-        console.log('Sternbecks Anbudsapplikation initialiserad framgångsrikt efter lösenordsvalidering!');
+        // Vänta in pricing – utan att göra funktionen async
+        Promise.resolve(window.pricingReady).then(() => {
+            window.quoteCalculator = new QuoteCalculator();
+            new AccessibilityEnhancer();
+            new ThemeToggle();
+            
+            // Visa och initialisera navigationsknappar (logout och reset)
+            this.showNavigationBar();
+            this.initializeNavigationButtons();
+            
+            console.log('Sternbecks Anbudsapplikation initialiserad framgångsrikt efter prisladdning.');
+        }).catch(err => {
+            console.error('Kunde inte ladda prislista:', err);
+            // Falla tillbaka på befintliga defaultvärden i CONFIG så appen ändå fungerar
+            window.quoteCalculator = new QuoteCalculator();
+            new AccessibilityEnhancer();
+            new ThemeToggle();
+            this.showNavigationBar();
+            this.initializeNavigationButtons();
+            console.log('Sternbecks Anbudsapplikation initialiserad med standardpriser efter felaktig prisladdning.');
+        });
     }
     
     showNavigationBar() {
@@ -3644,4 +3811,334 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+    
+    // Initialisera adminpanel
+    window.adminPanelInstance = new AdminPanel();
 });
+
+// AdminPanel klass för att hantera prisredigering och Google Sheets integration
+class AdminPanel {
+    constructor() {
+        console.log('🔧 Initializing AdminPanel...');
+        
+        // Google Sheets konfiguration
+        this.PRICING_API_URL = PRICING_API_URL;
+        this.API_TOKEN = PRICING_API_TOKEN;
+        
+        // Prisversionshantering
+        this.currentVersion = 1;
+        this.lastUpdated = null;
+        
+        // DOM-element
+        this.adminBtn = document.getElementById('admin-btn');
+        this.adminPanel = document.getElementById('adminPanel');
+        this.closeBtn = document.getElementById('btn_close_admin');
+        this.adminCloseBtn = document.getElementById('btn_admin_close');
+        this.fillBtn = document.getElementById('btn_admin_fill');
+        this.saveBtn = document.getElementById('btn_admin_save');
+        this.statusElement = document.getElementById('admin_status');
+        this.versionElement = document.getElementById('current_version');
+        this.lastUpdatedElement = document.getElementById('last_updated');
+        this.logsContainer = document.getElementById('admin_logs');
+        
+        // Prisfält - alla nya fält baserat på uppdaterad prisstruktur
+        this.priceFields = {
+            // Fönster och Dörrar
+            p_dorrpartier: document.getElementById('p_dorrpartier'),
+            p_pardorr_balkong: document.getElementById('p_pardorr_balkong'),
+            p_kallare_glugg: document.getElementById('p_kallare_glugg'),
+            p_flak: document.getElementById('p_flak'),
+            
+            // Luftare-priser
+            p_1_luftare: document.getElementById('p_1_luftare'),
+            p_2_luftare: document.getElementById('p_2_luftare'),
+            p_3_luftare: document.getElementById('p_3_luftare'),
+            p_4_luftare: document.getElementById('p_4_luftare'),
+            p_5_luftare: document.getElementById('p_5_luftare'),
+            p_6_luftare: document.getElementById('p_6_luftare'),
+            
+            // Renoveringstyper
+            p_modern_renovering: document.getElementById('p_modern_renovering'),
+            p_traditionell_renovering: document.getElementById('p_traditionell_renovering'),
+            
+            // Fönsteröppning
+            p_inatgaende: document.getElementById('p_inatgaende'),
+            p_utatgaende: document.getElementById('p_utatgaende'),
+            
+            // Fönstertyp
+            p_kopplade_standard: document.getElementById('p_kopplade_standard'),
+            p_kopplade_isolerglas: document.getElementById('p_kopplade_isolerglas'),
+            p_isolerglas: document.getElementById('p_isolerglas'),
+            p_insats_yttre: document.getElementById('p_insats_yttre'),
+            p_insats_inre: document.getElementById('p_insats_inre'),
+            p_insats_komplett: document.getElementById('p_insats_komplett'),
+            
+            // Arbetsbeskrivning
+            p_utvandig_renovering: document.getElementById('p_utvandig_renovering'),
+            p_invandig_renovering: document.getElementById('p_invandig_renovering'),
+            p_utv_plus_inner: document.getElementById('p_utv_plus_inner'),
+            
+            // Spröjs
+            p_sprojs_under4: document.getElementById('p_sprojs_under4'),
+            p_sprojs_over4: document.getElementById('p_sprojs_over4'),
+            
+            // LE-glas och Extra luftare
+            p_le_glas: document.getElementById('p_le_glas'),
+            p_extra_1: document.getElementById('p_extra_1'),
+            p_extra_2: document.getElementById('p_extra_2'),
+            p_extra_3: document.getElementById('p_extra_3'),
+            p_extra_4: document.getElementById('p_extra_4'),
+            p_extra_5: document.getElementById('p_extra_5'),
+            
+            // Skatter och avdrag
+            p_vat: document.getElementById('p_vat'),
+            p_rot: document.getElementById('p_rot'),
+            p_ver: document.getElementById('p_ver')
+        };
+        
+        this.initializeEventListeners();
+        this.initAdminPricing();
+        this.updateVersionDisplay();
+    }
+    
+    initializeEventListeners() {
+        // Adminpanel toggle
+        this.adminBtn?.addEventListener('click', () => this.showAdminPanel());
+        this.closeBtn?.addEventListener('click', () => this.hideAdminPanel());
+        
+        // Stäng panel om man klickar utanför
+        this.adminPanel?.addEventListener('click', (e) => {
+            if (e.target === this.adminPanel) {
+                this.hideAdminPanel();
+            }
+        });
+        
+        // Escape-tangent för att stänga
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !this.adminPanel?.classList.contains('hidden')) {
+                this.hideAdminPanel();
+            }
+        });
+        
+        // Knapparnas funktionalitet
+        this.closeBtn?.addEventListener('click', () => this.hideAdminPanel());
+        this.adminCloseBtn?.addEventListener('click', () => this.hideAdminPanel());
+        this.fillBtn?.addEventListener('click', () => this.fillCurrentPrices());
+        this.saveBtn?.addEventListener('click', () => this.savePricesToGoogle());
+    }
+    
+    showAdminPanel() {
+        this.adminPanel?.classList.remove('hidden');
+        this.addLogEntry('Adminpanel öppnad', 'info');
+        this.updateStatus('Redo');
+    }
+    
+    hideAdminPanel() {
+        this.adminPanel?.classList.add('hidden');
+    }
+    
+    async initAdminPricing() {
+        try {
+            const cached = getCachedPricing();
+            const data = cached || (await fetchPricingFromSheet());
+            setCachedPricing(data);
+
+            // Fyll inputs från Sheet-data med korrekta nycklar
+            // Fönster & dörrar
+            if (this.priceFields.p_dorrpartier) this.priceFields.p_dorrpartier.value = data.dorrparti || '';
+            if (this.priceFields.p_pardorr_balkong) this.priceFields.p_pardorr_balkong.value = data.pardorr_balong_altan || '';
+            if (this.priceFields.p_kallare_glugg) this.priceFields.p_kallare_glugg.value = data.kallare_glugg || '';
+            if (this.priceFields.p_flak) this.priceFields.p_flak.value = data.flak_bas || '';
+
+            // Luftare
+            if (this.priceFields.p_1_luftare) this.priceFields.p_1_luftare.value = data.luftare_1_pris || '';
+            if (this.priceFields.p_2_luftare) this.priceFields.p_2_luftare.value = data.luftare_2_pris || '';
+            if (this.priceFields.p_3_luftare) this.priceFields.p_3_luftare.value = data.luftare_3_pris || '';
+            if (this.priceFields.p_4_luftare) this.priceFields.p_4_luftare.value = data.luftare_4_pris || '';
+            if (this.priceFields.p_5_luftare) this.priceFields.p_5_luftare.value = data.luftare_5_pris || '';
+            if (this.priceFields.p_6_luftare) this.priceFields.p_6_luftare.value = data.luftare_6_pris || '';
+
+            // Renoveringstyper (%)
+            if (this.priceFields.p_traditionell_renovering) this.priceFields.p_traditionell_renovering.value = multToPct(data.renov_trad_linolja_mult);
+            if (this.priceFields.p_modern_renovering) this.priceFields.p_modern_renovering.value = multToPct(data.renov_modern_alcro_mult);
+
+            // Fönsteröppning (%)
+            if (this.priceFields.p_inatgaende) this.priceFields.p_inatgaende.value = multToPct(data.oppning_inat_mult);
+            if (this.priceFields.p_utatgaende) this.priceFields.p_utatgaende.value = multToPct(data.oppning_utat_mult);
+
+            // Fönstertyper (delta per båge)
+            if (this.priceFields.p_kopplade_standard) this.priceFields.p_kopplade_standard.value = data.typ_kopplade_standard_delta ?? 0;
+            if (this.priceFields.p_isolerglas) this.priceFields.p_isolerglas.value = data.typ_isolerglas_delta ?? -400;
+            if (this.priceFields.p_kopplade_isolerglas) this.priceFields.p_kopplade_isolerglas.value = data.typ_kopplade_isolerglas_delta ?? 0;
+            if (this.priceFields.p_insats_yttre) this.priceFields.p_insats_yttre.value = data.typ_insats_yttre_delta ?? -400;
+            if (this.priceFields.p_insats_inre) this.priceFields.p_insats_inre.value = data.typ_insats_inre_delta ?? -1250;
+            if (this.priceFields.p_insats_komplett) this.priceFields.p_insats_komplett.value = data.typ_insats_komplett_delta ?? 1000;
+
+            // Arbetsbeskrivning (%)
+            if (this.priceFields.p_utvandig_renovering) this.priceFields.p_utvandig_renovering.value = multToPct(data.arb_utvandig_mult);
+            if (this.priceFields.p_invandig_renovering) this.priceFields.p_invandig_renovering.value = multToPct(data.arb_invandig_mult);
+            if (this.priceFields.p_utv_plus_inner) this.priceFields.p_utv_plus_inner.value = multToPct(data.arb_utv_plus_innermal_mult);
+
+            // Spröjs + LE-glas
+            if (this.priceFields.p_sprojs_under4) this.priceFields.p_sprojs_under4.value = data.sprojs_low_price ?? 250;
+            if (this.priceFields.p_sprojs_over4) this.priceFields.p_sprojs_over4.value = data.sprojs_high_price ?? 400;
+            if (this.priceFields.p_le_glas) this.priceFields.p_le_glas.value = data.le_glas_per_kvm ?? 2500;
+
+            // Extra flak (adminfält p_extra_1..5)
+            if (this.priceFields.p_extra_1) this.priceFields.p_extra_1.value = data.flak_extra_1 ?? 2750;
+            if (this.priceFields.p_extra_2) this.priceFields.p_extra_2.value = data.flak_extra_2 ?? 5500;
+            if (this.priceFields.p_extra_3) this.priceFields.p_extra_3.value = data.flak_extra_3 ?? 8250;
+            if (this.priceFields.p_extra_4) this.priceFields.p_extra_4.value = data.flak_extra_4 ?? 11000;
+            if (this.priceFields.p_extra_5) this.priceFields.p_extra_5.value = data.flak_extra_5 ?? 13750;
+
+            // Skatter och version
+            if (this.priceFields.p_vat) this.priceFields.p_vat.value = toNumberLoose(data.vat) ?? 25;
+            // p_rot lämnas orörd (den finns inte i sheet)
+            if (this.priceFields.p_ver) this.priceFields.p_ver.value = data.version ?? this.currentVersion;
+            
+            this.updateStatus('Prislista laddad');
+            this.addLogEntry('Prislista laddad från Google Sheets', 'success');
+        } catch (e) {
+            console.error(e);
+            this.updateStatus('Kunde inte ladda prislista: ' + e.message);
+            this.addLogEntry('Fel vid laddning av prislista: ' + e.message, 'error');
+        }
+    }
+    
+    fillCurrentPrices() {
+        this.initAdminPricing();
+        this.addLogEntry('Formulär ifyllt från Google Sheets', 'info');
+    }
+    
+    async savePricesToGoogle() {
+        try {
+            this.updateStatus('Sparar...');
+            this.addLogEntry('Startar sparning av priser till Google Sheets', 'info');
+            
+            const pricing = this.collectPricingData();
+            
+            // Spara till Google Sheets via API
+            await savePricingToSheet(pricing);
+            
+            // Uppdatera cache och CONFIG
+            localStorage.setItem(PRICING_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: pricing }));
+            applyPricingToConfig(pricing);
+            window.quoteCalculator?.updatePriceCalculation?.();
+            
+            this.updateStatus('Sparat');
+            this.addLogEntry('Priser sparade framgångsrikt till Google Sheets', 'success');
+            this.updateVersionDisplay();
+            
+            this.currentVersion = pricing.version;
+            this.lastUpdated = new Date();
+            
+            alert('Priser uppdaterade framgångsrikt!');
+            
+        } catch (error) {
+            this.updateStatus('Fel');
+            this.addLogEntry('Fel vid sparning: ' + error.message, 'error');
+            alert('Fel vid uppdatering: ' + error.message);
+        }
+    }
+    
+    collectPricingData() {
+        return {
+            // Fönster och Dörrar - använd exakta Sheet-nycklar
+            dorrparti: Number(this.priceFields.p_dorrpartier?.value) || 5000,
+            pardorr_balong_altan: Number(this.priceFields.p_pardorr_balkong?.value) || 9000,
+            kallare_glugg: Number(this.priceFields.p_kallare_glugg?.value) || 3500,
+            flak_bas: Number(this.priceFields.p_flak?.value) || 6000,
+            
+            // Luftare-priser - använd exakta Sheet-nycklar
+            luftare_1_pris: Number(this.priceFields.p_1_luftare?.value) || 4000,
+            luftare_2_pris: Number(this.priceFields.p_2_luftare?.value) || 5500,
+            luftare_3_pris: Number(this.priceFields.p_3_luftare?.value) || 8250,
+            luftare_4_pris: Number(this.priceFields.p_4_luftare?.value) || 11000,
+            luftare_5_pris: Number(this.priceFields.p_5_luftare?.value) || 13750,
+            luftare_6_pris: Number(this.priceFields.p_6_luftare?.value) || 16500,
+            
+            // Renoveringstyper - använd exakta Sheet-nycklar (multiplikatorer)
+            renov_modern_alcro_mult: pctToMult(this.priceFields.p_modern_renovering?.value) ?? 1.00,
+            renov_trad_linolja_mult: pctToMult(this.priceFields.p_traditionell_renovering?.value) ?? 1.15,
+            
+            // Fönsteröppning - använd exakta Sheet-nycklar (multiplikatorer)
+            oppning_inat_mult: pctToMult(this.priceFields.p_inatgaende?.value) ?? 1.00,
+            oppning_utat_mult: pctToMult(this.priceFields.p_utatgaende?.value) ?? 1.05,
+            
+            // Fönstertyp - använd exakta Sheet-nycklar (delta per båge)
+            typ_kopplade_standard_delta: Number(this.priceFields.p_kopplade_standard?.value) || 0,
+            typ_kopplade_isolerglas_delta: Number(this.priceFields.p_kopplade_isolerglas?.value) || 0,
+            typ_isolerglas_delta: Number(this.priceFields.p_isolerglas?.value) || -400,
+            typ_insats_yttre_delta: Number(this.priceFields.p_insats_yttre?.value) || -400,
+            typ_insats_inre_delta: Number(this.priceFields.p_insats_inre?.value) || -1250,
+            typ_insats_komplett_delta: Number(this.priceFields.p_insats_komplett?.value) || 1000,
+            
+            // Arbetsbeskrivning - använd exakta Sheet-nycklar (multiplikatorer)
+            arb_utvandig_mult: pctToMult(this.priceFields.p_utvandig_renovering?.value) ?? 1.00,
+            arb_invandig_mult: pctToMult(this.priceFields.p_invandig_renovering?.value) ?? 1.25,
+            arb_utv_plus_innermal_mult: pctToMult(this.priceFields.p_utv_plus_inner?.value) ?? 1.05,
+            
+            // Spröjs - använd exakta Sheet-nycklar
+            sprojs_low_price: Number(this.priceFields.p_sprojs_under4?.value) || 250,
+            sprojs_high_price: Number(this.priceFields.p_sprojs_over4?.value) || 400,
+            
+            // LE-glas och Extra flak - använd exakta Sheet-nycklar
+            le_glas_per_kvm: Number(this.priceFields.p_le_glas?.value) || 2500,
+            flak_extra_1: Number(this.priceFields.p_extra_1?.value) || 2750,
+            flak_extra_2: Number(this.priceFields.p_extra_2?.value) || 5500,
+            flak_extra_3: Number(this.priceFields.p_extra_3?.value) || 8250,
+            flak_extra_4: Number(this.priceFields.p_extra_4?.value) || 11000,
+            flak_extra_5: Number(this.priceFields.p_extra_5?.value) || 13750,
+            
+            // Skatter - använd exakta Sheet-nycklar
+            vat: toNumberLoose(this.priceFields.p_vat?.value) ?? 25,
+            version: Number(this.priceFields.p_ver?.value) || (this.currentVersion + 1)
+        };
+    }
+    
+    
+    updateStatus(status) {
+        if (this.statusElement) {
+            this.statusElement.textContent = status;
+        }
+    }
+    
+    updateVersionDisplay() {
+        if (this.versionElement) {
+            this.versionElement.textContent = this.currentVersion;
+        }
+        if (this.lastUpdatedElement && this.lastUpdated) {
+            this.lastUpdatedElement.textContent = this.lastUpdated.toLocaleString('sv-SE');
+        }
+    }
+    
+    addLogEntry(message, type = 'info') {
+        if (!this.logsContainer) return;
+        
+        const entry = document.createElement('div');
+        entry.className = `log-entry ${type}`;
+        entry.textContent = `${new Date().toLocaleTimeString('sv-SE')}: ${message}`;
+        
+        this.logsContainer.appendChild(entry);
+        this.logsContainer.scrollTop = this.logsContainer.scrollHeight;
+        
+        // Begränsa antal loggposter
+        const entries = this.logsContainer.querySelectorAll('.log-entry');
+        if (entries.length > 50) {
+            entries[0].remove();
+        }
+        
+        console.log(`[AdminPanel ${type.toUpperCase()}] ${message}`);
+    }
+    
+    // Metod för att integrera med Google Sheets API (att implementeras senare)
+    async initializeGoogleSheetsAPI() {
+        // TODO: Implementera Google Sheets API-integration
+        // Detta kommer att kräva:
+        // 1. Google Apps Script deployment
+        // 2. API-nycklar och autentisering
+        // 3. Korrekt URL till deployed script
+        
+        this.addLogEntry('Google Sheets API inte implementerad ännu', 'info');
+    }
+}
