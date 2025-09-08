@@ -7,8 +7,8 @@ const PASSWORD_CONFIG = {
 
 // --- Sternbeck Pricing API ---
 const PRICING_API_URL = "https://script.google.com/macros/s/AKfycbwdJe2jnRtq4sewClA-O38q8l24B3WIjR3byAY92cSteuaHPxDwwxAiV2ULtnzpWNXU0A/exec";
-const PRICING_API_TOKEN = "N7g4x9wqPzVh2sLfBt8yR3mKdXe6UcJoQ1Zi0HpGa5WlMnTv"; // oförändrad
-const PRICING_CACHE_KEY = "sternbeck_pricing_cache_v3"; // nytt namn för att nolla gammal cache
+const PRICING_API_TOKEN = "N7g4x9wqPzVh2sLfBt8yR3mKdXe6UcJoQ1Zi0HpGa5WlMnTv";
+const PRICING_CACHE_KEY = "sternbeck_pricing_cache_v4";
 const PRICING_TTL_MS = 10 * 60 * 1000;
 
 // --- Local cache helpers ---
@@ -39,15 +39,14 @@ async function fetchPricingFromSheet() {
 }
 
 async function savePricingToSheet(kvObject) {
-  const body = { token: PRICING_API_TOKEN, pricing: kvObject };
   const res = await fetch(PRICING_API_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=UTF-8" },
-    body: JSON.stringify(body)
+    body: JSON.stringify({ token: PRICING_API_TOKEN, pricing: kvObject })
   });
   const json = await res.json();
   if (!json?.ok) throw new Error(json?.error || "Pricing POST failed");
-  return true;
+  return json; // ⟵ vi vill kunna läsa serverns version
 }
 
 // --- numerik & procent ↔ multiplikator ---
@@ -4015,22 +4014,21 @@ class AdminPanel {
             this.updateStatus('Sparar...');
             this.addLogEntry('Startar sparning av priser till Google Sheets', 'info');
             
-            const pricing = this.collectPricingData();
-            
-            // Spara till Google Sheets via API
-            await savePricingToSheet(pricing);
-            
-            // Uppdatera cache och CONFIG
-            localStorage.setItem(PRICING_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: pricing }));
-            applyPricingToConfig(pricing);
+            const payload = this.collectPricingData();       // utan "version"
+            const res = await savePricingToSheet(payload);
+            // uppdatera cache & CONFIG med serverns siffra
+            const merged = { ...payload, version: res.version };
+            localStorage.setItem(PRICING_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: merged }));
+            applyPricingToConfig(merged);
+            document.getElementById("pricing_version")?.innerText = String(res.version);
             window.quoteCalculator?.updatePriceCalculation?.();
             
             this.updateStatus('Sparat');
             this.addLogEntry('Priser sparade framgångsrikt till Google Sheets', 'success');
             this.updateVersionDisplay();
             
-            this.currentVersion = pricing.version;
-            this.lastUpdated = new Date();
+            this.currentVersion = res.version;
+            this.lastUpdated = new Date(res.updated_at || Date.now());
             
             alert('Priser uppdaterade framgångsrikt!');
             
@@ -4091,8 +4089,7 @@ class AdminPanel {
             flak_extra_5: Number(this.priceFields.p_extra_5?.value) || 13750,
             
             // Skatter - använd exakta Sheet-nycklar
-            vat: toNumberLoose(this.priceFields.p_vat?.value) ?? 25,
-            version: Number(this.priceFields.p_ver?.value) || (this.currentVersion + 1)
+            vat: toNumberLoose(this.priceFields.p_vat?.value) ?? 25
         };
     }
     
