@@ -120,16 +120,15 @@ h3 {
 
 /* Header top layout */
 .header-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: start;
     width: 100%;
-    position: relative;
     padding: 15px 0 0 15px;
 }
 
 .logo-section {
-    flex: 1;
+    grid-column: 2;
     display: flex;
     justify-content: center;
 }
