@@ -6,10 +6,67 @@ const PASSWORD_CONFIG = {
 };
 
 // --- Sternbeck Pricing API ---
-const PRICING_API_URL = "https://script.google.com/macros/s/AKfycbwdJe2jnRtq4sewClA-O38q8l24B3WIjR3byAY92cSteuaHPxDwwxAiV2ULtnzpWNXU0A/exec";
-const PRICING_API_TOKEN = "N7g4x9wqPzVh2sLfBt8yR3mKdXe6UcJoQ1Zi0HpGa5WlMnTv";
+const API_URL_STERNBECK = "/.netlify/functions/gas-proxy-sternbeck";
 const PRICING_CACHE_KEY = "sternbeck_pricing_cache_v5";
 const PRICING_TTL_MS = 10 * 60 * 1000;
+
+// Hårdkodade standardpriser (nuvarande priser som fallback)
+const DEFAULT_PRICES = {
+    // Fönster och Dörrar (kr)
+    dorrparti: 5000,
+    pardorr_balong_altan: 9000,
+    kallare_glugg: 3500,
+    flak_bas: 6000,
+    
+    // Luftare-priser (kr)
+    luftare_1_pris: 4000,
+    luftare_2_pris: 5500,
+    luftare_3_pris: 8250,
+    luftare_4_pris: 11000,
+    luftare_5_pris: 13750,
+    luftare_6_pris: 16500,
+    
+    // Renoveringstyper (multiplikatorer)
+    renov_modern_alcro_mult: 1.00,
+    renov_trad_linolja_mult: 1.15,
+    
+    // Fönsteröppning (multiplikatorer)
+    oppning_inat_mult: 1.00,
+    oppning_utat_mult: 1.05,
+    
+    // Fönstertyp (delta per båge, kr)
+    typ_kopplade_standard_delta: 0,
+    typ_kopplade_isolerglas_delta: 500,
+    typ_isolerglas_delta: -400,
+    typ_insats_yttre_delta: -400,
+    typ_insats_inre_delta: -1250,
+    typ_insats_komplett_delta: 1000,
+    
+    // Arbetsbeskrivning (multiplikatorer)
+    arb_utvandig_mult: 1.00,
+    arb_invandig_mult: 1.25,
+    arb_utv_plus_innermal_mult: 1.05,
+    
+    // Spröjs (kr per ruta)
+    sprojs_low_price: 250,
+    sprojs_high_price: 400,
+    sprojs_threshold: 3,
+    
+    // LE-glas och Extra flak (kr)
+    le_glas_per_kvm: 2500,
+    flak_extra_1: 2750,
+    flak_extra_2: 5500,
+    flak_extra_3: 8250,
+    flak_extra_4: 11000,
+    flak_extra_5: 13750,
+    
+    // Skatter (%)
+    vat: 25,
+    
+    // Metadata
+    version: 1,
+    source: 'default_fallback'
+};
 
 // --- Local cache helpers ---
 function getCachedPricing() {
@@ -31,7 +88,7 @@ function setCachedPricing(data) {
 
 // --- API IO ---
 async function fetchPricingFromSheet() {
-  const url = PRICING_API_URL + "?nocache=" + Date.now();
+  const url = API_URL_STERNBECK + "?nocache=" + Date.now();
   const res = await fetch(url, { method: "GET" });
   const json = await res.json();
   if (!json?.ok) throw new Error(json?.error || "Pricing GET failed");
@@ -39,14 +96,14 @@ async function fetchPricingFromSheet() {
 }
 
 async function savePricingToSheet(kvObject) {
-  const res = await fetch(PRICING_API_URL, {
+  const res = await fetch(API_URL_STERNBECK, {
     method: "POST",
-    headers: { "Content-Type": "text/plain;charset=UTF-8" },
-    body: JSON.stringify({ token: PRICING_API_TOKEN, pricing: kvObject })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pricing: kvObject }) // ingen token här
   });
   const json = await res.json();
   if (!json?.ok) throw new Error(json?.error || "Pricing POST failed");
-  return json; // ⟵ vi vill kunna läsa serverns version
+  return json;
 }
 
 // --- Numerik & procent ↔ multiplikator (robust mot 0, 15, 0.05, 1.05, "1,05") ---
@@ -133,38 +190,48 @@ function applyPricingToConfig(pr) {
   }
 }
 
-// Ladda priser en gång och cacha
 window.pricingReady = (async () => {
-  const cached = (() => {
+    console.log('🔄 Startar prisladdning - försöker alltid Google Sheets först...');
+    
+    let pricing = null;
+    let source = '';
+    
+    // Försök alltid hämta från Google Sheets först
     try {
-      const raw = localStorage.getItem(PRICING_CACHE_KEY);
-      if (!raw) return null;
-      const { ts, data } = JSON.parse(raw);
-      if (!ts || !data) return null;
-      if (Date.now() - ts > PRICING_TTL_MS) return null;
-      return data;
-    } catch { return null; }
-  })();
-
-  let pricing = cached;
-  
-  // Om ingen cache, försök ladda från server
-  if (!pricing) {
-    try {
-      pricing = await fetchPricingFromSheet();
-      localStorage.setItem(PRICING_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: pricing }));
-      console.log('✅ Priser laddade från server');
+        console.log('📡 Hämtar priser från Google Sheets...');
+        pricing = await fetchPricingFromSheet();
+        source = 'google_sheets';
+        
+        // Cacha framgångsrik hämtning
+        setCachedPricing(pricing);
+        console.log('✅ Priser laddade från Google Sheets');
+        
     } catch (error) {
-      console.warn('⚠️ Kunde inte ladda priser från server:', error.message);
-      // Falla tillbaka på tomma standardvärden - appen kommer använda CONFIG defaults
-      pricing = { version: 1, source: 'fallback' };
+        console.warn('⚠️ Kunde inte ladda från Google Sheets:', error.message);
+        
+        // Försök med cache
+        const cached = getCachedPricing();
+        if (cached) {
+            pricing = cached;
+            source = 'cache';
+            console.log('✅ Priser laddade från cache');
+        } else {
+            // Fallback till standardpriser
+            pricing = { ...DEFAULT_PRICES };
+            source = 'default_fallback';
+            console.log('⚠️ Använder hårdkodade standardpriser som fallback');
+        }
     }
-  } else {
-    console.log('✅ Priser laddade från cache');
-  }
-  
-  applyPricingToConfig(pricing);
-  return pricing;
+    
+    // Lägg till metadata
+    pricing.source = source;
+    pricing.loadedAt = new Date().toISOString();
+    
+    // Applicera priserna på CONFIG
+    applyPricingToConfig(pricing);
+    
+    console.log(`✅ Prisladdning klar - källa: ${source}`);
+    return pricing;
 })();
 
 // Konfiguration för applikationen
@@ -3844,8 +3911,8 @@ class AdminPanel {
         console.log('🔧 Initializing AdminPanel...');
         
         // Google Sheets konfiguration
-        this.PRICING_API_URL = PRICING_API_URL;
-        this.API_TOKEN = PRICING_API_TOKEN;
+        this.PRICING_API_URL = API_URL_STERNBECK;
+        // Token hanteras nu på serversidan via proxyn
         
         // Prisversionshantering
         this.currentVersion = 1;
@@ -3919,6 +3986,7 @@ class AdminPanel {
         };
         
         this.initializeEventListeners();
+        this.addResetDefaultsButton();
         this.initAdminPricing();
         this.updateVersionDisplay();
     }
@@ -4152,6 +4220,136 @@ class AdminPanel {
         console.log(`[AdminPanel ${type.toUpperCase()}] ${message}`);
     }
     
+    addResetDefaultsButton() {
+        const adminActions = document.querySelector('.admin-actions');
+        if (!adminActions) return;
+        
+        const resetDefaultsBtn = document.createElement('button');
+        resetDefaultsBtn.className = 'btn secondary';
+        resetDefaultsBtn.id = 'btn_reset_defaults';
+        resetDefaultsBtn.innerHTML = '🔄 Återställ standardpriser';
+        resetDefaultsBtn.title = 'Återställer priserna till hårdkodade standardvärden';
+        
+        const saveBtn = document.getElementById('btn_admin_save');
+        if (saveBtn) {
+            adminActions.insertBefore(resetDefaultsBtn, saveBtn);
+        } else {
+            adminActions.appendChild(resetDefaultsBtn);
+        }
+        
+        resetDefaultsBtn.addEventListener('click', () => {
+            this.resetToDefaultPrices();
+        });
+        
+        this.addLogEntry('Återställ standardpriser-knapp tillagd', 'info');
+    }
+
+    async resetToDefaultPrices() {
+        const confirmed = confirm(
+            'Är du säker på att du vill återställa alla priser till standardvärden?\n\n' +
+            'Detta kommer att:\n' +
+            '• Återställa alla prisfält till hårdkodade standardvärden\n' +
+            '• Spara standardpriserna till Google Sheets\n' +
+            '• Uppdatera prisberäkningarna direkt\n\n' +
+            'Denna åtgärd kan inte ångras.'
+        );
+        
+        if (!confirmed) {
+            this.addLogEntry('Återställning av standardpriser avbruten av användaren', 'info');
+            return;
+        }
+        
+        try {
+            this.updateStatus('Återställer standardpriser...');
+            this.addLogEntry('Startar återställning till standardpriser', 'info');
+            
+            this.fillFieldsWithDefaults();
+            this.addLogEntry('Admin-formulär ifyllt med standardpriser', 'info');
+            
+            const payload = this.collectPricingDataFromDefaults();
+            const res = await savePricingToSheet(payload);
+            
+            const merged = { ...payload, version: res.version, source: 'reset_to_defaults' };
+            setCachedPricing(merged);
+            applyPricingToConfig(merged);
+            
+            if (window.quoteCalculator) {
+                window.quoteCalculator.updatePriceCalculation();
+            }
+            
+            this.currentVersion = res.version;
+            this.lastUpdated = new Date(res.updated_at || Date.now());
+            this.updateVersionDisplay();
+            
+            this.updateStatus('Standardpriser återställda');
+            this.addLogEntry('✅ Standardpriser återställda och sparade till Google Sheets', 'success');
+            
+            alert('Standardpriser har återställts framgångsrikt!\n\nAlla priser är nu återställda till originalvärdena.');
+            
+        } catch (error) {
+            this.updateStatus('Fel vid återställning');
+            this.addLogEntry('❌ Fel vid återställning av standardpriser: ' + error.message, 'error');
+            alert('Fel vid återställning av standardpriser:\n' + error.message);
+        }
+    }
+
+    fillFieldsWithDefaults() {
+        // Fönster och Dörrar
+        if (this.priceFields.p_dorrpartier) this.priceFields.p_dorrpartier.value = DEFAULT_PRICES.dorrparti;
+        if (this.priceFields.p_pardorr_balkong) this.priceFields.p_pardorr_balkong.value = DEFAULT_PRICES.pardorr_balong_altan;
+        if (this.priceFields.p_kallare_glugg) this.priceFields.p_kallare_glugg.value = DEFAULT_PRICES.kallare_glugg;
+        if (this.priceFields.p_flak) this.priceFields.p_flak.value = DEFAULT_PRICES.flak_bas;
+        
+        // Luftare
+        if (this.priceFields.p_1_luftare) this.priceFields.p_1_luftare.value = DEFAULT_PRICES.luftare_1_pris;
+        if (this.priceFields.p_2_luftare) this.priceFields.p_2_luftare.value = DEFAULT_PRICES.luftare_2_pris;
+        if (this.priceFields.p_3_luftare) this.priceFields.p_3_luftare.value = DEFAULT_PRICES.luftare_3_pris;
+        if (this.priceFields.p_4_luftare) this.priceFields.p_4_luftare.value = DEFAULT_PRICES.luftare_4_pris;
+        if (this.priceFields.p_5_luftare) this.priceFields.p_5_luftare.value = DEFAULT_PRICES.luftare_5_pris;
+        if (this.priceFields.p_6_luftare) this.priceFields.p_6_luftare.value = DEFAULT_PRICES.luftare_6_pris;
+        
+        // Renoveringstyper (konvertera multiplikatorer till procent)
+        if (this.priceFields.p_modern_renovering) this.priceFields.p_modern_renovering.value = multToPct(DEFAULT_PRICES.renov_modern_alcro_mult);
+        if (this.priceFields.p_traditionell_renovering) this.priceFields.p_traditionell_renovering.value = multToPct(DEFAULT_PRICES.renov_trad_linolja_mult);
+        
+        // Fönsteröppning (konvertera multiplikatorer till procent)
+        if (this.priceFields.p_inatgaende) this.priceFields.p_inatgaende.value = multToPct(DEFAULT_PRICES.oppning_inat_mult);
+        if (this.priceFields.p_utatgaende) this.priceFields.p_utatgaende.value = multToPct(DEFAULT_PRICES.oppning_utat_mult);
+        
+        // Fönstertyper (delta per båge)
+        if (this.priceFields.p_kopplade_standard) this.priceFields.p_kopplade_standard.value = DEFAULT_PRICES.typ_kopplade_standard_delta;
+        if (this.priceFields.p_kopplade_isolerglas) this.priceFields.p_kopplade_isolerglas.value = DEFAULT_PRICES.typ_kopplade_isolerglas_delta;
+        if (this.priceFields.p_isolerglas) this.priceFields.p_isolerglas.value = DEFAULT_PRICES.typ_isolerglas_delta;
+        if (this.priceFields.p_insats_yttre) this.priceFields.p_insats_yttre.value = DEFAULT_PRICES.typ_insats_yttre_delta;
+        if (this.priceFields.p_insats_inre) this.priceFields.p_insats_inre.value = DEFAULT_PRICES.typ_insats_inre_delta;
+        if (this.priceFields.p_insats_komplett) this.priceFields.p_insats_komplett.value = DEFAULT_PRICES.typ_insats_komplett_delta;
+        
+        // Arbetsbeskrivning (konvertera multiplikatorer till procent)
+        if (this.priceFields.p_utvandig_renovering) this.priceFields.p_utvandig_renovering.value = multToPct(DEFAULT_PRICES.arb_utvandig_mult);
+        if (this.priceFields.p_invandig_renovering) this.priceFields.p_invandig_renovering.value = multToPct(DEFAULT_PRICES.arb_invandig_mult);
+        if (this.priceFields.p_utv_plus_inner) this.priceFields.p_utv_plus_inner.value = multToPct(DEFAULT_PRICES.arb_utv_plus_innermal_mult);
+        
+        // Spröjs
+        if (this.priceFields.p_sprojs_under4) this.priceFields.p_sprojs_under4.value = DEFAULT_PRICES.sprojs_low_price;
+        if (this.priceFields.p_sprojs_over4) this.priceFields.p_sprojs_over4.value = DEFAULT_PRICES.sprojs_high_price;
+        
+        // LE-glas och Extra flak
+        if (this.priceFields.p_le_glas) this.priceFields.p_le_glas.value = DEFAULT_PRICES.le_glas_per_kvm;
+        if (this.priceFields.p_extra_1) this.priceFields.p_extra_1.value = DEFAULT_PRICES.flak_extra_1;
+        if (this.priceFields.p_extra_2) this.priceFields.p_extra_2.value = DEFAULT_PRICES.flak_extra_2;
+        if (this.priceFields.p_extra_3) this.priceFields.p_extra_3.value = DEFAULT_PRICES.flak_extra_3;
+        if (this.priceFields.p_extra_4) this.priceFields.p_extra_4.value = DEFAULT_PRICES.flak_extra_4;
+        if (this.priceFields.p_extra_5) this.priceFields.p_extra_5.value = DEFAULT_PRICES.flak_extra_5;
+        
+        // Skatter
+        if (this.priceFields.p_vat) this.priceFields.p_vat.value = DEFAULT_PRICES.vat;
+        if (this.priceFields.p_ver) this.priceFields.p_ver.value = DEFAULT_PRICES.version;
+    }
+
+    collectPricingDataFromDefaults() {
+        return { ...DEFAULT_PRICES };
+    }
+
     // Metod för att integrera med Google Sheets API (att implementeras senare)
     async initializeGoogleSheetsAPI() {
         // TODO: Implementera Google Sheets API-integration
