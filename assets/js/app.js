@@ -4227,7 +4227,7 @@ class AdminPanel {
         const resetDefaultsBtn = document.createElement('button');
         resetDefaultsBtn.className = 'btn secondary';
         resetDefaultsBtn.id = 'btn_reset_defaults';
-        resetDefaultsBtn.innerHTML = '🔄 Återställ standardpriser';
+        resetDefaultsBtn.innerHTML = 'Återställ priser';
         resetDefaultsBtn.title = 'Återställer priserna till hårdkodade standardvärden';
         
         const saveBtn = document.getElementById('btn_admin_save');
