@@ -47,19 +47,43 @@ exports.handler = async (event) => {
       init.body = JSON.stringify(bodyObj);
     }
 
-    const resp = await fetch(GAS_URL + qs, init);
-    const text = await resp.text();
-    const contentType = resp.headers.get("content-type") || "application/json";
+    // Lägg till timeout för att undvika 504-fel
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout (under Netlify's 30s gräns)
+    
+    try {
+      init.signal = controller.signal;
+      const resp = await fetch(GAS_URL + qs, init);
+      clearTimeout(timeoutId);
+      
+      const text = await resp.text();
+      const contentType = resp.headers.get("content-type") || "application/json";
 
-    return {
-      statusCode: resp.status,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Content-Type": contentType,
-        "Cache-Control": "no-store"
-      },
-      body: text
-    };
+      return {
+        statusCode: resp.status,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Content-Type": contentType,
+          "Cache-Control": "no-store"
+        },
+        body: text
+      };
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      if (fetchError.name === 'AbortError') {
+        return {
+          statusCode: 408,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ ok: false, error: "Request timeout", detail: "Google Apps Script took too long to respond" })
+        };
+      }
+      
+      throw fetchError; // Re-throw other errors to be caught by outer catch
+    }
   } catch (err) {
     return {
       statusCode: 502,

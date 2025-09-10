@@ -90,7 +90,25 @@ function setCachedPricing(data) {
 async function fetchPricingFromSheet() {
   const url = API_URL_STERNBECK + "?nocache=" + Date.now();
   const res = await fetch(url, { method: "GET" });
-  const json = await res.json();
+  
+  // Hantera HTTP-fel (504, 502, etc.)
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+  }
+  
+  // Hantera tomma eller ogiltiga JSON-svar
+  const text = await res.text();
+  if (!text || text.trim() === '') {
+    throw new Error("Empty response from server");
+  }
+  
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch (parseError) {
+    throw new Error(`Invalid JSON response: ${parseError.message}`);
+  }
+  
   if (!json?.ok) throw new Error(json?.error || "Pricing GET failed");
   return json.data || {};
 }
