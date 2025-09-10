@@ -1374,9 +1374,14 @@ class QuoteCalculator {
         console.log('Price adjustment (excl VAT):', priceAdjustment);
         
         // Applicera renoveringstyp-pålägg
+        console.log('🔍 DEBUG - data.renovationType:', JSON.stringify(data.renovationType));
+        console.log('🔍 DEBUG - Available multipliers:', JSON.stringify(CONFIG.RENOVATION_TYPE_MULTIPLIERS));
         const renovationTypeMultiplier = CONFIG.RENOVATION_TYPE_MULTIPLIERS[data.renovationType] || 1.0;
         const renovationAdjustedTotal = (partierTotalCost + extrasCost + priceAdjustment) * renovationTypeMultiplier;
-        console.log('Renovation type multiplier:', renovationTypeMultiplier, 'for type:', data.renovationType);
+        console.log('🔍 DEBUG - Renovation type multiplier:', renovationTypeMultiplier, 'for type:', data.renovationType);
+        if (renovationTypeMultiplier === 1.0 && data.renovationType) {
+            console.warn('⚠️  PROBLEM: Renovation type not found in multipliers!');
+        }
         
         // Beräkna summa utan materialkostnad (partier innehåller redan allt parti-relaterat + renoveringstyp-pålägg)
         const subtotalBeforeMaterial = renovationAdjustedTotal;
