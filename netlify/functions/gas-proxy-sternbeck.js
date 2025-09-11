@@ -1,97 +1,73 @@
 // netlify/functions/gas-proxy-sternbeck.js
-// Proxy till Sternbecks GAS – injicerar token på serversidan.
-const GAS_URL   = "https://script.google.com/macros/s/AKfycbwdJe2jnRtq4sewClA-O38q8l24B3WIjR3byAY92cSteuaHPxDwwxAiV2ULtnzpWNXU0A/exec";
-const API_TOKEN = process.env.STERNBECK_TOKEN; // sätt i Netlify Environment variables
+// Proxy för Sternbecks Apps Script (GET + POST)
+// Env i Netlify:
+//   STERNBECK_GAS_URL   = din NYA webapp-URL (slutar på /exec)
+//   STERNBECK_API_TOKEN = samma som API_TOKEN i Apps Script
 
-exports.handler = async (event) => {
-  // CORS preflight
-  if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 204,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Max-Age": "86400"
-      },
-      body: ""
-    };
-  }
-
-  // ping
-  if (event.httpMethod === "GET" && event.rawQuery && /(^|&)action=ping(&|$)/.test(event.rawQuery)) {
-    return {
-      statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Content-Type": "application/json",
-        "Cache-Control": "no-store"
-      },
-      body: JSON.stringify({ ok: true, proxy: "sternbeck:alive" })
-    };
-  }
-
+export async function handler(event) {
   try {
-    const qs = event.rawQuery ? `?${event.rawQuery}` : "";
-    const init = { method: event.httpMethod, headers: {} };
+    const GAS_URL   = process.env.STERNBECK_GAS_URL;
+    const API_TOKEN = process.env.STERNBECK_API_TOKEN;
 
-    if (["POST","PUT","PATCH"].includes(event.httpMethod)) {
-      const ct = event.headers && (event.headers["content-type"] || event.headers["Content-Type"]) || "application/json";
-      init.headers["Content-Type"] = ct;
-
-      let bodyObj = {};
-      try { bodyObj = JSON.parse(event.body || "{}"); } catch { bodyObj = {}; }
-
-      // Injicera/överskriv token server-side
-      bodyObj.token = API_TOKEN;
-      init.body = JSON.stringify(bodyObj);
+    if (!GAS_URL) {
+      return resp(500, { ok:false, error:'Missing env STERNBECK_GAS_URL' });
     }
 
-    // Lägg till timeout för att undvika 504-fel
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout (under Netlify's 30s gräns)
-    
-    try {
-      init.signal = controller.signal;
-      const resp = await fetch(GAS_URL + qs, init);
-      clearTimeout(timeoutId);
-      
-      const text = await resp.text();
-      const contentType = resp.headers.get("content-type") || "application/json";
+    if (event.httpMethod === 'GET') {
+      // Pris-GET → proxya rakt igenom med no-store
+      const upstream = await fetch(`${GAS_URL}${event.rawQuery ? `?${event.rawQuery}` : ''}`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json', 'Cache-Control': 'no-store', 'Pragma': 'no-cache' },
+        cache: 'no-store',
+      });
+      const text = await upstream.text();
+      let data; try { data = JSON.parse(text); } catch { data = { ok:false, error:'Bad JSON from GAS', raw:text }; }
+      return resp(upstream.status, data);
+    }
 
-      return {
-        statusCode: resp.status,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Content-Type": contentType,
-          "Cache-Control": "no-store"
-        },
-        body: text
-      };
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      
-      if (fetchError.name === 'AbortError') {
-        return {
-          statusCode: 408,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ ok: false, error: "Request timeout", detail: "Google Apps Script took too long to respond" })
-        };
+    if (event.httpMethod === 'POST') {
+      if (!API_TOKEN) {
+        return resp(500, { ok:false, error:'Missing env STERNBECK_API_TOKEN' });
       }
-      
-      throw fetchError; // Re-throw other errors to be caught by outer catch
+
+      let payload = {};
+      try { payload = JSON.parse(event.body || '{}'); } catch { return resp(400, { ok:false, error:'Invalid JSON body' }); }
+
+      // Skicka vidare till GAS med token
+      const body = JSON.stringify({ token: API_TOKEN, pricing: payload.pricing || {} });
+
+      const upstream = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Cache-Control': 'no-store',
+          'Pragma': 'no-cache',
+        },
+        body,
+      });
+
+      const text = await upstream.text();
+      let data; try { data = JSON.parse(text); } catch { data = { ok:false, error:'Bad JSON from GAS', raw:text }; }
+      return resp(upstream.status, data);
     }
+
+    // Övriga metoder
+    return resp(405, { ok:false, error:'Method Not Allowed' });
   } catch (err) {
-    return {
-      statusCode: 502,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ ok: false, error: "Proxy failure", detail: String(err) })
-    };
+    return resp(500, { ok:false, error: String(err) });
   }
-};
+}
+
+function resp(status, json) {
+  return {
+    statusCode: status,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      'Pragma': 'no-cache',
+      'Access-Control-Allow-Origin': '*',
+    },
+    body: JSON.stringify(json),
+  };
+}
