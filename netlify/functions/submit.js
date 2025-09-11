@@ -6,6 +6,62 @@
  * Environment Variable: ZAPIER_WEBHOOK_URL
  */
 
+// Sternbeck: hämta hela prisobjektet från appens konfiguration
+function collectPricingForSternbeck() {
+  // Hämta från CONFIG-objektet - det innehåller flera objekt
+  if (!window.CONFIG) return {};
+  
+  // Samla ihop alla prisobjekt från CONFIG
+  const pricing = {
+    // Kopiera hela underobjekt från CONFIG
+    ...CONFIG.UNIT_PRICES,
+    ...CONFIG.RENOVATION_TYPE_MULTIPLIERS,
+    ...CONFIG.WINDOW_OPENING_MULTIPLIERS,
+    ...CONFIG.WINDOW_TYPE_DISCOUNTS_PER_BAGE,
+    ...CONFIG.WORK_DESCRIPTION_MULTIPLIERS,
+    ...CONFIG.EXTRAS
+  };
+
+  // Säker fallback: tvinga fram plain-objekt (ingen referens till CONFIG)
+  return JSON.parse(JSON.stringify(pricing));
+}
+
+// Koppla knappen "Spara priser" i appen
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('btn_admin_save'); // Korrekt ID från HTML
+  if (!btn) return;
+
+  btn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    btn.disabled = true;
+    const orig = btn.textContent;
+    btn.textContent = 'Sparar...';
+
+    try {
+      const pricing = collectPricingForSternbeck();   // <-- NY
+      const res = await fetch('/api/sternbeck/prices', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
+        body: JSON.stringify({ pricing })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data?.error || 'Misslyckades');
+
+      // uppdatera versionsvisning (om du har en badge)
+      const badge = document.getElementById('pricing_version');
+      if (badge && data.saved?.version != null) badge.textContent = String(data.saved.version);
+
+      alert(`Priser sparade. Ny version: ${data.saved.version}`);
+    } catch (err) {
+      console.error(err);
+      alert(String(err.message || err));
+    } finally {
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  });
+});
+
 exports.handler = async (event, context) => {
     console.log('🚀 Submit function anropad');
     console.log('Method:', event.httpMethod);

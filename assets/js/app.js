@@ -10,6 +10,62 @@ const API_URL_STERNBECK = "/.netlify/functions/gas-proxy-sternbeck";
 const PRICING_CACHE_KEY = "sternbeck_pricing_cache_v5";
 const PRICING_TTL_MS = 10 * 60 * 1000;
 
+// --- Version + reset helpers ---
+const LAST_VERSION_KEY = 'sternbeck_pricing_version_seen';
+
+async function hardResetStorageAndCaches() {
+  try {
+    // Behåll endast login-sessionen – rensa resten
+    const session = localStorage.getItem(PASSWORD_CONFIG.SESSION_KEY);
+    localStorage.clear();
+    if (session) localStorage.setItem(PASSWORD_CONFIG.SESSION_KEY, session);
+
+    // Rensa appens egna lokala cache-nycklar
+    try { localStorage.removeItem(PRICING_CACHE_KEY); } catch {}
+    try { localStorage.removeItem('sternbecks_anbud_data'); } catch {}
+    try { localStorage.removeItem('sternbecks_arbetsbeskrivning_data'); } catch {}
+
+    // Rensa ev. Service Worker caches
+    if (window.caches && caches.keys) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch (e) {
+    console.warn('hardResetStorageAndCaches warning:', e);
+  }
+}
+
+/**
+ * Körs vid inloggning: hämtar alltid färska priser (ingen cache),
+ * uppdaterar CONFIG, cachar dem igen, och gör versionskontroll.
+ * Returnerar en Promise som "pricingReady".
+ */
+async function forceFreshPricingOnLogin() {
+  // 1) hämta direkt från Google Sheets, aldrig cache
+  const fresh = await fetchPricingFromSheet(); // du har redan denna
+  fresh.source = 'google_sheets_login';
+  fresh.loadedAt = new Date().toISOString();
+
+  // 2) spara ny cache lokalt
+  setCachedPricing(fresh);
+
+  // 3) uppdatera CONFIG i minnet
+  applyPricingToConfig(fresh);
+
+  // 4) enkel versionskontroll
+  const currentVer = Number(fresh.version || 0);
+  const lastSeen = Number(localStorage.getItem(LAST_VERSION_KEY) || 0);
+  if (Number.isFinite(currentVer) && currentVer !== lastSeen) {
+    localStorage.setItem(LAST_VERSION_KEY, String(currentVer));
+    // Om du vill: visa diskret info i UI (om element finns)
+    const el = document.getElementById('pricing_version');
+    if (el) el.innerText = String(currentVer);
+    console.log(`🔎 Ny prisversion upptäckt: ${lastSeen} → ${currentVer}`);
+  }
+
+  return fresh;
+}
+
 // Hårdkodade standardpriser (nuvarande priser som fallback)
 const DEFAULT_PRICES = {
     // Fönster och Dörrar (kr)
@@ -3218,7 +3274,7 @@ class PasswordProtection {
         console.log('🎭 Animerar bort lösenordsskärm...');
         this.passwordOverlay.style.animation = 'fadeOut 0.5s ease-out';
         
-        setTimeout(() => {
+        setTimeout(async () => {
             console.log('⏰ setTimeout i grantAccess körs (efter 500ms)...');
             
             this.passwordOverlay.style.display = 'none';
@@ -3229,11 +3285,19 @@ class PasswordProtection {
             console.log('  - passwordOverlay display:', this.passwordOverlay.style.display);
             console.log('  - mainApp display:', this.mainApp.style.display);
             
-            // Nollställ hela appen vid varje inloggning
+            // 1) rensa cache + all state (men behåll sessionsnyckeln)
+            console.log('🧹 Kör hårdreset av cache och state...');
+            await hardResetStorageAndCaches();
+            
+            // 2) nollställ UI-fält etc. (din befintliga funktion)
             console.log('🔄 Nollställer appen...');
             this.resetApp();
             
-            // Initialisera huvudapplikationen efter framgångsrik inloggning
+            // 3) tvinga färsk prisladdning för just den här inloggningen
+            console.log('💰 Tvingar färsk prisladdning...');
+            window.pricingReady = forceFreshPricingOnLogin();
+            
+            // 4) initialisera resten – din initializeMainApplication väntar på pricingReady
             console.log('🚀 Initialiserar huvudapplikation...');
             this.initializeMainApplication();
         }, 500);
@@ -3591,7 +3655,7 @@ class PasswordProtection {
         }, 3000);
     }
     
-    logout() {
+    async logout() {
         console.log('🚪 Logout metod körs...');
         
         // Rensa gamla event listeners och instanser
@@ -3604,6 +3668,10 @@ class PasswordProtection {
         // Rensa localStorage session
         localStorage.removeItem(PASSWORD_CONFIG.SESSION_KEY);
         console.log('✅ localStorage session borttagen');
+        
+        // Hårdreset så att nästa inloggning börjar helt fräscht
+        console.log('🧹 Kör hårdreset vid logout...');
+        await hardResetStorageAndCaches();
         
         // Dölj navigationsknappar
         this.hideNavigationBar();
