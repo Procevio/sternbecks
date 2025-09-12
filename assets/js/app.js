@@ -66,6 +66,68 @@ async function forceFreshPricingOnLogin() {
   return fresh;
 }
 
+// --- Admin: tvinga färska priser från Google Sheets ---
+// Rensar lokala caches, hämtar via proxyn (GET), applicerar på CONFIG och uppdaterar UI.
+// Kastar fel om hämtningen misslyckas (så admin inte jobbar på fallback).
+async function forceFreshPricingForAdmin() {
+  // 1) rensa ev. lokal cache/flaggar
+  try { localStorage.removeItem('sternbeck_pricing_cache'); } catch {}
+  try { localStorage.removeItem('sternbecks_anbud_data'); } catch {}
+  try { localStorage.removeItem('sternbecks_arbetsbeskrivning_data'); } catch {}
+
+  // 2) hämta direkt från proxyn med cache-busting
+  const url = `/.netlify/functions/gas-proxy-sternbeck?ts=${Date.now()}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json', 'Cache-Control': 'no-store', 'Pragma': 'no-cache' },
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  if (!data.ok || !data.data) throw new Error(data.error || 'ok=false från backend');
+
+  // 3) applicera i CONFIG och cacha om du vill
+  const fresh = data.data;
+  // ta inte med "source" om den råkar finnas i arket
+  delete fresh.source;
+
+  // Uppdatera din app-konfiguration
+  if (!window.CONFIG) window.CONFIG = {};
+  CONFIG.PRICES = { ...CONFIG.PRICES, ...fresh };
+
+  // Om du har en befintlig helper för att applicera priserna överallt:
+  if (typeof applyPricingToConfig === 'function') {
+    applyPricingToConfig(fresh);
+  }
+
+  // 4) uppdatera admin-UI om du har fält som visar priserna
+  if (typeof AdminPanel?.renderPricing === 'function') {
+    AdminPanel.renderPricing(CONFIG.PRICES);
+  }
+
+  // 5) sätt "seen version" om du vill visa i badge
+  const ver = Number(fresh.version);
+  if (Number.isFinite(ver)) {
+    const el = document.getElementById('pricing_version');
+    if (el) el.textContent = String(ver);
+    localStorage.setItem('sternbeck_pricing_version_seen', String(ver));
+  }
+
+  return fresh;
+}
+
+// Bekväm wrapper för att köra med UI-feedback i Admin
+async function refreshAdminPricingOrFail() {
+  const btn = document.getElementById('admin-refresh-prices');
+  if (btn) { btn.disabled = true; btn.textContent = 'Hämtar...'; }
+  try {
+    await forceFreshPricingForAdmin();
+    console.log('✅ Admin: färska priser laddade från Google Sheets');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Uppdatera priser'; }
+  }
+}
+
 // Hårdkodade standardpriser (nuvarande priser som fallback)
 const DEFAULT_PRICES = {
     // Fönster och Dörrar (kr)
@@ -4001,6 +4063,8 @@ class AdminPanel {
     constructor() {
         console.log('🔧 Initializing AdminPanel...');
         
+        // Initializera async kommer att hämta färska priser
+        
         // Google Sheets konfiguration
         this.PRICING_API_URL = API_URL_STERNBECK;
         // Token hanteras nu på serversidan via proxyn
@@ -4106,6 +4170,19 @@ class AdminPanel {
         this.adminCloseBtn?.addEventListener('click', () => this.hideAdminPanel());
         this.fillBtn?.addEventListener('click', () => this.fillCurrentPrices());
         this.saveBtn?.addEventListener('click', () => this.savePricesToGoogle());
+        
+        // Uppdatera priser-knapp
+        const refreshBtn = document.getElementById('admin-refresh-prices');
+        refreshBtn?.addEventListener('click', async () => {
+            try {
+                await refreshAdminPricingOrFail();
+                this.addLogEntry('Priser uppdaterade från Google Sheets', 'success');
+                this.fillCurrentPrices(); // Uppdatera admin-fälten med nya priser
+            } catch (e) {
+                this.addLogEntry(`Fel vid prisuppdatering: ${e.message}`, 'error');
+                console.error('Admin pricing refresh error:', e);
+            }
+        });
     }
     
     showAdminPanel() {
@@ -4119,6 +4196,14 @@ class AdminPanel {
     }
     
     async initAdminPricing() {
+        try {
+            await forceFreshPricingForAdmin();   // ← tvinga färskt från Sheets
+        } catch (e) {
+            console.error('Admin: kunde inte hämta priser från Sheets', e);
+            alert('Kunde inte hämta priser från Google Sheets. Prova igen.');
+            return; // avbryt om det misslyckas
+        }
+        
         try {
             const cached = getCachedPricing();
             const data = cached || (await fetchPricingFromSheet());
