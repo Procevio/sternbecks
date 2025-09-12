@@ -3355,11 +3355,16 @@ class PasswordProtection {
             console.log('🔄 Nollställer appen...');
             this.resetApp();
             
-            // 3) tvinga färsk prisladdning för just den här inloggningen
+            // 3) visa navigationsknappar direkt - oberoende av prishämtning
+            console.log('🎯 Visar navigationsknappar direkt...');
+            this.showNavigationBar();
+            this.initializeNavigationButtons();
+            
+            // 4) tvinga färsk prisladdning för just den här inloggningen
             console.log('💰 Tvingar färsk prisladdning...');
             window.pricingReady = forceFreshPricingOnLogin();
             
-            // 4) initialisera resten – din initializeMainApplication väntar på pricingReady
+            // 5) initialisera resten – din initializeMainApplication väntar på pricingReady
             console.log('🚀 Initialiserar huvudapplikation...');
             this.initializeMainApplication();
         }, 500);
@@ -3805,10 +3810,6 @@ class PasswordProtection {
             new AccessibilityEnhancer();
             new ThemeToggle();
             
-            // Visa och initialisera navigationsknappar (logout och reset)
-            this.showNavigationBar();
-            this.initializeNavigationButtons();
-            
             console.log('Sternbecks Anbudsapplikation initialiserad framgångsrikt efter prisladdning.');
         }).catch(err => {
             console.error('Kunde inte ladda prislista:', err);
@@ -3816,8 +3817,6 @@ class PasswordProtection {
             window.quoteCalculator = new QuoteCalculator();
             new AccessibilityEnhancer();
             new ThemeToggle();
-            this.showNavigationBar();
-            this.initializeNavigationButtons();
             console.log('Sternbecks Anbudsapplikation initialiserad med standardpriser efter felaktig prisladdning.');
         });
     }
