@@ -3873,47 +3873,45 @@ class PasswordProtection {
         // Skapa referenser till PasswordProtection-instansen
         const passwordProtection = window.passwordProtectionInstance || this;
         
-        // Vänta en kort stund för att säkerställa att DOM är redo
-        setTimeout(() => {
-            console.log('⏰ setTimeout för navigationsknappar körs...');
-            
-            // Logout-knapp
-            const logoutBtn = document.getElementById('logout-btn');
-            console.log('🔍 Letar efter logout-btn:', logoutBtn);
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    console.log('🚪 Logout-knapp klickad');
-                    if (confirm('Är du säker på att du vill logga ut?')) {
-                        passwordProtection.logout();
-                    }
-                });
-                console.log('✅ Logout event listener tillagd för element:', logoutBtn);
-            } else {
-                console.error('❌ Logout-knapp hittades inte!');
-                console.log('🔍 Alla element med ID logout-btn:', document.querySelectorAll('#logout-btn'));
-                console.log('🔍 Alla nav-btn element:', document.querySelectorAll('.nav-btn'));
-            }
-            
-            // Reset-knapp (NY FUNKTION)
-            const resetBtn = document.getElementById('reset-btn');
-            console.log('🔍 Letar efter reset-btn:', resetBtn);
-            if (resetBtn) {
-                resetBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    console.log('🔄 Reset-knapp klickad');
-                    if (confirm('Är du säker på att du vill återställa alla formulärfält?')) {
-                        passwordProtection.resetFormOnly();
-                    }
-                });
-                console.log('✅ Reset event listener tillagd för element:', resetBtn);
-            } else {
-                console.error('❌ Reset-knapp hittades inte!');
-                console.log('🔍 Alla element med ID reset-btn:', document.querySelectorAll('#reset-btn'));
-            }
-            
-            console.log('🎯 Navigationsknappar (logout + reset) initialiserade');
-        }, 100);
+        // Initiera direkt utan fördröjning - DOM är redan redo
+        console.log('⏰ Initierar navigationsknappar direkt...');
+        
+        // Logout-knapp
+        const logoutBtn = document.getElementById('logout-btn');
+        console.log('🔍 Letar efter logout-btn:', logoutBtn);
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🚪 Logout-knapp klickad');
+                if (confirm('Är du säker på att du vill logga ut?')) {
+                    passwordProtection.logout();
+                }
+            });
+            console.log('✅ Logout event listener tillagd för element:', logoutBtn);
+        } else {
+            console.error('❌ Logout-knapp hittades inte!');
+            console.log('🔍 Alla element med ID logout-btn:', document.querySelectorAll('#logout-btn'));
+            console.log('🔍 Alla nav-btn element:', document.querySelectorAll('.nav-btn'));
+        }
+        
+        // Reset-knapp (NY FUNKTION)
+        const resetBtn = document.getElementById('reset-btn');
+        console.log('🔍 Letar efter reset-btn:', resetBtn);
+        if (resetBtn) {
+            resetBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🔄 Reset-knapp klickad');
+                if (confirm('Är du säker på att du vill återställa alla formulärfält?')) {
+                    passwordProtection.resetFormOnly();
+                }
+            });
+            console.log('✅ Reset event listener tillagd för element:', resetBtn);
+        } else {
+            console.error('❌ Reset-knapp hittades inte!');
+            console.log('🔍 Alla element med ID reset-btn:', document.querySelectorAll('#reset-btn'));
+        }
+        
+        console.log('🎯 Navigationsknappar (logout + reset) initialiserade');
     }
 }
 
