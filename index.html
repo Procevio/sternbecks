@@ -6,6 +6,7 @@
     <title>Anbudsförfrågan - Sternbecks Måleri & Fönsterhantverk</title>
     <link rel="stylesheet" href="assets/css/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" defer></script>
 </head>
 <body>
     <div class="container">
@@ -107,6 +108,7 @@
                     <div class="tabs-nav">
                         <button type="button" class="tab-button active" data-tab="anbud">Anbud</button>
                         <button type="button" class="tab-button" data-tab="arbetsbeskrivning">Arbetsbeskrivning</button>
+                        <button type="button" class="tab-button" data-tab="offert">Offert</button>
                     </div>
                 </div>
                 
@@ -167,6 +169,15 @@
                                 <label for="city">Ort *</label>
                                 <input type="text" id="city" name="city" autocomplete="address-level2" required>
                                 <div class="error-message" id="city-error"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="personnummer">Personnummer</label>
+                                <input type="text" id="personnummer" name="personnummer" placeholder="YYMMDD-XXXX" inputmode="numeric">
+                                <div class="error-message" id="personnummer-error"></div>
+                                <small class="help-text">Format: YYMMDD-XXXX (10 siffror)</small>
                             </div>
                         </div>
 
@@ -416,11 +427,10 @@
                         </div>
                     </section>
 
-                    <!-- Submit knapp -->
+                    <!-- Navigation knapp -->
                     <div class="form-actions">
-                        <button type="submit" class="submit-btn" id="submit-btn">
-                            <span class="btn-text">Skicka anbudsförfrågan</span>
-                            <div class="loading-spinner" id="loading-spinner"></div>
+                        <button type="button" class="submit-btn" id="go-to-arbetsbeskrivning-btn">
+                            <span class="btn-text">Till arbetsbeskrivning</span>
                         </button>
                     </div>
                 </form>
@@ -494,9 +504,9 @@
                         </section>
 
 
-                        <!-- Automatisk arbetsbeskrivning (dynamiskt baserat på val) -->
+                        <!-- Arbetsbeskrivning (dynamiskt baserat på val) -->
                         <section class="form-section" id="dynamic-work-description-section">
-                            <h3>Automatisk Arbetsbeskrivning</h3>
+                            <h3>Arbetsbeskrivning</h3>
                             <div id="generated-work-description" class="work-description-content">
                                 <div class="info-message">
                                     <p>Arbetsbeskrivningen genereras automatiskt baserat på dina val från Anbud-fliken.</p>
@@ -504,26 +514,10 @@
                             </div>
                         </section>
 
-                        <!-- GDPR samma som anbud -->
-                        <section class="form-section gdpr-section">
-                            <div class="gdpr-consent-group">
-                                <label class="checkbox-label gdpr-consent">
-                                    <input type="checkbox" id="arb-gdpr-consent" name="arb-gdpr-consent" required>
-                                    <span class="checkmark"></span>
-                                    Jag godkänner behandling av personuppgifter för anbud och kontakt enligt GDPR
-                                </label>
-                                <div class="error-message" id="arb-gdpr-consent-error"></div>
-                                <div class="gdpr-info">
-                                    <a href="#" id="arb-gdpr-details-link" class="privacy-link">Läs mer om dataskydd</a>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- Submit knapp -->
+                        <!-- Navigation knapp -->
                         <div class="form-actions">
-                            <button type="submit" class="submit-btn" id="arb-submit-btn">
-                                <span class="btn-text">Skicka arbetsbeskrivning</span>
-                                <div class="loading-spinner" id="arb-loading-spinner"></div>
+                            <button type="button" class="submit-btn" id="go-to-offert-btn">
+                                <span class="btn-text">Till offert</span>
                             </button>
                         </div>
                     </form>
@@ -538,6 +532,32 @@
                         <p>Vi kunde inte skicka din förfrågan just nu. Vänligen försök igen eller kontakta oss direkt.</p>
                     </div>
                 </div> <!-- End of arbetsbeskrivning-tab -->
+
+                <!-- Tab Content: Offert -->
+                <div id="offert-tab" class="tab-content">
+                    <div class="offert-container">
+                        <section class="form-section">
+                            <h3>Offert - Förhandsvisning</h3>
+                            <p class="info-text">Här ser du en förhandsvisning av din offert. Använd knappen nedan för att skicka offert och arbetsbeskrivning som PDF-filer.</p>
+
+                            <div id="offer-preview" class="offer-preview">
+                                <div class="info-message">
+                                    <p>Fyll i alla obligatoriska fält under Anbud-fliken för att se förhandsvisningen här.</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <div class="offert-actions">
+                            <button type="button" class="secondary-btn" id="refresh-offer">
+                                <span class="btn-text">Uppdatera förhandsvisning</span>
+                            </button>
+                            <button type="button" class="submit-btn" id="send-offer">
+                                <span class="btn-text">Skicka offert samt arbetsbeskrivning</span>
+                                <div class="loading-spinner" id="offer-loading-spinner"></div>
+                            </button>
+                        </div>
+                    </div>
+                </div> <!-- End of offert-tab -->
             </div>
         </main>
 

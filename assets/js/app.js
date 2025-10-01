@@ -128,6 +128,339 @@ async function refreshAdminPricingOrFail() {
   }
 }
 
+// --- ARBETSBESKRIVNING: Fulltext-mapping ---
+// Nycklar måste matcha exakt VALUE från WORK_DESC konstanten (inte label).
+const WORK_DESCRIPTIONS = {
+  "Modern - Alcro bestå": {
+    "invandig": `Arbetsbeskrivning fönster, utvändig och invändig renovering – Alcro Bestå
+
+<strong>Arbetsbeskrivning utvändigt</strong>
+<strong>Fönsterkarm:</strong>
+Tvättning
+Skrapning och slipning till fast sittande underlag
+Färgkanter slipas ner
+Demontering gamla beslag, spikar etc
+Demontering gammal tätningslist
+Montering ny tätningslist
+Uppskrapning fönsterbleck, slipning till fast sittande underlag 1 ggr grundning av trären yta - Färgtyp - Alcro.
+Kant mellan fönsterbleck och karm fogas tätt, samt hål och sprickor
+2 ggr strykning - Färgtyp - Alcro Bestå Utsikt
+
+<strong>Fönsterbågar:</strong>
+<strong>Ytterbåge</strong>
+Hel rengöring till trären yta av yttersida samt 4 kanter
+Hel kittborttagning
+Kittning - LASeal
+1 ggr grundning - Färgtyp - Alcro.
+2 ggr strykning - Färgtyp - Alcro Bestå Utsikt
+
+<strong>Innerbågens fyra kanter</strong>
+Skrapning och slipning till fast sittande underlag
+1 ggr grundning - Färgtyp - Alcro Bestå utsikt
+2 ggr strykning - Färgtyp - Alcro Bestå utsikt
+
+<strong>Mellansidor:</strong>
+<strong>Ytterbågens mellansida</strong>
+Skrapning och slipning till fast sittande underlag
+Toppförsegling
+1 ggr grundning - Färgtyp - Alcro Bestå utsikt
+2 ggr strykning - Färgtyp - Alcro Bestå utsikt
+
+<strong>Innerbågens mellansida</strong>
+Skrapning och slipning till fast sittande underlag
+1 ggr grundning - Färgtyp - Alcro
+2 ggr strykning – Färgtyp - Alcro Bestå utsikt
+
+<strong>Invändigt karm:</strong>
+Skrapning och slipning till fast sittande underlag
+Pågrundning av trären yta
+I- och påspackling
+1 ggr grundning - Färgtyp Alcro Vslip
+1-2 ggr strykning - Färgtyp Alcro V mill
+
+<strong>Invändigt fönsterbågar</strong>
+Skrapning och slipning till fast sittande underlag
+Pågrundning av trären yta
+I- och påspackling
+1 ggr grundning - Färgtyp Alcro Vslip
+2 ggr strykning - Färgtyp Alcro V mill
+
+<strong>Övrigt</strong>`,
+
+    "utvandig": `Arbetsbeskrivning fönster, utvändig renovering – Alcro Bestå
+
+<strong>Arbetsbeskrivning utvändigt</strong>
+<strong>Fönsterkarm:</strong>
+Tvättning
+Skrapning och slipning till fast sittande underlag
+Färgkanter slipas ner
+Demontering gamla beslag, spikar etc
+Demontering gammal tätningslist
+Montering ny tätningslist
+Uppskrapning fönsterbleck, slipning till fast sittande underlag 1 ggr grundning av trären yta - Färgtyp - Alcro.
+Kant mellan fönsterbleck och karm fogas tätt, samt hål och sprickor
+2 ggr strykning - Färgtyp - Alcro Bestå Utsikt
+
+<strong>Fönsterbågar:</strong>
+<strong>Ytterbåge</strong>
+Hel rengöring till trären yta av yttersida samt 4 kanter
+Hel kittborttagning
+Kittning - LASeal
+1 ggr grundning - Färgtyp - Alcro.
+2 ggr strykning - Färgtyp - Alcro Bestå Utsikt
+
+<strong>Innerbågens fyra kanter</strong>
+Skrapning och slipning till fast sittande underlag
+1 ggr grundning - Färgtyp - Alcro Bestå utsikt
+2 ggr strykning - Färgtyp - Alcro Bestå utsikt
+
+<strong>Mellansidor:</strong>
+<strong>Ytterbågens mellansida</strong>
+Skrapning och slipning till fast sittande underlag
+Toppförsegling
+1 ggr grundning - Färgtyp - Alcro Bestå utsikt
+2 ggr strykning - Färgtyp - Alcro Bestå utsikt
+
+<strong>Innerbågens mellansida</strong>
+Skrapning och slipning till fast sittande underlag
+1 ggr grundning - Färgtyp - Alcro
+2 ggr strykning – Färgtyp - Alcro Bestå utsikt
+
+<strong>Invändigt karm:</strong>
+Ingen åtgärd
+
+<strong>Invändigt fönsterbågar</strong>
+Ingen åtgärd
+
+<strong>Fönsterfoder</strong>
+Ingen åtgärd
+
+<strong>Övrigt</strong>`,
+
+    "utv_plus_innermal": `Arbetsbeskrivning fönster, utvändig renovering + innerbågens insida – Alcro Bestå
+
+<strong>Arbetsbeskrivning utvändigt</strong>
+<strong>Fönsterkarm:</strong>
+Tvättning
+Skrapning och slipning till fast sittande underlag
+Färgkanter slipas ner
+Demontering gamla beslag, spikar etc
+Demontering gammal tätningslist
+Montering ny tätningslist
+Uppskrapning fönsterbleck, slipning till fast sittande underlag
+1 ggr grundning av trären yta - Färgtyp - Alcro.
+Kant mellan fönsterbleck och karm fogas tätt, samt hål och sprickor
+2 ggr strykning - Färgtyp - Alcro Bestå Utsikt
+
+<strong>Fönsterbågar:</strong>
+<strong>Ytterbåge</strong>
+Hel rengöring till trären yta av yttersida samt 4 kanter
+Hel kittborttagning
+Kittning - LASeal
+1 ggr grundning - Färgtyp - Alcro.
+2 ggr strykning - Färgtyp - Alcro Bestå Utsikt
+
+<strong>Innerbågens fyra kanter</strong>
+Skrapning och slipning till fast sittande underlag
+1 ggr grundning - Färgtyp - Alcro Bestå utsikt
+2 ggr strykning - Färgtyp - Alcro Bestå utsikt
+
+<strong>Mellansidor:</strong>
+<strong>Ytterbågens mellansida</strong>
+Skrapning och slipning till fast sittande underlag
+Toppförsegling
+1 ggr grundning - Färgtyp - Alcro Bestå utsikt
+2 ggr strykning - Färgtyp - Alcro Bestå utsikt
+
+<strong>Innerbågens mellansida</strong>
+Skrapning och slipning till fast sittande underlag
+1 ggr grundning - Färgtyp - Alcro
+2 ggr strykning – Färgtyp - Alcro Bestå utsikt
+
+<strong>Invändigt karm:</strong>
+Ingen åtgärd
+
+<strong>Invändigt fönsterbågar</strong>
+Skrapning och slipning till fast sittande underlag
+Pågrundning av trären yta
+I- och påspackling
+1 ggr grundning - Färgtyp Alcro Vslip
+2 ggr strykning - Färgtyp Alcro V mill
+
+<strong>Fönsterfoder</strong>
+Ingen åtgärd
+
+<strong>Övrigt</strong>`
+  },
+
+  "Traditionell - Linoljebehandling": {
+    "invandig": `Arbetsbeskrivning fönster, utvändig & invändig renovering – Engwall & Claesson
+
+<strong>Arbetsbeskrivning utvändigt</strong>
+<strong>Fönsterkarm:</strong>
+Tvättning
+Skrapning och slipning till fast sittande underlag
+Färgkanter slipas ner
+Demontering gamla beslag, spikar etc
+Demontering gammal tätningslist
+Montering ny tätningslist
+Uppskrapning fönsterbleck, slipning till fast sittande underlag
+1 ggr grundning av trären yta - Färgtyp – Engwall & Claesson Linoljefärg.
+Kant mellan fönsterbleck och karm fogas tätt, samt hål och sprickor
+2 ggr strykning - Färgtyp – Engwall & Claesson Linoljefärg
+
+<strong>Fönsterbågar:</strong>
+
+<strong>Ytterbåge</strong>
+Hel rengöring till trären yta av yttersida samt 4 kanter
+Hel kittborttagning
+Kittning - Linoljekitt
+1 ggr grundning - Färgtyp – Engwall & Claesson Linoljefärg
+2 ggr strykning - Färgtyp – Engwall & Claesson Linoljefärg
+
+<strong>Innerbågens fyra kanter</strong>
+Skrapning och slipning till fast sittande underlag
+1 ggr grundning - Färgtyp – Engwall & Claesson Linoljefärg
+2 ggr strykning - Färgtyp – Engwall & Claesson Linoljefärg
+
+<strong>Mellansidor:</strong>
+<strong>Ytterbågens mellansida</strong>
+Skrapning och slipning till fast sittande underlag
+Toppförsegling
+1 ggr grundning - Färgtyp - Alcro Bestå utsikt
+2 ggr strykning - Färgtyp - Alcro Bestå utsikt
+
+<strong>Innerbågens mellansida</strong>
+Skrapning och slipning till fast sittande underlag
+1 ggr grundning - Färgtyp - Alcro
+2 ggr strykning – Färgtyp - Alcro Bestå utsikt
+
+<strong>Invändigt karm:</strong>
+Slipning till fast sittande underlag
+I- och påspackling
+1 ggr grundning - Färgtyp - Alcro - vslip
+2 ggr strykning – Färgtyp - Alcro Vmill
+
+<strong>Invändigt fönsterbågar</strong>
+Slipning till fast sittande underlag
+I- och påspackling
+1 ggr grundning - Färgtyp - Alcro - vslip
+2 ggr strykning – Färgtyp - Alcro Vmill
+
+<strong>Fönsterfoder</strong>
+Ingen åtgärd
+
+<strong>Övrigt</strong>`,
+
+    "utvandig": `Arbetsbeskrivning fönster, utvändig renovering – Engwall & Claesson
+
+<strong>Arbetsbeskrivning utvändigt</strong>
+<strong>Fönsterkarm:</strong>
+Tvättning
+Skrapning och slipning till fast sittande underlag
+Färgkanter slipas ner
+Demontering gamla beslag, spikar etc
+Demontering gammal tätningslist
+Montering ny tätningslist
+Uppskrapning fönsterbleck, slipning till fast sittande underlag
+1 ggr grundning av trären yta - Färgtyp – Engwall & Claesson Linoljefärg.
+Kant mellan fönsterbleck och karm fogas tätt, samt hål och sprickor
+2 ggr strykning - Färgtyp – Engwall & Claesson Linoljefärg
+
+<strong>Fönsterbågar:</strong>
+
+<strong>Ytterbåge</strong>
+Hel rengöring till trären yta av yttersida samt 4 kanter
+Hel kittborttagning
+Kittning - Linoljekitt
+1 ggr grundning - Färgtyp – Engwall & Claesson Linoljefärg
+2 ggr strykning - Färgtyp – Engwall & Claesson Linoljefärg
+
+<strong>Innerbågens fyra kanter</strong>
+Skrapning och slipning till fast sittande underlag
+1 ggr grundning - Färgtyp – Engwall & Claesson Linoljefärg
+2 ggr strykning - Färgtyp – Engwall & Claesson Linoljefärg
+
+<strong>Mellansidor:</strong>
+<strong>Ytterbågens mellansida</strong>
+Skrapning och slipning till fast sittande underlag
+Toppförsegling
+1 ggr grundning - Färgtyp - Alcro Bestå utsikt
+2 ggr strykning - Färgtyp - Alcro Bestå utsikt
+
+<strong>Innerbågens mellansida</strong>
+Skrapning och slipning till fast sittande underlag
+1 ggr grundning - Färgtyp - Alcro
+2 ggr strykning – Färgtyp - Alcro Bestå utsikt
+
+<strong>Invändigt karm:</strong>
+Ingen åtgärd
+
+<strong>Invändigt fönsterbågar</strong>
+Ingen åtgärd
+
+<strong>Fönsterfoder</strong>
+Ingen åtgärd
+
+<strong>Övrigt</strong>`,
+
+    "utv_plus_innermal": `Arbetsbeskrivning fönster, utvändig renovering + innerbågens insida – Engwall & Claesson
+
+<strong>Arbetsbeskrivning utvändigt</strong>
+<strong>Fönsterkarm:</strong>
+Tvättning
+Skrapning och slipning till fast sittande underlag
+Färgkanter slipas ner
+Demontering gamla beslag, spikar etc
+Demontering gammal tätningslist
+Montering ny tätningslist
+Uppskrapning fönsterbleck, slipning till fast sittande underlag
+1 ggr grundning av trären yta - Färgtyp – Engwall & Claesson Linoljefärg.
+Kant mellan fönsterbleck och karm fogas tätt, samt hål och sprickor
+2 ggr strykning - Färgtyp – Engwall & Claesson Linoljefärg
+
+<strong>Fönsterbågar:</strong>
+
+<strong>Ytterbåge</strong>
+Hel rengöring till trären yta av yttersida samt 4 kanter
+Hel kittborttagning
+Kittning - Linoljekitt
+1 ggr grundning - Färgtyp – Engwall & Claesson Linoljefärg
+2 ggr strykning - Färgtyp – Engwall & Claesson Linoljefärg
+
+<strong>Innerbågens fyra kanter</strong>
+Skrapning och slipning till fast sittande underlag
+1 ggr grundning - Färgtyp – Engwall & Claesson Linoljefärg
+2 ggr strykning - Färgtyp – Engwall & Claesson Linoljefärg
+
+<strong>Mellansidor:</strong>
+<strong>Ytterbågens mellansida</strong>
+Skrapning och slipning till fast sittande underlag
+Toppförsegling
+1 ggr grundning - Färgtyp - Alcro Bestå utsikt
+2 ggr strykning - Färgtyp - Alcro Bestå utsikt
+
+<strong>Innerbågens mellansida</strong>
+Skrapning och slipning till fast sittande underlag
+1 ggr grundning - Färgtyp - Alcro
+2 ggr strykning – Färgtyp - Alcro Bestå utsikt
+
+<strong>Invändigt karm:</strong>
+Ingen åtgärd
+
+<strong>Invändigt fönsterbågar</strong>
+Slipning till fast sittande underlag
+I- och påspackling
+1 ggr grundning - Färgtyp - Alcro - vslip
+2 ggr strykning – Färgtyp - Alcro Vmill
+
+<strong>Fönsterfoder</strong>
+Ingen åtgärd
+
+<strong>Övrigt</strong>`
+  }
+};
+
 // Hårdkodade standardpriser (nuvarande priser som fallback)
 const DEFAULT_PRICES = {
     // Fönster och Dörrar (kr)
@@ -135,7 +468,7 @@ const DEFAULT_PRICES = {
     pardorr_balong_altan: 9000,
     kallare_glugg: 3500,
     flak_bas: 6000,
-    
+
     // Luftare-priser (kr)
     luftare_1_pris: 4000,
     luftare_2_pris: 5500,
@@ -143,7 +476,7 @@ const DEFAULT_PRICES = {
     luftare_4_pris: 11000,
     luftare_5_pris: 13750,
     luftare_6_pris: 16500,
-    
+
     // Renoveringstyper (multiplikatorer)
     renov_modern_alcro_mult: 1.00,
     renov_trad_linolja_mult: 1.15,
@@ -559,7 +892,18 @@ class QuoteCalculator {
         this.gdprModal = document.getElementById('gdpr-modal');
         this.gdprModalClose = document.getElementById('gdpr-modal-close');
         this.gdprModalOk = document.getElementById('gdpr-modal-ok');
-        
+
+        // PDF cache för snabbare delning
+        this._pdfCache = { offerBlob: null, workBlob: null, ts: 0 };
+
+        // Diagnostik för Web Share API
+        console.log('isSecureContext:', isSecureContext);
+        console.log('navigator.share:', !!navigator.share);
+        try {
+            const can = navigator.canShare ? navigator.canShare({ files: [new File([new Blob(['x'])], 'x.txt', { type: 'text/plain' })] }) : false;
+            console.log('navigator.canShare(files):', !!can);
+        } catch (e) { console.log('navigator.canShare(files) threw:', e); }
+
         console.log('CONFIG object:', CONFIG);
         
         // Kontrollera att DOM är redo för QuoteCalculator
@@ -726,6 +1070,37 @@ class QuoteCalculator {
                 }
             });
         }
+
+        // Offert tab event listeners
+        const refreshBtn = document.getElementById('refresh-offer');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', async () => {
+                this.updatePriceCalculation();
+                this.renderOfferPreview();
+                await this.getOrBuildPdfs(true); // bygg om PDF:er efter ändringar
+            });
+        }
+
+        const sendBtn = document.getElementById('send-offer');
+        if (sendBtn) {
+            sendBtn.addEventListener('click', async () => {
+                try {
+                    await this.shareOrDownloadPdfs();
+                } catch (err) {
+                    console.error('Delning misslyckades:', err);
+                    alert('Kunde inte skapa eller dela PDF. Vi försöker ladda ned filerna istället.');
+                    // Sista utväg – tvinga fram nedladdning även om shareOrDownloadPdfs redan försökt
+                    try {
+                        const { offerBlob, workBlob } = await this.getOrBuildPdfs(true);
+                        [{ blob: offerBlob, name: 'Anbud.pdf' }, { blob: workBlob, name: 'Arbetsbeskrivning.pdf' }].forEach(({ blob, name }) => {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a'); a.href = url; a.download = name; a.click();
+                            setTimeout(() => URL.revokeObjectURL(url), 10000);
+                        });
+                    } catch (_) { }
+                }
+            });
+        }
     }
     
     initializeFastighetsbeteckningAutoFill() {
@@ -873,11 +1248,19 @@ class QuoteCalculator {
                 e.preventDefault();
                 const targetTab = button.getAttribute('data-tab');
                 this.switchTab(targetTab);
-                
+
                 // Copy customer data and update work description when switching to arbetsbeskrivning
                 if (targetTab === 'arbetsbeskrivning') {
                     this.copyCustomerData();
                     this.updateWorkDescription();
+                }
+
+                // Render offer preview when switching to offert tab
+                if (targetTab === 'offert') {
+                    this.updatePriceCalculation();
+                    this.renderOfferPreview();
+                    // Förvärm cache – snabbar upp delningen
+                    this.getOrBuildPdfs(true).catch(() => {});
                 }
             });
         });
@@ -1027,184 +1410,111 @@ class QuoteCalculator {
                 this.updateWorkDescription();
             });
         }
-        
-        // Listen to arbetsbeskrivning radio button changes
-        const arbetsbeskrivningRadios = document.querySelectorAll('input[name="arbetsbeskrivning"]');
-        arbetsbeskrivningRadios.forEach(radio => {
-            radio.addEventListener('change', () => {
-                this.updateWorkDescription();
-            });
-        });
+
+        // Note: Arbetsbeskrivning is now per-parti, so updates are handled
+        // in setupPartiEventListeners() when workDesc field changes
     }
     
     updateWorkDescription() {
         console.log('🔄 Updating automatic work description...');
-        
+
         const workDescriptionContainer = document.getElementById('generated-work-description');
-        
+
         if (!workDescriptionContainer) {
             console.error('Work description container not found');
             return;
         }
-        
-        // Get current selections from anbud tab
+
+        // Get renovation type from anbud tab
         const renovationType = this.form.querySelector('select[name="typ_av_renovering"]')?.value || '';
-        const workDescription = this.form.querySelector('input[name="arbetsbeskrivning"]:checked')?.value || '';
-        
-        console.log('Current selections:', { renovationType, workDescription });
-        
-        if (!renovationType || !workDescription) {
+
+        // Get work descriptions from all partis
+        const partiWorkDescs = partisState.partis.map(p => ({
+            id: p.id,
+            type: p.partiType,
+            workDesc: p.workDesc
+        })).filter(p => p.workDesc); // Only partis with workDesc set
+
+        console.log('Current selections:', { renovationType, partiWorkDescs });
+
+        if (!renovationType || partiWorkDescs.length === 0) {
             workDescriptionContainer.innerHTML = `
                 <div class="info-message">
                     <p>Arbetsbeskrivningen genereras automatiskt baserat på dina val från Anbud-fliken.</p>
-                    <p>Gå till Anbud-fliken och välj renoveringstyp och arbetsbeskrivning för att se den detaljerade beskrivningen.</p>
+                    <p>Gå till Anbud-fliken, välj renoveringstyp och konfigurera dina partier med arbetsbeskrivning för att se den detaljerade beskrivningen.</p>
                 </div>
             `;
             return;
         }
-        
-        // Generate work description based on selections
-        const generatedDescription = this.generateWorkDescription(renovationType, workDescription);
-        
-        workDescriptionContainer.innerHTML = `
-            <div class="selected-options">
-                <h4>Valda alternativ:</h4>
-                <p><strong>Renoveringstyp:</strong> ${renovationType}</p>
-                <p><strong>Arbetsbeskrivning:</strong> ${workDescription}</p>
-            </div>
-            <div class="work-description-text">
-                ${generatedDescription}
-            </div>
-        `;
-        
+
+        // Check if all partis have the same work description
+        const allSame = partiWorkDescs.every(p => p.workDesc === partiWorkDescs[0].workDesc);
+
+        let html = '';
+
+        if (allSame) {
+            // All partis have same work description - show ONE text
+            const generatedDescription = this.generateWorkDescription(renovationType, partiWorkDescs[0].workDesc);
+
+            // Get the label for the work description
+            const workDescLabel = WORK_DESC.find(wd => wd.value === partiWorkDescs[0].workDesc)?.label || partiWorkDescs[0].workDesc;
+
+            html = `
+                <div class="selected-options">
+                    <h4>Valda alternativ:</h4>
+                    <p><strong>Renoveringstyp:</strong> ${renovationType}</p>
+                    <p><strong>Arbetsbeskrivning:</strong> ${workDescLabel}</p>
+                    <p><strong>Gäller för:</strong> Alla ${partiWorkDescs.length} ${partiWorkDescs.length === 1 ? 'parti' : 'partier'}</p>
+                </div>
+                <div class="work-description-text">
+                    <pre style="white-space: pre-wrap; font-family: inherit;">${generatedDescription}</pre>
+                </div>
+            `;
+        } else {
+            // Different work descriptions - show ALL texts grouped by parti
+            html = `
+                <div class="selected-options">
+                    <h4>Valda alternativ:</h4>
+                    <p><strong>Renoveringstyp:</strong> ${renovationType}</p>
+                    <p><strong>Arbetsbeskrivningar per parti:</strong></p>
+                </div>
+            `;
+
+            partiWorkDescs.forEach(p => {
+                const generatedDescription = this.generateWorkDescription(renovationType, p.workDesc);
+                const partiTypeLabel = PARTI_TYPES.find(pt => pt.value === p.type)?.label || p.type;
+                const workDescLabel = WORK_DESC.find(wd => wd.value === p.workDesc)?.label || p.workDesc;
+                html += `
+                    <div class="work-description-parti-section">
+                        <h4 style="color: #c8b896; margin-top: 1.5rem;">Parti ${p.id} (${partiTypeLabel})</h4>
+                        <p><strong>Arbetsbeskrivning:</strong> ${workDescLabel}</p>
+                        <div class="work-description-text">
+                            <pre style="white-space: pre-wrap; font-family: inherit;">${generatedDescription}</pre>
+                        </div>
+                        <hr style="border: 1px solid #ddd; margin: 1.5rem 0;">
+                    </div>
+                `;
+            });
+        }
+
+        workDescriptionContainer.innerHTML = html;
         console.log('✅ Work description updated');
     }
     
     generateWorkDescription(renovationType, workDescription) {
         console.log('🎯 Generating work description for:', { renovationType, workDescription });
-        
-        let description = '';
-        
-        // Traditionell Linoljebehandling + Utvändig renovering
-        if (renovationType === 'Traditionell - Linoljebehandling' && workDescription === 'Utvändig renovering') {
-            description = `
-                <h4>Traditionell Linoljebehandling - Utvändigt</h4>
-                
-                <div class="work-section">
-                    <h5>Fönsterkarm:</h5>
-                    <ul>
-                        <li>Tvättning och rengöring av befintlig yta</li>
-                        <li>Uppskrapning och slipning till fast sittande underlag</li>
-                        <li>Färgkanter slipas ner för jämn övergång</li>
-                        <li>Demontering av gamla beslag, spikar och metalldelar</li>
-                        <li>Demontering av gammal tätningslist</li>
-                        <li>Montering av ny tätningslist för optimal tätning</li>
-                        <li>Uppskrapning av fönsterbleck, slipning till fast sittande underlag</li>
-                        <li>1 gång grundning av trä med Engwall & Claesson Linoljefärg</li>
-                        <li>Fogning mellan fönsterbleck och karm samt hål och sprickor</li>
-                        <li>2 gånger strykning med Engwall & Claesson Linoljefärg</li>
-                    </ul>
-                </div>
-                
-                <div class="work-section">
-                    <h5>Ytterbåge fönster:</h5>
-                    <ul>
-                        <li>Hel rengöring till träytan av yttersida samt fyra kanter</li>
-                        <li>Hel kittborttagning från glaspartier</li>
-                        <li>Ny kittning med linoljekitt för långvarig tätning</li>
-                        <li>1 gång grundning med Engwall & Claesson Linoljefärg</li>
-                        <li>2 gånger strykning med Engwall & Claesson Linoljefärg</li>
-                    </ul>
-                </div>
-                
-                <div class="work-section">
-                    <h5>Innerbågens fyra kanter:</h5>
-                    <ul>
-                        <li>Skrapning och slipning till fast sittande underlag</li>
-                        <li>1 gång grundning med Engwall & Claesson Linoljefärg</li>
-                        <li>2 gånger strykning med Engwall & Claesson Linoljefärg</li>
-                    </ul>
-                </div>
-            `;
+
+        const sysMap = WORK_DESCRIPTIONS[renovationType] || null;
+        if (!sysMap) {
+            return '<em>Arbetsbeskrivning saknas för vald renoveringstyp.</em>';
         }
-        // Modern - Alcro bestå (alla varianter)
-        else if (renovationType === 'Modern - Alcro bestå') {
-            description = `
-                <h4>Modern Renovering - Alcro Bestå</h4>
-                
-                <div class="work-section">
-                    <h5>Fönsterkarm:</h5>
-                    <ul>
-                        <li>Tvättning och rengöring av befintlig yta</li>
-                        <li>Uppskrapning och slipning till fast sittande underlag</li>
-                        <li>Färgkanter slipas ner för jämn övergång</li>
-                        <li>Demontering av gamla beslag och tätningslist</li>
-                        <li>Montering av ny tätningslist</li>
-                        <li>Uppskrapning av fönsterbleck</li>
-                        <li>1 gång grundning med Alcro primer</li>
-                        <li>Fogning mellan bleck och karm</li>
-                        <li>2 gånger strykning med Alcro Bestå Utsikt</li>
-                    </ul>
-                </div>
-                
-                <div class="work-section">
-                    <h5>Ytterbåge fönster:</h5>
-                    <ul>
-                        <li>Rengöring och förberedelser</li>
-                        <li>Komplettering av befintlig kittning vid behov</li>
-                        <li>Ny kittning med LASeal för modern finish</li>
-                        <li>1 gång grundning med Alcro primer</li>
-                        <li>2 gånger strykning med Alcro Bestå</li>
-                    </ul>
-                </div>
-                
-                <div class="work-section">
-                    <h5>Innerbågens kanter:</h5>
-                    <ul>
-                        <li>Skrapning och slipning till fast underlag</li>
-                        <li>1 gång grundning med Alcro primer</li>
-                        <li>2 gånger strykning med Alcro Bestå</li>
-                    </ul>
-                </div>
-            `;
+
+        const text = sysMap[workDescription];
+        if (!text || !text.trim()) {
+            return '<em>Arbetsbeskrivning saknas för vald omfattning.</em>';
         }
-        
-        // Lägg till invändig renovering om valt
-        if (workDescription === 'Invändig renovering' || workDescription === 'Utvändig renovering samt målning av innerbågens insida') {
-            description += `
-                <div class="work-section">
-                    <h4>Invändig Renovering:</h4>
-                    
-                    <h5>Invändig karm:</h5>
-                    <ul>
-                        <li>Skrapning och slipning till fast sittande underlag</li>
-                        <li>I- och påspackling av ojämnheter</li>
-                        <li>1 gång grundning med Alcro Vslip</li>
-                        <li>1-2 gånger strykning med Alcro Vmill</li>
-                    </ul>
-                    
-                    <h5>Invändiga fönsterbågar:</h5>
-                    <ul>
-                        <li>Skrapning och slipning till fast sittande underlag</li>
-                        <li>Pågrundning av träytan för bättre vidhäftning</li>
-                        <li>I- och påspackling för jämn yta</li>
-                        <li>1 gång grundning med Alcro Vslip</li>
-                        <li>1 gång strykning med Alcro Vmill</li>
-                    </ul>
-                </div>
-            `;
-        }
-        
-        if (!description) {
-            description = `
-                <div class="info-message">
-                    <p>Ingen arbetsbeskrivning tillgänglig för denna kombination.</p>
-                    <p>Kontakta Sternbecks Måleri för mer information om ditt specifika projekt.</p>
-                </div>
-            `;
-        }
-        
-        return description;
+
+        return text;
     }
     
     testBasicCalculation() {
@@ -1585,7 +1895,70 @@ class QuoteCalculator {
         
         console.log('=== PRICE CALCULATION COMPLETE ===');
     }
-    
+
+    getCalculatedPriceData() {
+        // Samla in alla värden
+        const data = this.collectPricingData();
+
+        // Summera individuella partier
+        const partierTotalCost = partisState.partis.reduce((sum, parti) => {
+            return sum + (parti.pris || 0);
+        }, 0);
+
+        // E-glas (inte parti-specifik)
+        const extrasCost = this.calculateExtrasCost(data);
+
+        // Beräkna prisjusteringar
+        const priceAdjustment = data.priceAdjustmentPlus - data.priceAdjustmentMinus;
+
+        // Applicera renoveringstyp-pålägg
+        const renovationTypeMultiplier = CONFIG.RENOVATION_TYPE_MULTIPLIERS[data.renovationType] || 1.0;
+        const renovationAdjustedTotal = (partierTotalCost + extrasCost + priceAdjustment) * renovationTypeMultiplier;
+
+        // Beräkna summa utan materialkostnad
+        const subtotalBeforeMaterial = renovationAdjustedTotal;
+
+        // Beräkna arbetsbeskrivning-pålägg
+        const workDescriptionMarkup = this.calculateWorkDescriptionMarkup(data, subtotalBeforeMaterial, priceAdjustment, 0);
+
+        // Total summa exklusive moms
+        const subtotalExclVat = subtotalBeforeMaterial + workDescriptionMarkup;
+
+        // Moms
+        const vatCost = subtotalExclVat * CONFIG.EXTRAS.VAT_RATE;
+
+        // Total inklusive moms
+        const totalInclVat = subtotalExclVat + vatCost;
+
+        // Materialkostnad för ROT-beräkning
+        const materialCostForRot = totalInclVat * (data.materialPercentage / 100);
+
+        // Arbetskostnad för ROT-beräkning
+        const workCostForRot = totalInclVat - materialCostForRot;
+
+        // ROT-avdrag beräkning med maxbelopp
+        let rotDeduction = 0;
+        if (data.hasRotDeduction) {
+            const calculatedRotDeduction = workCostForRot * CONFIG.EXTRAS.ROT_DEDUCTION;
+            const maxRotAmount = data.isSharedRotDeduction ? 100000 : 50000;
+            rotDeduction = Math.min(calculatedRotDeduction, maxRotAmount);
+        }
+
+        // Slutligt kundpris
+        const finalCustomerPrice = totalInclVat - rotDeduction;
+
+        return {
+            total_excl_vat: subtotalExclVat,
+            vat_amount: vatCost,
+            total_incl_vat: totalInclVat,
+            rot_applicable: data.hasRotDeduction,
+            rot_property_eligible: data.hasRotDeduction,
+            rot_customer_eligible: data.hasRotDeduction,
+            rot_deduction: rotDeduction,
+            customer_pays: finalCustomerPrice
+        };
+    }
+
     collectPricingData() {
         // Hjälpfunktion för att hämta numeriska värden säkert
         const getNumericValue = (id) => {
@@ -2282,6 +2655,37 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
             anbudsNummer: `SB-${Date.now()}`,
             källa: 'Sternbecks Anbudsapp'
         };
+
+        // Add work description text to payload
+        const selectedRenovationType = this.form.querySelector('select[name="typ_av_renovering"]')?.value || '';
+        const partiWorkDescs = partisState.partis.map(p => ({
+            id: p.id,
+            type: p.partiType,
+            workDesc: p.workDesc
+        })).filter(p => p.workDesc);
+
+        if (selectedRenovationType && partiWorkDescs.length > 0) {
+            webhookData.selectedRenovationType = selectedRenovationType;
+
+            // Check if all partis have same work description
+            const allSame = partiWorkDescs.every(p => p.workDesc === partiWorkDescs[0].workDesc);
+
+            if (allSame) {
+                // Single work description for all partis
+                webhookData.selectedWorkDescriptionScope = partiWorkDescs[0].workDesc;
+                webhookData.workDescriptionText = this.generateWorkDescription(selectedRenovationType, partiWorkDescs[0].workDesc);
+            } else {
+                // Multiple work descriptions - combine them
+                webhookData.selectedWorkDescriptionScope = 'Varierar per parti';
+                let combinedText = '';
+                partiWorkDescs.forEach(p => {
+                    const text = this.generateWorkDescription(selectedRenovationType, p.workDesc);
+                    const partiTypeLabel = PARTI_TYPES.find(pt => pt.value === p.type)?.label || p.type;
+                    combinedText += `\n\n=== Parti ${p.id} (${partiTypeLabel}) - ${p.workDesc} ===\n${text}`;
+                });
+                webhookData.workDescriptionText = combinedText;
+            }
+        }
 
         console.log('📊 Skickar anbudsdata till Netlify function...');
         console.log('💰 Beräknade priser:', {
@@ -3060,15 +3464,20 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                         
                         // Uppdatera pris och rendera endast pris-displayen
                         parti.pris = this.computePris(parti);
-                        
+
                         // Uppdatera endast prisvisning för detta parti istället för full re-render
                         const priceDisplay = document.querySelector(`.parti-section:nth-child(${partiId}) .price-display-inline strong`);
                         if (priceDisplay) {
                             priceDisplay.textContent = this.formatSEK(parti.pris || 0);
                         }
-                        
+
                         this.syncLegacyFields();
                         this.updatePriceCalculation();
+
+                        // Update work description if workDesc changed
+                        if (field === 'workDesc') {
+                            this.updateWorkDescription();
+                        }
                     }
                 }
             }
@@ -3174,6 +3583,505 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         this.updatePriceCalculation();
 
         console.log('🔄 KLAR - Föregående kopierat in i nuvarande parti:', JSON.stringify(target, null, 2));
+    }
+
+    /* ============================================
+       OFFERT TAB METHODS
+       ============================================ */
+
+    // Robust nummer-cast: "12 345 kr", "12,34", null → 12345.00 eller 0
+    toNumber(x) {
+        if (x == null) return 0;
+        if (typeof x === 'number' && isFinite(x)) return x;
+        const s = String(x).replace(/\s+/g, '').replace(/kr/gi, '').replace(/,/g, '.').replace(/[^\d.-]/g, '');
+        const n = parseFloat(s);
+        return isFinite(n) ? n : 0;
+    }
+
+    // Hämtar slutpriset "KUNDEN BETALAR" (inkl. moms, efter ROT-avdrag om tillämpligt)
+    getFinalCustomerPrice() {
+        try {
+            const data = this.collectPricingData();
+
+            // 1. Beräkna alla kostnadskomponenter
+            const baseComponentsPrice = this.calculateBaseComponents(data);
+            const renovationTypeCost = this.calculateRenovationTypeCost(data, baseComponentsPrice);
+            const windowTypeCost = this.calculateWindowTypeCost(data, baseComponentsPrice);
+            const extrasCost = this.calculateExtrasCost(data);
+            const subtotalBeforeMaterial = baseComponentsPrice + renovationTypeCost + windowTypeCost + extrasCost;
+            const workDescriptionMarkup = this.calculateWorkDescriptionMarkup(data, subtotalBeforeMaterial, 0, 0);
+            const subtotalExclVat = subtotalBeforeMaterial + workDescriptionMarkup;
+
+            // 2. Lägg till moms
+            const vatCost = subtotalExclVat * CONFIG.EXTRAS.VAT_RATE;
+            const totalInclVat = subtotalExclVat + vatCost;
+
+            // 3. Beräkna ROT-avdrag om tillämpligt
+            let rotDeduction = 0;
+            if (data.hasRotDeduction) {
+                const materialCostForRot = totalInclVat * (data.materialPercentage / 100);
+                const workCostForRot = totalInclVat - materialCostForRot;
+                const calculatedRotDeduction = workCostForRot * CONFIG.EXTRAS.ROT_DEDUCTION;
+                const maxRotAmount = data.isSharedRotDeduction ? 100000 : 50000;
+                rotDeduction = Math.min(calculatedRotDeduction, maxRotAmount);
+            }
+
+            // 4. Slutpris efter ROT-avdrag
+            const finalCustomerPrice = totalInclVat - rotDeduction;
+
+            return finalCustomerPrice;
+        } catch (error) {
+            console.error('[getFinalCustomerPrice] Error:', error);
+            return 0;
+        }
+    }
+
+    // --- Hämtar kundfält från formuläret
+    getCustomerFields() {
+        const v = id => document.getElementById(id)?.value?.trim() || '';
+        return {
+            company: v('company'),
+            contact: v('contact_person'),
+            address: v('address'),
+            postal: v('postal_code'),
+            city: v('city'),
+            email: v('email'),
+            phone: v('phone'),
+            fastighet: v('fastighetsbeteckning'),
+            personnummer: v('personnummer')
+        };
+    }
+
+    // --- Räknar antal fönster- och dörrpartier om data finns
+    getPartCounts() {
+        const partis = (window.partisState?.partis || []);
+        const isWindow = p => (p.partiType || '').toString().toLowerCase() === 'fonster';
+        const isDoor = p => ['dorr', 'pardorr_balkong'].includes((p.partiType || '').toString().toLowerCase());
+
+        const windows = partis.filter(isWindow).length || null;
+        const doors = partis.filter(isDoor).length || null;
+        return { windows, doors };
+    }
+
+    getSubtotalExclVat() {
+        // Se till att ev. interna state är uppdaterat
+        try { this.updatePriceCalculation?.(); } catch (_) { }
+
+        // Data från befintliga helpers om de finns
+        let data = {};
+        try { data = this.collectPricingData?.() || {}; } catch (_) { }
+
+        // 1) Summa partier
+        const partis = (window.partisState?.partis || []);
+        const partierTotal = partis.reduce((sum, p) => {
+            // p.pris kan vara sträng
+            return sum + this.toNumber(p.pris);
+        }, 0);
+
+        // 2) Extras (om funktion saknas → 0)
+        let extras = 0;
+        try { extras = this.toNumber(this.calculateExtrasCost?.(data)); } catch (_) { }
+
+        // 3) Manuella justeringar
+        const plus = this.toNumber(data?.priceAdjustmentPlus);
+        const minus = this.toNumber(data?.priceAdjustmentMinus);
+        const adjustment = plus - minus;
+
+        // 4) Multiplikator för system (om satt)
+        const rt = data?.renovationType || data?.renovationTypeSelected || '';
+        const mult = this.toNumber((window.CONFIG?.RENOVATION_TYPE_MULTIPLIERS || {})[rt] || 1);
+
+        // 5) Arbetsbeskrivningspåslag (om funktion saknas → 0)
+        let wdMarkup = 0;
+        try {
+            wdMarkup = this.toNumber(
+                this.calculateWorkDescriptionMarkup?.(data, partierTotal + extras + adjustment, adjustment, 0)
+            );
+        } catch (_) { }
+
+        const subtotal = (partierTotal + extras + adjustment) * (mult || 1) + wdMarkup;
+
+        // Rimlighetslåsning
+        if (!isFinite(subtotal) || subtotal < 0) return 0;
+        return subtotal;
+    }
+
+    generateOfferHTML() {
+        const c = this.getCustomerFields?.() || {};
+
+        // Hämta slutpris (samma som "KUNDEN BETALAR" i Anbud-fliken)
+        const finalPrice = this.getFinalCustomerPrice();
+        const prisText = `PRIS: ${this.formatPrice(finalPrice).replace(/\s*kr/i, '')} KR INKLUSIVE MOMS`;
+
+        const today = new Date();
+        const dateStr = today.toLocaleDateString('sv-SE');
+        const ortForDate = (c.city || 'Ludvika');
+
+        // Kontrollera GDPR-godkännande
+        const gdprConsent = document.getElementById('gdpr-consent')?.checked;
+        const gdprText = gdprConsent ? '<p class="offer-gdpr"><em>Kund har godkänt behandling av personuppgifter enligt GDPR.</em></p>' : '';
+
+        // Bygg mottagarblock med alla kunduppgifter (varje rad i egen div)
+        const mottagareLines = [];
+        if (c.company) mottagareLines.push(`<div>${c.company}</div>`);
+        if (c.contact) mottagareLines.push(`<div>${c.contact}</div>`);
+        if (c.personnummer) mottagareLines.push(`<div>Personnummer: ${c.personnummer}</div>`);
+        if (c.address) mottagareLines.push(`<div>${c.address}</div>`);
+        if (c.postal || c.city) mottagareLines.push(`<div>${[c.postal, c.city].filter(Boolean).join(' ')}</div>`);
+        if (c.fastighet) mottagareLines.push(`<div>Fastighetsbeteckning: ${c.fastighet}</div>`);
+        if (c.phone) mottagareLines.push(`<div>Telefon: ${c.phone}</div>`);
+        if (c.email) mottagareLines.push(`<div>E-post: ${c.email}</div>`);
+
+        const mottagareBlock = mottagareLines.join('');
+
+        // Antal-rader om vi kan läsa dem
+        let antalWindows = '', antalDoors = '';
+        try {
+            const partis = (window.partisState?.partis || []);
+            const windows = partis.filter(p => String(p.typ || p.type || '').toLowerCase().includes('fönster')).length;
+            const doors = partis.filter(p => String(p.typ || p.type || '').toLowerCase().includes('dörr')).length;
+            if (windows) antalWindows = `Antal fönsterpartier: ${windows} st`;
+            if (doors) antalDoors = `Antal dörrpartier: ${doors} st`;
+        } catch (_) { }
+
+        // Adress i ingressen
+        const adr = [c.address, c.city].filter(Boolean).join(', ');
+
+        return `
+    <div class="offer offer--locked">
+      <h2 class="offer-company-title">Sternbecks Fönsterhantverk i Dalarna AB</h2>
+
+      ${mottagareBlock ? `<div class="offer-recipient">${mottagareBlock}</div>` : ''}
+
+      <h3 class="offer-title">ANBUD</h3>
+
+      <p>Vi ber att få tacka för förfrågan och skickar härmed offert på utvändig renovering och målning av fönsterpartier${adr ? ' på ' + adr : ''}.</p>
+
+      <p>
+        ${antalWindows ? antalWindows + '<br/>' : ''}
+        ${antalDoors ? antalDoors + '<br/>' : ''}
+        Anbudet omfattar pris enligt bifogad arbetsbeskrivning.<br/>
+        Byten av rötskadat trä, trasigt glas, trasiga beslag ingår ej i anbudssumman. Regleras med timtid och materialkostnad.
+      </p>
+
+      <p class="offer-price">${prisText}</p>
+
+      <p>I anbudet ingår material och transporter.</p>
+
+      <p><strong>För anbudet gäller:</strong><br/>
+        1. Vi ansvarar för rengöring av fönsterglas efter renovering. Ej fönsterputs.<br/>
+        2. Miljö- och kvalitetsansvarig: Johan Sternbeck<br/>
+        3. Entreprenörens ombud: Johan Sternbeck<br/>
+        4. Timtid vid tillkommande arbeten debiteras med 625 kr inkl moms.
+      </p>
+
+      <p>Vi förutsätter fritt tillträde till fönsterpartierna så att arbetet kan utföras rationellt.</p>
+
+      ${gdprText}
+
+      <div class="offer-sign">
+        <div>${ortForDate} ${dateStr}</div>
+        <div>Johan Sternbeck</div>
+        <div>Sternbecks Fönsterhantverk i Dalarna AB</div>
+        <div>Lavendelstigen 7</div>
+        <div>77143 Ludvika</div>
+        <div>Org.nr 559389-0717</div>
+        <div>Tel.nr Johan Sternbeck 076-846 52 79 - Företaget innehar F-skatt</div>
+      </div>
+    </div>
+  `.trim();
+    }
+
+    generateOfferTextFromHTML(html) {
+        // Konvertera HTML till ren text för PDF
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        // Ta bort info-message om den finns
+        const infoMsg = tempDiv.querySelector('.info-message');
+        if (infoMsg) return '';
+
+        // Hitta offer-containern (antingen .offer-content eller .offer--locked)
+        const content = tempDiv.querySelector('.offer-content, .offer--locked, .offer');
+        if (!content) return '';
+
+        // Extrahera text från alla element
+        let text = content.textContent || content.innerText || '';
+
+        // Rensa upp mellanslag och radbrytningar
+        text = text
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .join('\n');
+
+        return text.trim();
+    }
+
+    renderOfferPreview() {
+        console.log('🔍 renderOfferPreview called');
+        const previewEl = document.getElementById('offer-preview');
+        if (!previewEl) {
+            console.error('❌ offer-preview element not found!');
+            return;
+        }
+
+        const html = this.generateOfferHTML();
+        console.log('✅ Generated HTML length:', html.length);
+        previewEl.innerHTML = html;
+    }
+
+    async getOrBuildPdfs(force = false) {
+        const maxAgeMs = 60 * 1000; // bygg om efter 60s eller vid force
+        const fresh = this._pdfCache.offerBlob && this._pdfCache.workBlob && (Date.now() - this._pdfCache.ts < maxAgeMs);
+        if (fresh && !force) return this._pdfCache;
+
+        // Bygg nya blobbar
+        const [offerBlob, workBlob] = await Promise.all([
+            this.createOfferPdfBlob(),
+            this.createWorkDescriptionPdfBlob()
+        ]);
+        this._pdfCache = { offerBlob, workBlob, ts: Date.now() };
+        return this._pdfCache;
+    }
+
+    createOfferPdfBlob() {
+        return new Promise((resolve, reject) => {
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                const customerFields = this.getCustomerFields();
+                const offerHTML = this.generateOfferHTML();
+                const offerText = this.generateOfferTextFromHTML(offerHTML);
+
+                if (!offerText) {
+                    reject(new Error('Ingen offertdata att generera PDF från'));
+                    return;
+                }
+
+                // Header
+                doc.setFontSize(20);
+                doc.text('Offert', 20, 20);
+
+                doc.setFontSize(10);
+                doc.text('Sternbecks Måleri & Fönsterhantverk', 20, 30);
+                doc.text(new Date().toLocaleDateString('sv-SE'), 20, 35);
+
+                // Content
+                doc.setFontSize(11);
+                const lines = offerText.split('\n');
+                let y = 50;
+
+                lines.forEach(line => {
+                    if (y > 270) {
+                        doc.addPage();
+                        y = 20;
+                    }
+
+                    if (line.match(/^(Kund|Renovering|Partier|Prissättning|ROT-avdrag)$/)) {
+                        doc.setFontSize(14);
+                        doc.setFont(undefined, 'bold');
+                        doc.text(line, 20, y);
+                        y += 7;
+                        doc.setFontSize(11);
+                        doc.setFont(undefined, 'normal');
+                    } else if (line.trim()) {
+                        const wrapped = this._pdfMultiline(doc, line, 170);
+                        wrapped.forEach(wLine => {
+                            doc.text(wLine, 20, y);
+                            y += 6;
+                        });
+                    } else {
+                        y += 4;
+                    }
+                });
+
+                const blob = doc.output('blob');
+                resolve(blob);
+            } catch (error) {
+                console.error('Fel vid PDF-generering (Offert):', error);
+                reject(error);
+            }
+        });
+    }
+
+    createWorkDescriptionPdfBlob() {
+        return new Promise((resolve, reject) => {
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                const workDescEl = document.getElementById('generated-work-description');
+                if (!workDescEl) {
+                    reject(new Error('Ingen arbetsbeskrivning hittades'));
+                    return;
+                }
+
+                // Extrahera text från arbetsbeskrivning
+                let workText = workDescEl.innerText || workDescEl.textContent || '';
+
+                // Ta bort "Arbetsbeskrivningen genereras automatiskt..." meddelandet
+                workText = workText.replace(/Arbetsbeskrivningen genereras automatiskt.*?\n/g, '');
+
+                if (!workText.trim()) {
+                    reject(new Error('Arbetsbeskrivningen är tom'));
+                    return;
+                }
+
+                // Header
+                doc.setFontSize(20);
+                doc.text('Arbetsbeskrivning', 20, 20);
+
+                doc.setFontSize(10);
+                doc.text('Sternbecks Måleri & Fönsterhantverk', 20, 30);
+                doc.text(new Date().toLocaleDateString('sv-SE'), 20, 35);
+
+                // Content
+                doc.setFontSize(11);
+                const lines = workText.split('\n');
+                let y = 50;
+
+                lines.forEach(line => {
+                    if (y > 270) {
+                        doc.addPage();
+                        y = 20;
+                    }
+
+                    const trimmed = line.trim();
+                    if (trimmed) {
+                        const wrapped = this._pdfMultiline(doc, trimmed, 170);
+                        wrapped.forEach(wLine => {
+                            doc.text(wLine, 20, y);
+                            y += 6;
+                        });
+                    } else {
+                        y += 4;
+                    }
+                });
+
+                const blob = doc.output('blob');
+                resolve(blob);
+            } catch (error) {
+                console.error('Fel vid PDF-generering (Arbetsbeskrivning):', error);
+                reject(error);
+            }
+        });
+    }
+
+    _pdfMultiline(doc, text, maxWidth) {
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = '';
+
+        words.forEach(word => {
+            const testLine = currentLine + (currentLine ? ' ' : '') + word;
+            const width = doc.getTextWidth(testLine);
+
+            if (width > maxWidth && currentLine) {
+                lines.push(currentLine);
+                currentLine = word;
+            } else {
+                currentLine = testLine;
+            }
+        });
+
+        if (currentLine) lines.push(currentLine);
+        return lines;
+    }
+
+    async shareOrDownloadPdfs() {
+        try {
+            // 1) Bygg/cacha PDF:er snabbt inom user gesture
+            const { offerBlob, workBlob } = await this.getOrBuildPdfs(false);
+
+            // Validera att blobbarna inte är tomma
+            if (!offerBlob || offerBlob.size === 0) {
+                throw new Error('Offert-PDF är tom');
+            }
+            if (!workBlob || workBlob.size === 0) {
+                throw new Error('Arbetsbeskrivning-PDF är tom');
+            }
+
+            console.log('PDF sizes:', { offer: offerBlob.size, work: workBlob.size });
+
+            // 2) Filnamn enligt krav: "Anbud - adress - datum"
+            // Sanitera filnamn: ta bort ogiltiga tecken
+            const c = this.getCustomerFields();
+            const dateStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+            const sanitizeFilename = (str) => str.replace(/[<>:"/\\|?*]/g, '-').replace(/\s+/g, ' ').trim();
+            const base = sanitizeFilename(`${c.address || 'Okand-adress'} - ${dateStr}`);
+            const offerName = `Anbud - ${base}.pdf`;
+            const workName = `Arbetsbeskrivning - ${base}.pdf`;
+
+            const files = [
+                new File([offerBlob], offerName, { type: 'application/pdf', lastModified: Date.now() }),
+                new File([workBlob], workName, { type: 'application/pdf', lastModified: Date.now() })
+            ];
+
+            console.log('Files created:', files.map(f => ({ name: f.name, size: f.size })));
+
+            // 3) Share-text
+            const subject = `Anbud: ${c.address || ''} (${dateStr})`;
+            const text = [
+                `Hej ${c.company || ''},`,
+                ``,
+                `Här kommer anbud och arbetsbeskrivning för ${c.address || ''}.`,
+                `Återkom gärna vid frågor.`,
+                ``,
+                `Vänliga hälsningar,`,
+                `Sternbecks Fönsterhantverk`
+            ].join('\n');
+
+            // 4) Web Share API med filer (Level 2) - endast mobil
+            // Desktop browsers stödjer sällan file sharing ordentligt via Web Share API
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const canShareFiles = !!(isMobile && navigator.canShare && (() => {
+                try { return navigator.canShare({ files }); } catch { return false; }
+            })());
+
+            if (navigator.share && canShareFiles) {
+                console.log('Using Web Share API with files (mobile)');
+                try {
+                    await navigator.share({ files, title: subject, text });
+                    return; // klart
+                } catch (error) {
+                    console.warn('Web Share API failed, falling back to download:', error);
+                    // Fortsätt till fallback nedan
+                }
+            }
+
+            // 5) Fallback: ladda ned PDF:er direkt (fungerar på alla plattformar)
+            console.log('Fallback: direct download');
+
+            // Ladda ned båda PDF:erna
+            [{ blob: offerBlob, name: offerName }, { blob: workBlob, name: workName }].forEach(({ blob, name }) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            });
+
+            // Vänta lite så nedladdningarna startar innan mailto öppnas
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Öppna mailto för att användaren kan skicka mejl med bifogade filer manuellt
+            if (c.email) {
+                const mailto = `mailto:${encodeURIComponent(c.email)}`
+                    + `?subject=${encodeURIComponent(subject)}`
+                    + `&body=${encodeURIComponent(text + '\n\n(Bifoga de nedladdade PDF-filerna manuellt)')}`;
+                window.open(mailto, '_blank');
+            }
+
+            alert('PDF-filerna har laddats ned. Du kan nu bifoga dem manuellt i ditt e-postprogram.');
+        } catch (error) {
+            console.error('Error in shareOrDownloadPdfs:', error);
+            alert(`Fel vid delning: ${error.message}`);
+        }
     }
 }
 
@@ -3809,7 +4717,7 @@ class PasswordProtection {
             window.quoteCalculator = new QuoteCalculator();
             new AccessibilityEnhancer();
             new ThemeToggle();
-            
+
             console.log('Sternbecks Anbudsapplikation initialiserad framgångsrikt efter prisladdning.');
         }).catch(err => {
             console.error('Kunde inte ladda prislista:', err);
@@ -3817,6 +4725,7 @@ class PasswordProtection {
             window.quoteCalculator = new QuoteCalculator();
             new AccessibilityEnhancer();
             new ThemeToggle();
+
             console.log('Sternbecks Anbudsapplikation initialiserad med standardpriser efter felaktig prisladdning.');
         });
     }
@@ -4050,7 +4959,87 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-    
+
+    // Personnummer-formatering: 12 siffror → 10 siffror (YYMMDD-XXXX)
+    const personnummerInput = document.getElementById('personnummer');
+    if (personnummerInput) {
+        personnummerInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, ''); // Ta bort allt utom siffror
+
+            // Om 12 siffror (YYYYMMDDXXXX), ta bort de första 2 siffrorna
+            if (value.length === 12) {
+                value = value.substring(2);
+            }
+
+            // Formatera med bindestreck efter 6 siffror
+            if (value.length > 6) {
+                value = value.substring(0, 6) + '-' + value.substring(6, 10);
+            }
+
+            // Begränsa till 10 siffror + bindestreck
+            if (value.replace('-', '').length > 10) {
+                value = value.substring(0, 11); // YYMMDD-XXXX = 11 tecken
+            }
+
+            e.target.value = value;
+        });
+
+        // Validering vid blur
+        personnummerInput.addEventListener('blur', (e) => {
+            const value = e.target.value.replace(/\D/g, '');
+            const errorEl = document.getElementById('personnummer-error');
+
+            if (value && value.length !== 10) {
+                if (errorEl) errorEl.textContent = 'Personnummer måste vara 10 siffror';
+                e.target.classList.add('error');
+            } else {
+                if (errorEl) errorEl.textContent = '';
+                e.target.classList.remove('error');
+            }
+        });
+    }
+
+    // Setup tab navigation (kör med fördröjning för att säkerställa att DOM är redo)
+    setTimeout(() => {
+        console.log('🔧 Setting up tab navigation (delayed)...');
+
+        const goToArbetsbeskrivningBtn = document.getElementById('go-to-arbetsbeskrivning-btn');
+        const goToOffertBtn = document.getElementById('go-to-offert-btn');
+        const arbetsbeskrivningTabBtn = document.getElementById('arbetsbeskrivning');
+        const offertTabBtn = document.getElementById('offert');
+
+        console.log('Tab navigation elements:', {
+            goToArbetsbeskrivningBtn: !!goToArbetsbeskrivningBtn,
+            goToOffertBtn: !!goToOffertBtn,
+            arbetsbeskrivningTabBtn: !!arbetsbeskrivningTabBtn,
+            offertTabBtn: !!offertTabBtn
+        });
+
+        if (goToArbetsbeskrivningBtn && arbetsbeskrivningTabBtn) {
+            goToArbetsbeskrivningBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('✅ Navigating to Arbetsbeskrivning tab');
+                arbetsbeskrivningTabBtn.click();
+                setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+            });
+            console.log('✅ "Till arbetsbeskrivning" button setup complete');
+        } else {
+            console.error('❌ Could not setup "Till arbetsbeskrivning" button');
+        }
+
+        if (goToOffertBtn && offertTabBtn) {
+            goToOffertBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('✅ Navigating to Offert tab');
+                offertTabBtn.click();
+                setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+            });
+            console.log('✅ "Till offert" button setup complete');
+        } else {
+            console.error('❌ Could not setup "Till offert" button');
+        }
+    }, 1000);
+
     // Initialisera adminpanel
     window.adminPanelInstance = new AdminPanel();
 });
@@ -4530,7 +5519,7 @@ class AdminPanel {
         // 1. Google Apps Script deployment
         // 2. API-nycklar och autentisering
         // 3. Korrekt URL till deployed script
-        
+
         this.addLogEntry('Google Sheets API inte implementerad ännu', 'info');
     }
 }

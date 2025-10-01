@@ -2198,3 +2198,286 @@ body.dark .logs-container {
 body.dark .log-entry {
     color: var(--surface-light);
 }
+
+/* ============================================
+   OFFERT TAB STYLING
+   ============================================ */
+
+.offert-container {
+    width: 100%;
+}
+
+.offert-container .form-section {
+    padding: 0 8px;
+}
+
+.offert-container .form-section h3 {
+    margin-top: 8px;
+    margin-bottom: 24px;
+}
+
+.offert-container .info-text {
+    margin-bottom: 28px;
+    line-height: 1.6;
+}
+
+.offer-preview {
+    background: var(--white);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius);
+    padding: 24px 28px;
+    margin-top: var(--spacing-lg);
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+/* Desktop: mer utrymme i Offert-fliken */
+@media (min-width: 768px) {
+    .offert-container .form-section {
+        padding: 0 32px;
+    }
+
+    .offert-container .form-section h3 {
+        margin-top: 16px;
+        margin-bottom: 32px;
+    }
+
+    .offert-container .info-text {
+        margin-bottom: 36px;
+    }
+}
+
+.offer-preview h4 {
+    color: var(--primary-dark);
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 28px;
+    margin-bottom: 14px;
+    border-bottom: 2px solid var(--accent-beige);
+    padding-bottom: 8px;
+}
+
+.offer-preview h4:first-child {
+    margin-top: 0;
+}
+
+.offer-preview p {
+    margin-bottom: 16px;
+    line-height: 1.7;
+}
+
+.offer-preview p:last-of-type {
+    margin-bottom: 0;
+}
+
+.offer-preview strong {
+    color: var(--primary-dark);
+    font-weight: 600;
+    display: inline-block;
+    min-width: 180px;
+}
+
+/* Styling för den låsta ANBUD-mallen */
+.offer-preview .offer h3 {
+    color: var(--primary-dark);
+    font-size: 20px;
+    font-weight: 700;
+    margin: 24px 0 20px 0;
+    text-align: left;
+    border: none;
+}
+
+.offer-preview .offer p {
+    margin-bottom: 14px;
+    line-height: 1.6;
+}
+
+.offer-preview .offer strong {
+    font-weight: 600;
+    min-width: auto;
+}
+
+.offer-preview br + br {
+    display: none;
+}
+
+.offer-preview .info-message {
+    padding: 20px;
+    background: var(--surface-light);
+    border-radius: var(--border-radius-sm);
+    text-align: center;
+    margin: 0;
+}
+
+.offer-preview .info-message p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.offert-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-light);
+}
+
+.offert-actions .secondary-btn {
+    background: var(--white);
+    color: var(--primary-dark);
+    border: 2px solid var(--border-light);
+    padding: 14px 24px;
+    border-radius: var(--border-radius);
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    flex: 0 0 auto;
+}
+
+.offert-actions .secondary-btn:hover {
+    background: var(--surface-light);
+    border-color: var(--accent-beige);
+}
+
+.offert-actions .submit-btn {
+    flex: 1;
+}
+
+.info-text {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-top: var(--spacing-sm);
+}
+
+/* Dark mode för offert */
+body.dark .offer-preview {
+    background: var(--secondary-gray);
+    border-color: var(--text-muted);
+}
+
+body.dark .offer-preview h4 {
+    color: var(--accent-beige);
+    border-bottom-color: var(--accent-beige);
+}
+
+body.dark .offer-preview p,
+body.dark .offer-preview strong {
+    color: var(--surface-light);
+}
+
+body.dark .offer-preview .info-message {
+    background: var(--primary-dark);
+}
+
+body.dark .offer-preview .info-message p {
+    color: var(--text-muted);
+}
+
+body.dark .offert-actions .secondary-btn {
+    background: var(--secondary-gray);
+    color: var(--surface-light);
+    border-color: var(--text-muted);
+}
+
+body.dark .offert-actions .secondary-btn:hover {
+    background: var(--white);
+    color: var(--text-primary);
+    border-color: var(--accent-beige);
+}
+
+body.dark .info-text {
+    color: var(--text-muted);
+}
+
+/* Responsive för offert */
+@media (max-width: 768px) {
+    .offer-preview {
+        padding: 20px 16px;
+    }
+
+    .offer-preview h4 {
+        font-size: 15px;
+        margin-top: 24px;
+        margin-bottom: 12px;
+    }
+
+    .offer-preview strong {
+        min-width: auto;
+        display: inline;
+    }
+
+    .offert-actions {
+        flex-direction: column;
+    }
+
+    .offert-actions .secondary-btn,
+    .offert-actions .submit-btn {
+        width: 100%;
+    }
+}
+
+/* Styling för låst ANBUD-mall */
+.offer--locked {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.offer-company-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin: 0 0 16px 0;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+.offer-recipient {
+  margin-bottom: 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+  max-width: 400px;
+}
+
+.offer-recipient div {
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.offer-recipient div:last-child {
+  margin-bottom: 0;
+}
+
+.offer-title {
+  font-size: 22px;
+  letter-spacing: 0.3px;
+  margin: 24px 0 16px;
+  font-weight: 700;
+}
+
+.offer-price {
+  font-weight: 700;
+  margin: 14px 0 18px;
+  font-size: 16px;
+}
+
+.offer-sign {
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+
+.offer-gdpr {
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+#offer-preview .offer p {
+  margin: 10px 0;
+}
+
+#offer-preview {
+  max-width: 760px;
+}
