@@ -3599,24 +3599,38 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
     }
 
     // Hämtar slutpriset "KUNDEN BETALAR" (inkl. moms, efter ROT-avdrag om tillämpligt)
+    // VIKTIGT: Denna metod måste använda EXAKT samma beräkning som updatePriceCalculation()
     getFinalCustomerPrice() {
         try {
             const data = this.collectPricingData();
 
-            // 1. Beräkna alla kostnadskomponenter
-            const baseComponentsPrice = this.calculateBaseComponents(data);
-            const renovationTypeCost = this.calculateRenovationTypeCost(data, baseComponentsPrice);
-            const windowTypeCost = this.calculateWindowTypeCost(data, baseComponentsPrice);
+            // 1. Summera individuella partier (samma som updatePriceCalculation)
+            const partierTotalCost = (window.partisState?.partis || []).reduce((sum, parti) => {
+                return sum + (parti.pris || 0);
+            }, 0);
+
+            // 2. E-glas (inte parti-specifik)
             const extrasCost = this.calculateExtrasCost(data);
-            const subtotalBeforeMaterial = baseComponentsPrice + renovationTypeCost + windowTypeCost + extrasCost;
-            const workDescriptionMarkup = this.calculateWorkDescriptionMarkup(data, subtotalBeforeMaterial, 0, 0);
+
+            // 3. Prisjusteringar
+            const priceAdjustment = data.priceAdjustmentPlus - data.priceAdjustmentMinus;
+
+            // 4. Applicera renoveringstyp-pålägg (samma som updatePriceCalculation)
+            const renovationTypeMultiplier = CONFIG.RENOVATION_TYPE_MULTIPLIERS[data.renovationType] || 1.0;
+            const renovationAdjustedTotal = (partierTotalCost + extrasCost + priceAdjustment) * renovationTypeMultiplier;
+
+            // 5. Arbetsbeskrivning-pålägg
+            const subtotalBeforeMaterial = renovationAdjustedTotal;
+            const workDescriptionMarkup = this.calculateWorkDescriptionMarkup(data, subtotalBeforeMaterial, priceAdjustment, 0);
+
+            // 6. Total summa exklusive moms
             const subtotalExclVat = subtotalBeforeMaterial + workDescriptionMarkup;
 
-            // 2. Lägg till moms
+            // 7. Lägg till moms
             const vatCost = subtotalExclVat * CONFIG.EXTRAS.VAT_RATE;
             const totalInclVat = subtotalExclVat + vatCost;
 
-            // 3. Beräkna ROT-avdrag om tillämpligt
+            // 8. Beräkna ROT-avdrag om tillämpligt
             let rotDeduction = 0;
             if (data.hasRotDeduction) {
                 const materialCostForRot = totalInclVat * (data.materialPercentage / 100);
@@ -3626,8 +3640,24 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 rotDeduction = Math.min(calculatedRotDeduction, maxRotAmount);
             }
 
-            // 4. Slutpris efter ROT-avdrag
+            // 9. Slutpris efter ROT-avdrag
             const finalCustomerPrice = totalInclVat - rotDeduction;
+
+            console.log('[getFinalCustomerPrice] Breakdown:', {
+                partierTotal: partierTotalCost,
+                extras: extrasCost,
+                adjustment: priceAdjustment,
+                renovationMultiplier: renovationTypeMultiplier,
+                afterRenovation: renovationAdjustedTotal,
+                workDescription: workDescriptionMarkup,
+                subtotalExclVat: subtotalExclVat,
+                vat: vatCost,
+                totalInclVat: totalInclVat,
+                rotDeduction: rotDeduction,
+                finalPrice: finalCustomerPrice,
+                hasRotDeduction: data.hasRotDeduction,
+                materialPercentage: data.materialPercentage
+            });
 
             return finalCustomerPrice;
         } catch (error) {
