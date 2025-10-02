@@ -5035,8 +5035,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const goToArbetsbeskrivningBtn = document.getElementById('go-to-arbetsbeskrivning-btn');
         const goToOffertBtn = document.getElementById('go-to-offert-btn');
-        const arbetsbeskrivningTabBtn = document.getElementById('arbetsbeskrivning');
-        const offertTabBtn = document.getElementById('offert');
+        const arbetsbeskrivningTabBtn = document.querySelector('[data-tab="arbetsbeskrivning"]');
+        const offertTabBtn = document.querySelector('[data-tab="offert"]');
 
         console.log('Tab navigation elements:', {
             goToArbetsbeskrivningBtn: !!goToArbetsbeskrivningBtn,
