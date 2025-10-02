@@ -3605,9 +3605,18 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
             const data = this.collectPricingData();
 
             // 1. Summera individuella partier (samma som updatePriceCalculation)
-            const partierTotalCost = (window.partisState?.partis || []).reduce((sum, parti) => {
+            // Kolla om partisState finns, annars använd global partisState
+            const partisStateRef = window.partisState || partisState;
+            const partierTotalCost = (partisStateRef?.partis || []).reduce((sum, parti) => {
                 return sum + (parti.pris || 0);
             }, 0);
+
+            console.log('[getFinalCustomerPrice] Partier check:', {
+                hasWindowPartisState: !!window.partisState,
+                hasGlobalPartisState: typeof partisState !== 'undefined',
+                partisCount: partisStateRef?.partis?.length || 0,
+                partierTotal: partierTotalCost
+            });
 
             // 2. E-glas (inte parti-specifik)
             const extrasCost = this.calculateExtrasCost(data);
@@ -3662,6 +3671,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
             return finalCustomerPrice;
         } catch (error) {
             console.error('[getFinalCustomerPrice] Error:', error);
+            console.error('[getFinalCustomerPrice] Stack:', error.stack);
             return 0;
         }
     }
