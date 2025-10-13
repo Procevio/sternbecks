@@ -1843,8 +1843,11 @@ class QuoteCalculator {
         const subtotalExclVat = subtotalBeforeMaterial + workDescriptionMarkup;
         console.log('Subtotal excl VAT:', subtotalExclVat);
         
-        // Moms
-        const vatCost = subtotalExclVat * CONFIG.EXTRAS.VAT_RATE;
+        // Moms (fallback 25% om ogiltigt)
+        const vatRate = (typeof CONFIG?.EXTRAS?.VAT_RATE === 'number' && isFinite(CONFIG.EXTRAS.VAT_RATE) && CONFIG.EXTRAS.VAT_RATE > 0)
+            ? CONFIG.EXTRAS.VAT_RATE
+            : 0.25;
+        const vatCost = subtotalExclVat * vatRate;
         console.log('VAT cost:', vatCost);
         
         // Total inklusive moms (det kunden betalar utan ROT)
@@ -1926,8 +1929,11 @@ class QuoteCalculator {
         // Total summa exklusive moms
         const subtotalExclVat = subtotalBeforeMaterial + workDescriptionMarkup;
 
-        // Moms
-        const vatCost = subtotalExclVat * CONFIG.EXTRAS.VAT_RATE;
+        // Moms (fallback 25% om ogiltigt)
+        const vatRate = (typeof CONFIG?.EXTRAS?.VAT_RATE === 'number' && isFinite(CONFIG.EXTRAS.VAT_RATE) && CONFIG.EXTRAS.VAT_RATE > 0)
+            ? CONFIG.EXTRAS.VAT_RATE
+            : 0.25;
+        const vatCost = subtotalExclVat * vatRate;
 
         // Total inklusive moms
         const totalInclVat = subtotalExclVat + vatCost;
@@ -3603,12 +3609,14 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
     generateOfferHTML() {
         const c = this.getCustomerFields?.() || {};
 
-        // Hämta slutpris (samma som "KUNDEN BETALAR" i Anbud-fliken)
-        const finalPrice = this.getFinalCustomerPrice();
-        const prisText = `PRIS: ${this.formatPrice(finalPrice).replace(/\s*kr/i, '')} KR INKLUSIVE MOMS`;
+        // Visa separat pris före/efter ROT (båda inkl. moms)
+        const calc = this.getCalculatedPriceData();
+        const priceInclVatPreRot = calc.total_incl_vat;
+        const priceInclVatAfterRot = calc.customer_pays;
+        const prisText = `PRIS: ${this.formatPrice(priceInclVatPreRot).replace(/\s*kr/i, '')} KR INKLUSIVE MOMS`;
+        const prisRotText = `PRIS VID GODKÄNT ROTAVDRAG: ${this.formatPrice(priceInclVatAfterRot).replace(/\s*kr/i, '')} KR INKL MOMS`;
 
         // Visa även totalsumma inkl. moms och ROT-avdrag i offerten
-        const calc = this.getCalculatedPriceData();
         const totalInclText = `Totalt inkl. moms: ${this.formatPrice(calc.total_incl_vat)}`;
         const rotText = calc.rot_applicable
             ? `ROT-avdrag (50% på arbetskostnad): -${this.formatPrice(calc.rot_deduction)}`
@@ -3666,6 +3674,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
       </p>
 
       <p class="offer-price">${prisText}</p>
+      <p class="offer-price" style="margin-top: 0.25rem;">${prisRotText}</p>
       <p style="margin: 0.5rem 0 0;">${totalInclText}</p>
       <p style="margin: 0;">${rotText}</p>
 
