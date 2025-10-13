@@ -6,24 +6,27 @@
     <title>Anbudsförfrågan - Sternbecks Måleri & Fönsterhantverk</title>
     <link rel="stylesheet" href="assets/css/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" defer></script>
 </head>
 <body>
     <div class="container">
         <header class="header">
-            <div class="logo-section">
-                <img src="assets/images/Sternbecks logotyp.png" alt="Sternbecks Måleri & Fönsterhantverk" class="company-logo">
-            </div>
-            
-            <!-- Modern Navigation Bar -->
-            <nav class="navigation-bar">
-                <button id="logout-btn" class="nav-btn logout-btn" title="Logga ut">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="header-top">
+                <button id="logout-btn" class="logout-btn-compact" title="Logga ut">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path>
                         <polyline points="16,17 21,12 16,7"></polyline>
                         <line x1="21" y1="12" x2="9" y2="12"></line>
                     </svg>
-                    <span class="nav-label">Logga ut</span>
                 </button>
+                
+                <div class="logo-section">
+                    <img src="assets/images/Sternbecks logotyp.png" alt="Sternbecks Måleri & Fönsterhantverk" class="company-logo">
+                </div>
+            </div>
+
+            <!-- Centered Navigation Bar -->
+            <nav class="navigation-bar">
                 
                 <button id="reset-btn" class="nav-btn reset-btn" title="Återställ formulär">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -50,6 +53,21 @@
                         <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
                     </svg>
                     <span class="nav-label">Tema</span>
+                </button>
+                
+                <button id="admin-btn" class="nav-btn admin-btn" title="Adminpanel">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="4" y1="21" x2="4" y2="14"></line>
+                        <line x1="4" y1="10" x2="4" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12" y2="3"></line>
+                        <line x1="20" y1="21" x2="20" y2="16"></line>
+                        <line x1="20" y1="12" x2="20" y2="3"></line>
+                        <line x1="1" y1="14" x2="7" y2="14"></line>
+                        <line x1="9" y1="8" x2="15" y2="8"></line>
+                        <line x1="17" y1="16" x2="23" y2="16"></line>
+                    </svg>
+                    <span class="nav-label">Admin</span>
                 </button>
             </nav>
         </header>
@@ -90,6 +108,7 @@
                     <div class="tabs-nav">
                         <button type="button" class="tab-button active" data-tab="anbud">Anbud</button>
                         <button type="button" class="tab-button" data-tab="arbetsbeskrivning">Arbetsbeskrivning</button>
+                        <button type="button" class="tab-button" data-tab="offert">Offert</button>
                     </div>
                 </div>
                 
@@ -153,6 +172,15 @@
                             </div>
                         </div>
 
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="personnummer">Personnummer</label>
+                                <input type="text" id="personnummer" name="personnummer" placeholder="YYMMDD-XXXX" inputmode="numeric">
+                                <div class="error-message" id="personnummer-error"></div>
+                                <small class="help-text">Format: YYMMDD-XXXX (10 siffror)</small>
+                            </div>
+                        </div>
+
                     </section>
 
                     <!-- Arbetsbeskrivning -->
@@ -169,81 +197,7 @@
                             <div class="error-message" id="typ_av_renovering-error"></div>
                         </div>
 
-                        <div class="form-group">
-                            <label>Arbetsbeskrivning *</label>
-                            <div class="radio-group">
-                                <label class="radio-label">
-                                    <input type="radio" name="arbetsbeskrivning" value="Utvändig renovering" required>
-                                    <span class="radio-custom"></span>
-                                    Utvändig renovering
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="arbetsbeskrivning" value="Invändig renovering" required>
-                                    <span class="radio-custom"></span>
-                                    Invändig renovering
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="arbetsbeskrivning" value="Utvändig renovering samt målning av innerbågens insida" required>
-                                    <span class="radio-custom"></span>
-                                    Utvändig renovering samt målning av innerbågens insida
-                                </label>
-                            </div>
-                            <div class="error-message" id="arbetsbeskrivning-error"></div>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Fönsteröppning *</label>
-                            <div class="radio-group">
-                                <label class="radio-label">
-                                    <input type="radio" name="fonsteroppning" value="Inåtgående" required checked>
-                                    <span class="radio-custom"></span>
-                                    Inåtgående
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="fonsteroppning" value="Utåtgående" required>
-                                    <span class="radio-custom"></span>
-                                    Utåtgående
-                                </label>
-                            </div>
-                            <div class="error-message" id="fonsteroppning-error"></div>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Typ av fönster *</label>
-                            <div class="radio-group">
-                                <label class="radio-label">
-                                    <input type="radio" name="typ_av_fonster" value="Kopplade standard" required checked>
-                                    <span class="radio-custom"></span>
-                                    Kopplade standard
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="typ_av_fonster" value="Isolerglas" required>
-                                    <span class="radio-custom"></span>
-                                    Isolerglas
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="typ_av_fonster" value="Kopplade isolerglas" required>
-                                    <span class="radio-custom"></span>
-                                    Kopplade isolerglas
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="typ_av_fonster" value="Insatsbågar yttre" required>
-                                    <span class="radio-custom"></span>
-                                    Insatsbågar yttre
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="typ_av_fonster" value="Insatsbågar inre" required>
-                                    <span class="radio-custom"></span>
-                                    Insatsbågar inre
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="typ_av_fonster" value="Insatsbågar komplett" required>
-                                    <span class="radio-custom"></span>
-                                    Insatsbågar komplett
-                                </label>
-                            </div>
-                            <div class="error-message" id="typ_av_fonster-error"></div>
-                        </div>
+                        <!-- Obs: Arbetsbeskrivning, fönsteröppning och typ av fönster har flyttats till individuell parti-konfiguration -->
 
 
                         <!-- Prisjustering -->
@@ -265,85 +219,30 @@
                         <h3>Antal partier</h3>
                         
                         <div class="form-row">
-                            <div class="form-group quarter-width">
-                                <label for="window_sections">Fönsterpartier</label>
-                                <input type="number" id="window_sections" name="window_sections" min="0" placeholder="Ange antal" inputmode="numeric">
+                            <div class="form-group">
+                                <label for="window_sections">Antal partier att konfigurera *</label>
+                                <input type="number" id="window_sections" name="window_sections" min="1" max="50" placeholder="Ange antal partier" inputmode="numeric" required value="">
                                 <div class="error-message" id="window_sections-error"></div>
-                            </div>
-                            <div class="form-group quarter-width">
-                                <label for="antal_dorrpartier">Dörrpartier</label>
-                                <input type="number" id="antal_dorrpartier" name="antal_dorrpartier" min="0" placeholder="Ange antal" inputmode="numeric">
-                            </div>
-                            <div class="form-group quarter-width">
-                                <label for="antal_kallare_glugg">Källare/Glugg</label>
-                                <input type="number" id="antal_kallare_glugg" name="antal_kallare_glugg" min="0" placeholder="Ange antal" inputmode="numeric">
-                            </div>
-                            <div class="form-group quarter-width">
-                                <label for="antal_pardorr_balkong">Pardörr balkong/altan</label>
-                                <input type="number" id="antal_pardorr_balkong" name="antal_pardorr_balkong" min="0" placeholder="Ange antal" inputmode="numeric">
+                                <div class="help-text">Ange hur många partier (fönster, dörrar, etc.) du vill konfigurera individuellt</div>
                             </div>
                         </div>
                         
-                        <!-- Parties validation message -->
-                        <div id="parties-validation" class="validation-message" style="display: none;">
-                            <span id="parties-validation-text"></span>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group third-width">
-                                <label for="antal_1_luftare">1 luftare</label>
-                                <input type="number" id="antal_1_luftare" name="antal_1_luftare" min="0" placeholder="Ange antal" inputmode="numeric">
-                            </div>
-                            <div class="form-group third-width">
-                                <label for="antal_2_luftare">2 luftare</label>
-                                <input type="number" id="antal_2_luftare" name="antal_2_luftare" min="0" placeholder="Ange antal" inputmode="numeric">
-                            </div>
-                            <div class="form-group third-width">
-                                <label for="antal_3_luftare">3 luftare</label>
-                                <input type="number" id="antal_3_luftare" name="antal_3_luftare" min="0" placeholder="Ange antal" inputmode="numeric">
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group third-width">
-                                <label for="antal_4_luftare">4 luftare</label>
-                                <input type="number" id="antal_4_luftare" name="antal_4_luftare" min="0" placeholder="Ange antal" inputmode="numeric">
-                            </div>
-                            <div class="form-group third-width">
-                                <label for="antal_5_luftare">5 luftare</label>
-                                <input type="number" id="antal_5_luftare" name="antal_5_luftare" min="0" placeholder="Ange antal" inputmode="numeric">
-                            </div>
-                            <div class="form-group third-width">
-                                <label for="antal_6_luftare">6 luftare</label>
-                                <input type="number" id="antal_6_luftare" name="antal_6_luftare" min="0" placeholder="Ange antal" inputmode="numeric">
-                            </div>
-                        </div>
-
-                        <!-- Spröjs sektion -->
-                        <div class="form-group">
-                            <label>Har fönstren spröjs?</label>
-                            <div class="radio-group">
-                                <label class="radio-label">
-                                    <input type="radio" name="sprojs_choice" value="Nej" checked>
-                                    <span class="radio-custom"></span>
-                                    Nej
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="sprojs_choice" value="Ja">
-                                    <span class="radio-custom"></span>
-                                    Ja
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group" id="sprojs-antal-group" style="display: none;">
-                            <label for="antal_sprojs_per_bage">Antal spröjs per båge</label>
-                            <input type="number" id="antal_sprojs_per_bage" name="antal_sprojs_per_bage" min="0" placeholder="Ange antal" inputmode="numeric">
-                        </div>
-                        
-                        <div class="form-group" id="sprojs-fonster-group" style="display: none;">
-                            <label for="antal_fonster_med_sprojs">Hur många av fönstren har spröjs?</label>
-                            <input type="number" id="antal_fonster_med_sprojs" name="antal_fonster_med_sprojs" min="0" placeholder="Ange antal fönster" inputmode="numeric">
+                        <!-- Hidden legacy fields for calculations -->
+                        <div style="display: none;">
+                            <!-- Separata legacy-fält för beräkningar (inte samma som huvudinputen) -->
+                            <input type="number" id="legacy_window_sections" name="legacy_window_sections" value="0">
+                            <input type="number" id="antal_dorrpartier" name="antal_dorrpartier" value="0">
+                            <input type="number" id="antal_kallare_glugg" name="antal_kallare_glugg" value="0">
+                            <input type="number" id="antal_pardorr_balkong" name="antal_pardorr_balkong" value="0">
+                            <input type="number" id="antal_1_luftare" name="antal_1_luftare" value="0">
+                            <input type="number" id="antal_2_luftare" name="antal_2_luftare" value="0">
+                            <input type="number" id="antal_3_luftare" name="antal_3_luftare" value="0">
+                            <input type="number" id="antal_4_luftare" name="antal_4_luftare" value="0">
+                            <input type="number" id="antal_5_luftare" name="antal_5_luftare" value="0">
+                            <input type="number" id="antal_6_luftare" name="antal_6_luftare" value="0">
+                            <input type="number" id="antal_sprojs_per_bage" name="antal_sprojs_per_bage" value="0">
+                            <input type="number" id="antal_fonster_med_sprojs" name="antal_fonster_med_sprojs" value="0">
+                            <input type="radio" name="sprojs_choice" value="Nej" checked>
                         </div>
 
                         <!-- LE-glas sektion -->
@@ -367,8 +266,20 @@
                             <label for="le_kvm">LE-glas kvm</label>
                             <input type="number" id="le_kvm" name="le_kvm" min="0" step="0.01" placeholder="Ange kvm" inputmode="decimal">
                         </div>
+                    </section>
 
-                        <!-- ROT-avdrag frågor -->
+                    <!-- Parti konfiguration -->
+                    <section class="form-section" id="parti-config-section" style="display: none;">
+                        <h3>Konfigurera varje parti individuellt</h3>
+                        <div id="parties-container">
+                            <!-- Dynamiskt genererat innehåll -->
+                        </div>
+                    </section>
+
+                    <!-- ROT-avdrag -->
+                    <section class="form-section">
+                        <h3>ROT-avdrag</h3>
+                        
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Är fastigheten berättigad till ROT-avdrag? *</label>
@@ -516,11 +427,10 @@
                         </div>
                     </section>
 
-                    <!-- Submit knapp -->
+                    <!-- Navigation knapp -->
                     <div class="form-actions">
-                        <button type="submit" class="submit-btn" id="submit-btn">
-                            <span class="btn-text">Skicka anbudsförfrågan</span>
-                            <div class="loading-spinner" id="loading-spinner"></div>
+                        <button type="button" class="submit-btn" id="go-to-arbetsbeskrivning-btn">
+                            <span class="btn-text">Till arbetsbeskrivning</span>
                         </button>
                     </div>
                 </form>
@@ -594,9 +504,9 @@
                         </section>
 
 
-                        <!-- Automatisk arbetsbeskrivning (dynamiskt baserat på val) -->
+                        <!-- Arbetsbeskrivning (dynamiskt baserat på val) -->
                         <section class="form-section" id="dynamic-work-description-section">
-                            <h3>Automatisk Arbetsbeskrivning</h3>
+                            <h3>Arbetsbeskrivning</h3>
                             <div id="generated-work-description" class="work-description-content">
                                 <div class="info-message">
                                     <p>Arbetsbeskrivningen genereras automatiskt baserat på dina val från Anbud-fliken.</p>
@@ -604,26 +514,10 @@
                             </div>
                         </section>
 
-                        <!-- GDPR samma som anbud -->
-                        <section class="form-section gdpr-section">
-                            <div class="gdpr-consent-group">
-                                <label class="checkbox-label gdpr-consent">
-                                    <input type="checkbox" id="arb-gdpr-consent" name="arb-gdpr-consent" required>
-                                    <span class="checkmark"></span>
-                                    Jag godkänner behandling av personuppgifter för anbud och kontakt enligt GDPR
-                                </label>
-                                <div class="error-message" id="arb-gdpr-consent-error"></div>
-                                <div class="gdpr-info">
-                                    <a href="#" id="arb-gdpr-details-link" class="privacy-link">Läs mer om dataskydd</a>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- Submit knapp -->
+                        <!-- Navigation knapp -->
                         <div class="form-actions">
-                            <button type="submit" class="submit-btn" id="arb-submit-btn">
-                                <span class="btn-text">Skicka arbetsbeskrivning</span>
-                                <div class="loading-spinner" id="arb-loading-spinner"></div>
+                            <button type="button" class="submit-btn" id="go-to-offert-btn">
+                                <span class="btn-text">Till offert</span>
                             </button>
                         </div>
                     </form>
@@ -638,6 +532,32 @@
                         <p>Vi kunde inte skicka din förfrågan just nu. Vänligen försök igen eller kontakta oss direkt.</p>
                     </div>
                 </div> <!-- End of arbetsbeskrivning-tab -->
+
+                <!-- Tab Content: Offert -->
+                <div id="offert-tab" class="tab-content">
+                    <div class="offert-container">
+                        <section class="form-section">
+                            <h3>Offert - Förhandsvisning</h3>
+                            <p class="info-text">Här ser du en förhandsvisning av din offert. Använd knappen nedan för att skicka offert och arbetsbeskrivning som PDF-filer.</p>
+
+                            <div id="offer-preview" class="offer-preview">
+                                <div class="info-message">
+                                    <p>Fyll i alla obligatoriska fält under Anbud-fliken för att se förhandsvisningen här.</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <div class="offert-actions">
+                            <button type="button" class="secondary-btn" id="refresh-offer">
+                                <span class="btn-text">Uppdatera förhandsvisning</span>
+                            </button>
+                            <button type="button" class="submit-btn" id="send-offer">
+                                <span class="btn-text">Skicka offert samt arbetsbeskrivning</span>
+                                <div class="loading-spinner" id="offer-loading-spinner"></div>
+                            </button>
+                        </div>
+                    </div>
+                </div> <!-- End of offert-tab -->
             </div>
         </main>
 
@@ -671,6 +591,230 @@
             </div>
             <div class="gdpr-modal-footer">
                 <button class="gdpr-modal-ok" id="gdpr-modal-ok">Stäng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Adminpanel -->
+    <div class="admin-panel hidden" id="adminPanel">
+        <div class="admin-content">
+            <div class="admin-header">
+                <h2>Administrationspanel - Sternbecks Måleri</h2>
+                <button class="admin-close-btn" id="btn_close_admin" aria-label="Stäng adminpanel">×</button>
+            </div>
+            
+            <div class="admin-status">
+                <div class="status-info">
+                    <span>Status: <strong id="admin_status">Redo</strong></span>
+                    <span>Senast uppdaterad: <strong id="last_updated">--</strong></span>
+                    <span>Version: <strong id="current_version">--</strong></span>
+                </div>
+            </div>
+
+            <div class="admin-form">
+                <div class="form-section">
+                    <h3>Fönster och Dörrar</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_dorrpartier">Dörrpartier</label>
+                            <input id="p_dorrpartier" type="number" placeholder="5000" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_pardorr_balkong">Pardörr Balkong/Altan</label>
+                            <input id="p_pardorr_balkong" type="number" placeholder="9000" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_kallare_glugg">Källare/Glugg</label>
+                            <input id="p_kallare_glugg" type="number" placeholder="3500" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_flak">Flak</label>
+                            <input id="p_flak" type="number" placeholder="6000" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Luftare-priser</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_1_luftare">1 luftare</label>
+                            <input id="p_1_luftare" type="number" placeholder="4000" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_2_luftare">2 luftare</label>
+                            <input id="p_2_luftare" type="number" placeholder="5500" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_3_luftare">3 luftare</label>
+                            <input id="p_3_luftare" type="number" placeholder="8250" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_4_luftare">4 luftare</label>
+                            <input id="p_4_luftare" type="number" placeholder="11000" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_5_luftare">5 luftare</label>
+                            <input id="p_5_luftare" type="number" placeholder="13750" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_6_luftare">6 luftare</label>
+                            <input id="p_6_luftare" type="number" placeholder="16500" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Renoveringstyper (påslag totalpris %)</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_modern_renovering">Modern - Alcro bestå (%)</label>
+                            <input id="p_modern_renovering" type="number" placeholder="0" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_traditionell_renovering">Traditionell - Linoljebehandling (%)</label>
+                            <input id="p_traditionell_renovering" type="number" placeholder="15" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Fönsteröppning (påslag per luftare %)</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_inatgaende">Inåtgående (%)</label>
+                            <input id="p_inatgaende" type="number" placeholder="0" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_utatgaende">Utåtgående (%)</label>
+                            <input id="p_utatgaende" type="number" placeholder="5" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Fönstertyp (prisändring per båge)</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_kopplade_standard">Kopplade standard</label>
+                            <input id="p_kopplade_standard" type="number" placeholder="0" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_kopplade_isolerglas">Kopplade isolerglas</label>
+                            <input id="p_kopplade_isolerglas" type="number" placeholder="500" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_isolerglas">Isolerglas</label>
+                            <input id="p_isolerglas" type="number" placeholder="-400" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_insats_yttre">Insatsbågar yttre</label>
+                            <input id="p_insats_yttre" type="number" placeholder="-400" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_insats_inre">Insatsbågar inre</label>
+                            <input id="p_insats_inre" type="number" placeholder="-1250" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_insats_komplett">Insatsbågar komplett</label>
+                            <input id="p_insats_komplett" type="number" placeholder="1000" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Arbetsbeskrivning (påslag totalpris %)</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_utvandig_renovering">Utvändig renovering (%)</label>
+                            <input id="p_utvandig_renovering" type="number" placeholder="0" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_invandig_renovering">Invändig renovering (%)</label>
+                            <input id="p_invandig_renovering" type="number" placeholder="25" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_utv_plus_inner">Utvändig + innerbågens insida (%)</label>
+                            <input id="p_utv_plus_inner" type="number" placeholder="5" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Spröjs (pris per ruta)</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_sprojs_under4">Spröjs under 4 st</label>
+                            <input id="p_sprojs_under4" type="number" placeholder="250" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_sprojs_over4">Spröjs 4 och över</label>
+                            <input id="p_sprojs_over4" type="number" placeholder="400" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>LE-glas och Extra luftare</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_le_glas">LE-glas per kvm</label>
+                            <input id="p_le_glas" type="number" placeholder="2500" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_extra_1">1 extra luftare (flak)</label>
+                            <input id="p_extra_1" type="number" placeholder="2750" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_extra_2">2 extra luftare (flak)</label>
+                            <input id="p_extra_2" type="number" placeholder="5500" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_extra_3">3 extra luftare (flak)</label>
+                            <input id="p_extra_3" type="number" placeholder="8250" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_extra_4">4 extra luftare (flak)</label>
+                            <input id="p_extra_4" type="number" placeholder="11000" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_extra_5">5 extra luftare (flak)</label>
+                            <input id="p_extra_5" type="number" placeholder="13750" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Skatter och avdrag</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="p_vat">Moms (%)</label>
+                            <input id="p_vat" type="number" placeholder="25" />
+                        </div>
+                        <div class="form-group">
+                            <label for="p_rot">ROT-avdrag (%)</label>
+                            <input id="p_rot" type="number" placeholder="50" />
+                        </div>
+                        <div class="form-group" style="display: none;">
+                            <label for="p_ver">Konfiguration version</label>
+                            <input id="p_ver" type="number" placeholder="1" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-actions">
+                    <button class="btn secondary" id="btn_admin_close">Stäng</button>
+                    <button class="btn secondary" id="admin-refresh-prices" type="button">Uppdatera priser</button>
+                    <button class="btn primary" id="btn_admin_save">Spara priser</button>
+                    <span class="pricing-version" id="pricing_version" style="margin-left: 1rem; color: #888; font-size: 0.8em;">v1</span>
+                </div>
+            </div>
+
+            <div class="admin-logs">
+                <h3>Aktivitetslogg</h3>
+                <div class="logs-container" id="admin_logs">
+                    <div class="log-entry">Adminpanel öppnad</div>
+                </div>
             </div>
         </div>
     </div>

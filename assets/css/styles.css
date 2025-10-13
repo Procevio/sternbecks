@@ -106,7 +106,7 @@ h3 {
 /* Modern Navigation Bar */
 .navigation-bar {
     display: none; /* Dold som standard */
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     max-width: 400px;
     margin: 20px auto 0;
@@ -116,6 +116,54 @@ h3 {
 
 .navigation-bar.visible {
     display: flex; /* Visas endast när användaren är inloggad */
+}
+
+/* Header top layout */
+.header-top {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: start;
+    width: 100%;
+    padding: 15px 0 0 15px;
+}
+
+.logo-section {
+    grid-column: 2;
+    display: flex;
+    justify-content: center;
+}
+
+/* Kompakt logout button */
+.logout-btn-compact {
+    display: none; /* Dold som standard */
+    align-self: flex-start;
+    margin-right: auto;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--white);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.logout-btn-compact.visible {
+    display: flex;
+}
+
+.logout-btn-compact svg {
+    width: 18px;
+    height: 18px;
+}
+
+.logout-btn-compact:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .nav-btn {
@@ -272,6 +320,15 @@ h3 {
         min-width: auto;
         width: 100%;
         justify-content: center;
+    }
+    
+    .admin-actions .btn {
+        padding: 12px 16px;
+        font-size: 13px;
+    }
+    
+    .header-top {
+        padding: 10px 0 0 10px;
     }
 }
 
@@ -454,6 +511,11 @@ input[readonly] {
     border-color: var(--accent-beige);
     box-shadow: 0 0 0 3px rgba(212, 196, 160, 0.15);
     transform: translateY(-1px);
+}
+
+/* Fixar dubbelklick på select: ingen förflyttning på fokus */
+.form-select:focus {
+    transform: none;
 }
 
 .form-group input:hover,
@@ -998,6 +1060,7 @@ body.dark .theme-icon::before {
 body.dark .theme-icon {
     font-size: 0;
 }
+
 
 /* Keep form header dark text in dark theme */
 body.dark .form-header h2 {
@@ -1635,4 +1698,786 @@ body.dark .moment-item label:hover {
 .gdpr-modal-ok:hover {
     background: var(--secondary-gray);
     transform: translateY(-1px);
+}
+
+/* Parti-konfiguration styling */
+.parti-section {
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--white);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius);
+    box-shadow: 0 1px 3px var(--shadow-subtle);
+}
+
+.parti-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.parti-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.btn-small {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-sm);
+    background: var(--white);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.btn-small svg {
+    flex-shrink: 0;
+}
+
+.btn-small:hover {
+    background: var(--surface-light);
+    border-color: var(--accent-beige);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.btn-small:active {
+    transform: translateY(0);
+}
+
+.parti-header h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.price-display-inline {
+    font-size: 1rem;
+    color: var(--accent-beige);
+    font-weight: 600;
+}
+
+.parti-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--spacing-md);
+    align-items: start;
+}
+
+.parti-controls .form-group.compact {
+    margin-bottom: 0;
+}
+
+.parti-controls .form-group.compact label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: var(--spacing-xs);
+    display: block;
+    color: var(--text-secondary);
+}
+
+.parti-controls .form-select {
+    font-size: 0.9rem;
+    padding: var(--spacing-sm);
+    width: 100%;
+}
+
+.compact-input {
+    font-size: 0.85rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+/* Responsiv design för parti-kontroller */
+@media (max-width: 1024px) {
+    .parti-controls {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-sm);
+    }
+}
+
+@media (max-width: 768px) {
+    .parti-controls {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+    }
+    
+    .parti-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+    
+    .parti-actions {
+        align-self: stretch;
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .btn-small {
+        font-size: 0.75rem;
+        padding: var(--spacing-xs);
+    }
+}
+
+#parti-config-section {
+    border-top: 2px solid var(--accent-beige);
+    background: var(--surface-light);
+    padding: var(--spacing-xl) var(--spacing-lg);
+    margin: var(--spacing-xl) 0;
+    border-radius: var(--border-radius-lg);
+}
+
+#parti-config-section h3 {
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-lg);
+    text-align: center;
+}
+
+/* Adminpanel styling */
+.admin-btn:hover {
+    background: rgba(255, 200, 120, 0.2);
+    border-color: rgba(255, 200, 120, 0.3);
+}
+
+.admin-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(5px);
+}
+
+.admin-panel.hidden {
+    display: none;
+}
+
+.admin-content {
+    background: var(--white);
+    border-radius: var(--border-radius-lg);
+    max-width: 900px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+}
+
+.admin-header {
+    padding: var(--spacing-xl);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-gray) 100%);
+    border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+}
+
+.admin-header h2 {
+    margin: 0;
+    color: var(--white);
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.admin-close-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--white);
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-fast);
+}
+
+.admin-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.admin-status {
+    padding: var(--spacing-lg);
+    background: var(--surface-light);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.status-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-lg);
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.status-info span {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.status-info strong {
+    color: var(--text-primary);
+}
+
+.admin-form {
+    padding: var(--spacing-xl);
+}
+
+.admin-form .form-section {
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.admin-form .form-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: var(--spacing-lg);
+}
+
+.admin-form .form-section h3 {
+    color: var(--primary-dark);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.form-grid .form-group {
+    margin-bottom: 0;
+}
+
+.form-grid .form-group label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.form-grid .form-group input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border-light);
+    border-radius: var(--border-radius);
+    font-size: 14px;
+    transition: var(--transition-fast);
+    background: var(--white);
+}
+
+.form-grid .form-group input:focus {
+    border-color: var(--accent-beige);
+    box-shadow: 0 0 0 3px rgba(212, 196, 160, 0.15);
+    outline: none;
+}
+
+.admin-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: center;
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-light);
+}
+
+.btn {
+    padding: 12px 24px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    min-height: 44px;
+}
+
+.btn.secondary {
+    background: var(--surface-light);
+    color: var(--text-secondary);
+    border-color: var(--border-light);
+}
+
+.btn.secondary:hover {
+    background: var(--white);
+    color: var(--text-primary);
+    border-color: var(--accent-beige);
+    transform: translateY(-1px);
+}
+
+.btn.primary {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-gray) 100%);
+    color: var(--white);
+    border: none;
+}
+
+.btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px var(--shadow-medium);
+}
+
+.admin-logs {
+    padding: var(--spacing-xl);
+    border-top: 1px solid var(--border-light);
+    background: var(--surface-light);
+}
+
+.admin-logs h3 {
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: var(--spacing-md);
+}
+
+.logs-container {
+    background: var(--white);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: Monaco, Consolas, 'Courier New', monospace;
+}
+
+.log-entry {
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-entry.success {
+    color: var(--success-green);
+}
+
+.log-entry.error {
+    color: var(--error-red);
+}
+
+.log-entry.info {
+    color: var(--text-primary);
+}
+
+/* Mobile responsive för adminpanel */
+@media (max-width: 768px) {
+    .admin-panel {
+        padding: 10px;
+    }
+    
+    .admin-content {
+        max-height: 95vh;
+    }
+    
+    .admin-header {
+        padding: var(--spacing-lg);
+    }
+    
+    .admin-header h2 {
+        font-size: 18px;
+    }
+    
+    .admin-form {
+        padding: var(--spacing-lg);
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+    
+    .admin-actions {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 14px 20px;
+    }
+    
+    .admin-logs {
+        padding: var(--spacing-lg);
+    }
+}
+
+/* Dark theme för adminpanel */
+body.dark .admin-content {
+    background: var(--primary-dark);
+}
+
+body.dark .admin-status {
+    background: var(--secondary-gray);
+    border-color: var(--text-muted);
+}
+
+body.dark .admin-form {
+    background: var(--primary-dark);
+}
+
+body.dark .admin-form .form-section h3 {
+    color: var(--accent-beige);
+}
+
+body.dark .form-grid .form-group input {
+    background: var(--secondary-gray);
+    border-color: var(--text-muted);
+    color: var(--surface-light);
+}
+
+body.dark .form-grid .form-group input:focus {
+    border-color: var(--accent-beige);
+    background: var(--white);
+    color: var(--text-primary);
+}
+
+body.dark .form-grid .form-group label {
+    color: var(--surface-light);
+}
+
+body.dark .admin-actions {
+    border-color: var(--text-muted);
+}
+
+body.dark .btn.secondary {
+    background: var(--secondary-gray);
+    color: var(--surface-light);
+    border-color: var(--text-muted);
+}
+
+body.dark .btn.secondary:hover {
+    background: var(--white);
+    color: var(--text-primary);
+}
+
+body.dark .admin-logs {
+    background: var(--secondary-gray);
+    border-color: var(--text-muted);
+}
+
+body.dark .admin-logs h3 {
+    color: var(--accent-beige);
+}
+
+body.dark .logs-container {
+    background: var(--primary-dark);
+    border-color: var(--text-muted);
+}
+
+body.dark .log-entry {
+    color: var(--surface-light);
+}
+
+/* ============================================
+   OFFERT TAB STYLING
+   ============================================ */
+
+.offert-container {
+    width: 100%;
+}
+
+.offert-container .form-section {
+    padding: 0 8px;
+}
+
+.offert-container .form-section h3 {
+    margin-top: 8px;
+    margin-bottom: 24px;
+}
+
+.offert-container .info-text {
+    margin-bottom: 28px;
+    line-height: 1.6;
+}
+
+.offer-preview {
+    background: var(--white);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius);
+    padding: 24px 28px;
+    margin-top: var(--spacing-lg);
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+/* Desktop: mer utrymme i Offert-fliken */
+@media (min-width: 768px) {
+    .offert-container .form-section {
+        padding: 0 32px;
+    }
+
+    .offert-container .form-section h3 {
+        margin-top: 16px;
+        margin-bottom: 32px;
+    }
+
+    .offert-container .info-text {
+        margin-bottom: 36px;
+    }
+}
+
+.offer-preview h4 {
+    color: var(--primary-dark);
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 28px;
+    margin-bottom: 14px;
+    border-bottom: 2px solid var(--accent-beige);
+    padding-bottom: 8px;
+}
+
+.offer-preview h4:first-child {
+    margin-top: 0;
+}
+
+.offer-preview p {
+    margin-bottom: 16px;
+    line-height: 1.7;
+}
+
+.offer-preview p:last-of-type {
+    margin-bottom: 0;
+}
+
+.offer-preview strong {
+    color: var(--primary-dark);
+    font-weight: 600;
+    display: inline-block;
+    min-width: 180px;
+}
+
+/* Styling för den låsta ANBUD-mallen */
+.offer-preview .offer h3 {
+    color: var(--primary-dark);
+    font-size: 20px;
+    font-weight: 700;
+    margin: 24px 0 20px 0;
+    text-align: left;
+    border: none;
+}
+
+.offer-preview .offer p {
+    margin-bottom: 14px;
+    line-height: 1.6;
+}
+
+.offer-preview .offer strong {
+    font-weight: 600;
+    min-width: auto;
+}
+
+.offer-preview br + br {
+    display: none;
+}
+
+.offer-preview .info-message {
+    padding: 20px;
+    background: var(--surface-light);
+    border-radius: var(--border-radius-sm);
+    text-align: center;
+    margin: 0;
+}
+
+.offer-preview .info-message p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.offert-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-light);
+}
+
+.offert-actions .secondary-btn {
+    background: var(--white);
+    color: var(--primary-dark);
+    border: 2px solid var(--border-light);
+    padding: 14px 24px;
+    border-radius: var(--border-radius);
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    flex: 0 0 auto;
+}
+
+.offert-actions .secondary-btn:hover {
+    background: var(--surface-light);
+    border-color: var(--accent-beige);
+}
+
+.offert-actions .submit-btn {
+    flex: 1;
+}
+
+.info-text {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-top: var(--spacing-sm);
+}
+
+/* Dark mode för offert */
+body.dark .offer-preview {
+    background: var(--secondary-gray);
+    border-color: var(--text-muted);
+}
+
+body.dark .offer-preview h4 {
+    color: var(--accent-beige);
+    border-bottom-color: var(--accent-beige);
+}
+
+body.dark .offer-preview p,
+body.dark .offer-preview strong {
+    color: var(--surface-light);
+}
+
+body.dark .offer-preview .info-message {
+    background: var(--primary-dark);
+}
+
+body.dark .offer-preview .info-message p {
+    color: var(--text-muted);
+}
+
+body.dark .offert-actions .secondary-btn {
+    background: var(--secondary-gray);
+    color: var(--surface-light);
+    border-color: var(--text-muted);
+}
+
+body.dark .offert-actions .secondary-btn:hover {
+    background: var(--white);
+    color: var(--text-primary);
+    border-color: var(--accent-beige);
+}
+
+body.dark .info-text {
+    color: var(--text-muted);
+}
+
+/* Responsive för offert */
+@media (max-width: 768px) {
+    .offer-preview {
+        padding: 20px 16px;
+    }
+
+    .offer-preview h4 {
+        font-size: 15px;
+        margin-top: 24px;
+        margin-bottom: 12px;
+    }
+
+    .offer-preview strong {
+        min-width: auto;
+        display: inline;
+    }
+
+    .offert-actions {
+        flex-direction: column;
+    }
+
+    .offert-actions .secondary-btn,
+    .offert-actions .submit-btn {
+        width: 100%;
+    }
+}
+
+/* Styling för låst ANBUD-mall */
+.offer--locked {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.offer-company-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin: 0 0 16px 0;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+.offer-recipient {
+  margin-bottom: 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+  max-width: 400px;
+}
+
+.offer-recipient div {
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.offer-recipient div:last-child {
+  margin-bottom: 0;
+}
+
+.offer-title {
+  font-size: 22px;
+  letter-spacing: 0.3px;
+  margin: 24px 0 16px;
+  font-weight: 700;
+}
+
+.offer-price {
+  font-weight: 700;
+  margin: 14px 0 18px;
+  font-size: 16px;
+}
+
+.offer-sign {
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+
+.offer-gdpr {
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+#offer-preview .offer p {
+  margin: 10px 0;
+}
+
+#offer-preview {
+  max-width: 760px;
 }

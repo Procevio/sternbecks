@@ -6,6 +6,8 @@
  * Environment Variable: ZAPIER_WEBHOOK_URL
  */
 
+// (Serverless-only file) – Removed browser/DOM code to avoid window/document usage in Netlify environment
+
 exports.handler = async (event, context) => {
     console.log('🚀 Submit function anropad');
     console.log('Method:', event.httpMethod);
