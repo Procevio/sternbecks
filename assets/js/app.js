@@ -1085,6 +1085,8 @@ class QuoteCalculator {
         if (sendBtn) {
             sendBtn.addEventListener('click', async () => {
                 try {
+                    // Tvinga fram nybyggda PDF:er precis vid klick
+                    await this.getOrBuildPdfs(true);
                     await this.shareOrDownloadPdfs();
                 } catch (err) {
                     console.error('Delning misslyckades:', err);
@@ -2417,15 +2419,11 @@ class QuoteCalculator {
         this.hideMessages();
         
         try {
-            // Skicka till Netlify function som hanterar Zapier webhook säkert
-            await this.submitToNetlifyFunction();
-            
-            // Visa framgångsmeddelande
+            // Ingen Zapier: vi visar framgång när användaren genererat PDF:er i Offert
             this.showSuccessMessage();
             this.resetForm();
-            
         } catch (error) {
-            console.error('Fel vid skickning av formulär:', error);
+            console.error('Fel vid formulärflöde:', error);
             this.showErrorMessage();
         } finally {
             this.setSubmitButtonLoading(false);
@@ -2568,151 +2566,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         return formData;
     }*/
     
-    async submitToNetlifyFunction() {
-        // Hämta alla beräknade värden
-        const data = this.collectPricingData();
-        const baseComponentsPrice = this.calculateBaseComponents(data);
-        const renovationTypeCost = this.calculateRenovationTypeCost(data, baseComponentsPrice);
-        const windowTypeCost = this.calculateWindowTypeCost(data, baseComponentsPrice);
-        const extrasCost = this.calculateExtrasCost(data);
-        const subtotalBeforeMaterial = baseComponentsPrice + renovationTypeCost + windowTypeCost + extrasCost;
-        const workDescriptionMarkup = this.calculateWorkDescriptionMarkup(data, subtotalBeforeMaterial, 0, 0);
-        const subtotalExclVat = subtotalBeforeMaterial + workDescriptionMarkup;
-        const vatCost = subtotalExclVat * CONFIG.EXTRAS.VAT_RATE;
-        const totalInclVat = subtotalExclVat + vatCost;
-        const materialCostForRot = totalInclVat * (data.materialPercentage / 100);
-        const workCostForRot = totalInclVat - materialCostForRot;
-        
-        // ROT-avdrag med maxbelopp-logik
-        let rotDeduction = 0;
-        if (data.hasRotDeduction) {
-            const calculatedRotDeduction = workCostForRot * CONFIG.EXTRAS.ROT_DEDUCTION;
-            const maxRotAmount = data.isSharedRotDeduction ? 100000 : 50000;
-            rotDeduction = Math.min(calculatedRotDeduction, maxRotAmount);
-        }
-        const finalCustomerPrice = totalInclVat - rotDeduction;
-
-        // Bygg webhook data-struktur för Netlify function
-        const webhookData = {
-            // Kunduppgifter
-            kundNamn: document.getElementById('company').value || '',
-            kontaktperson: document.getElementById('contact_person').value || '',
-            adress: document.getElementById('address').value || '',
-            telefon: document.getElementById('phone').value || '',
-            email: document.getElementById('email').value || '',
-            ort: document.getElementById('city').value || '',
-            postnummer: document.getElementById('postal_code').value || '',
-            fastighetsbeteckning: document.getElementById('fastighetsbeteckning').value || '',
-            
-            // Projektuppgifter
-            renoveringsTyp: data.renovationType,
-            arbetsbeskrivning: data.workDescription,
-            fönsteröppning: data.windowOpening,
-            fönstertyp: data.windowType,
-            materialkostnadProcent: data.materialPercentage,
-            
-            // Kvantiteter
-            antalDörrpartier: data.doorSections,
-            antalKällareGlugg: data.kallareGlugg,
-            antal1Luftare: data.luftare1,
-            antal2Luftare: data.luftare2,
-            antal3Luftare: data.luftare3,
-            antal4Luftare: data.luftare4,
-            antal5Luftare: data.luftare5,
-            antal6Luftare: data.luftare6,
-            antalFönsterpartier: data.totalWindows,
-            
-            // Spröjs
-            harSpröjs: data.hasSprojs,
-            antalSpröjsPerBåge: data.sprojsPerWindow,
-            antalFönsterMedSpröjs: data.windowsWithSprojs,
-            
-            // E-glas
-            harEGlas: data.hasEGlass,
-            eGlasKvm: data.eGlassSqm,
-            
-            // ROT-avdrag
-            fastighetRotBerättigad: data.propertyRotEligible,
-            kundRotBerättigad: data.customerRotEligible,
-            harRotAvdrag: data.hasRotDeduction,
-            delatRotAvdrag: data.isSharedRotDeduction,
-            
-            // BERÄKNADE PRISER (alla värden i SEK)
-            grundprisExklMoms: Math.round(baseComponentsPrice),
-            renoveringsPålägg: Math.round(renovationTypeCost),
-            fönsterTypKostnad: Math.round(windowTypeCost),
-            extraKostnad: Math.round(extrasCost),
-            arbetsbeskrivningsPålägg: Math.round(workDescriptionMarkup),
-            delsummaExklMoms: Math.round(subtotalExclVat),
-            moms: Math.round(vatCost),
-            totaltInklMoms: Math.round(totalInclVat),
-            materialkostnadForRot: Math.round(materialCostForRot),
-            rotAvdrag: Math.round(rotDeduction),
-            slutprisKund: Math.round(finalCustomerPrice),
-            
-            // Metadata
-            timestamp: new Date().toISOString(),
-            anbudsNummer: `SB-${Date.now()}`,
-            källa: 'Sternbecks Anbudsapp'
-        };
-
-        // Add work description text to payload
-        const selectedRenovationType = this.form.querySelector('select[name="typ_av_renovering"]')?.value || '';
-        const partiWorkDescs = partisState.partis.map(p => ({
-            id: p.id,
-            type: p.partiType,
-            workDesc: p.workDesc
-        })).filter(p => p.workDesc);
-
-        if (selectedRenovationType && partiWorkDescs.length > 0) {
-            webhookData.selectedRenovationType = selectedRenovationType;
-
-            // Check if all partis have same work description
-            const allSame = partiWorkDescs.every(p => p.workDesc === partiWorkDescs[0].workDesc);
-
-            if (allSame) {
-                // Single work description for all partis
-                webhookData.selectedWorkDescriptionScope = partiWorkDescs[0].workDesc;
-                webhookData.workDescriptionText = this.generateWorkDescription(selectedRenovationType, partiWorkDescs[0].workDesc);
-            } else {
-                // Multiple work descriptions - combine them
-                webhookData.selectedWorkDescriptionScope = 'Varierar per parti';
-                let combinedText = '';
-                partiWorkDescs.forEach(p => {
-                    const text = this.generateWorkDescription(selectedRenovationType, p.workDesc);
-                    const partiTypeLabel = PARTI_TYPES.find(pt => pt.value === p.type)?.label || p.type;
-                    combinedText += `\n\n=== Parti ${p.id} (${partiTypeLabel}) - ${p.workDesc} ===\n${text}`;
-                });
-                webhookData.workDescriptionText = combinedText;
-            }
-        }
-
-        console.log('📊 Skickar anbudsdata till Netlify function...');
-        console.log('💰 Beräknade priser:', {
-            totaltInklMoms: Math.round(totalInclVat),
-            rotAvdrag: Math.round(rotDeduction),
-            slutpris: Math.round(finalCustomerPrice)
-        });
-
-        // POST till Netlify function som hanterar webhook säkert
-        const response = await fetch('/.netlify/functions/submit', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(webhookData)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-            throw new Error(`Netlify function error: ${response.status} - ${errorData.error || 'Unknown error'}`);
-        }
-
-        const result = await response.json();
-        console.log('✅ Netlify function response:', result);
-        
-        return result;
-    }
+    // Ingen Zapier / webhook – funktionen borttagen
     
     async handleArbetsbeskrivningSubmission() {
         const arbetsForm = document.getElementById('arbetsbeskrivning-form');
@@ -3753,6 +3607,13 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         const finalPrice = this.getFinalCustomerPrice();
         const prisText = `PRIS: ${this.formatPrice(finalPrice).replace(/\s*kr/i, '')} KR INKLUSIVE MOMS`;
 
+        // Visa även totalsumma inkl. moms och ROT-avdrag i offerten
+        const calc = this.getCalculatedPriceData();
+        const totalInclText = `Totalt inkl. moms: ${this.formatPrice(calc.total_incl_vat)}`;
+        const rotText = calc.rot_applicable
+            ? `ROT-avdrag (50% på arbetskostnad): -${this.formatPrice(calc.rot_deduction)}`
+            : 'ROT-avdrag: Ej tillämpligt';
+
         const today = new Date();
         const dateStr = today.toLocaleDateString('sv-SE');
         const ortForDate = (c.city || 'Ludvika');
@@ -3805,6 +3666,8 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
       </p>
 
       <p class="offer-price">${prisText}</p>
+      <p style="margin: 0.5rem 0 0;">${totalInclText}</p>
+      <p style="margin: 0;">${rotText}</p>
 
       <p>I anbudet ingår material och transporter.</p>
 
@@ -3876,6 +3739,13 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         const fresh = this._pdfCache.offerBlob && this._pdfCache.workBlob && (Date.now() - this._pdfCache.ts < maxAgeMs);
         if (fresh && !force) return this._pdfCache;
 
+        // Säkerställ att pris och förhandsvisning är uppdaterade innan PDF byggs
+        try {
+            this.updatePriceCalculation();
+            this.renderOfferPreview();
+            this.updateWorkDescription && this.updateWorkDescription();
+        } catch (_) {}
+
         // Bygg nya blobbar
         const [offerBlob, workBlob] = await Promise.all([
             this.createOfferPdfBlob(),
@@ -3888,6 +3758,9 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
     createOfferPdfBlob() {
         return new Promise((resolve, reject) => {
             try {
+                if (!window.jspdf || !window.jspdf.jsPDF) {
+                    throw new Error('jsPDF ej laddad');
+                }
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
 
@@ -3937,6 +3810,32 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                     }
                 });
 
+                // Sammanfattningsblock (fetstil): Totalt inkl. moms, ROT, Kunden betalar
+                try {
+                    const calc = this.getCalculatedPriceData();
+                    const totalIncl = this.formatPrice(calc.total_incl_vat);
+                    const rotLine = calc.rot_applicable
+                        ? `ROT-avdrag (50% på arbetskostnad): -${this.formatPrice(calc.rot_deduction)}`
+                        : 'ROT-avdrag: Ej tillämpligt';
+                    const customerPays = this.formatPrice(calc.customer_pays);
+
+                    if (y > 240) { doc.addPage(); y = 20; }
+                    doc.setLineWidth(0.5);
+                    doc.line(20, y, 190, y); y += 6;
+
+                    doc.setFontSize(13);
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`Totalt inkl. moms: ${totalIncl}`, 20, y); y += 7;
+                    doc.text(rotLine, 20, y); y += 7;
+                    doc.text(`KUNDEN BETALAR: ${customerPays}`, 20, y); y += 7;
+
+                    doc.setFont(undefined, 'normal');
+                    doc.setFontSize(11);
+                    doc.line(20, y, 190, y); y += 4;
+                } catch (e) {
+                    console.warn('Kunde inte rita sammanfattningsblock i PDF:', e);
+                }
+
                 const blob = doc.output('blob');
                 resolve(blob);
             } catch (error) {
@@ -3949,6 +3848,9 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
     createWorkDescriptionPdfBlob() {
         return new Promise((resolve, reject) => {
             try {
+                if (!window.jspdf || !window.jspdf.jsPDF) {
+                    throw new Error('jsPDF ej laddad');
+                }
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
 

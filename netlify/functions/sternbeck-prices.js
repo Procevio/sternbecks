@@ -4,7 +4,7 @@
 //  - STERNBECK_GAS_URL   (ex: https://script.google.com/macros/s/AKfy.../exec)
 //  - STERNBECK_API_TOKEN (samma som i Apps Script)
 
-export async function handler(event) {
+exports.handler = async function(event) {
   try {
     if (event.httpMethod !== 'POST') {
       return resp(405, { ok:false, error: 'Method Not Allowed' });

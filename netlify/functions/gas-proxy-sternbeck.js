@@ -4,7 +4,7 @@
 //   STERNBECK_GAS_URL   = din NYA webapp-URL (slutar på /exec)
 //   STERNBECK_API_TOKEN = samma som API_TOKEN i Apps Script
 
-export async function handler(event) {
+exports.handler = async function(event) {
   try {
     const GAS_URL   = process.env.STERNBECK_GAS_URL;
     const API_TOKEN = process.env.STERNBECK_API_TOKEN;
