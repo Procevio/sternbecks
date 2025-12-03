@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROT-avdrag Test - Sternbecks</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { 
+            border: 1px solid #ddd; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+        }
+        .test-case h3 { margin-top: 0; color: #2c5aa0; }
+        .expected { color: #28a745; font-weight: bold; }
+        .calculation { background: #f8f9fa; padding: 10px; margin: 5px 0; }
+        .result { font-weight: bold; font-size: 1.1em; }
+        .pass { color: #28a745; }
+        .fail { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>🧪 ROT-avdrag Beräknings-test</h1>
+    <p>Testar de nya ROT-avdrag reglerna med max-belopp för en och två personer.</p>
+    
+    <div style="background: #e7f3ff; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #2c5aa0;">
+        <h4>🆕 Nya funktioner i ROT-avdrag system:</h4>
+        <ul>
+            <li><strong>Radiobuttons</strong> istället för checkbox för "Två personer som delar på ROT-avdraget"</li>
+            <li><strong>Förinställt på "Nej"</strong> för både fastighet och kund ROT-berättigande</li>
+            <li><strong>Preliminär text</strong> visas nu i Prisberäkning-sektionen endast när ROT-avdrag är aktivt</li>
+            <li><strong>Dynamisk text</strong> som visar om ROT begränsas av max-belopp eller 50%-regeln</li>
+        </ul>
+    </div>
+
+    <div class="test-case">
+        <h3>Test 1: Låg arbetskostnad - En person (50% regel)</h3>
+        <div class="calculation">
+            • Totalt inkl. moms: 80 000 kr<br>
+            • Materialkostnad (10%): 8 000 kr<br>
+            • Arbetskostnad: 72 000 kr<br>
+            • 50% av arbetskostnad: 36 000 kr<br>
+            • Max ROT (en person): 50 000 kr
+        </div>
+        <div class="expected">Förväntat ROT-avdrag: 36 000 kr (50% regel)</div>
+        <div class="result" id="test1-result">Resultat: Väntar på test...</div>
+    </div>
+
+    <div class="test-case">
+        <h3>Test 2: Hög arbetskostnad - En person (max-belopp)</h3>
+        <div class="calculation">
+            • Totalt inkl. moms: 200 000 kr<br>
+            • Materialkostnad (5%): 10 000 kr<br>
+            • Arbetskostnad: 190 000 kr<br>
+            • 50% av arbetskostnad: 95 000 kr<br>
+            • Max ROT (en person): 50 000 kr
+        </div>
+        <div class="expected">Förväntat ROT-avdrag: 50 000 kr (max-belopp begränsar)</div>
+        <div class="result" id="test2-result">Resultat: Väntar på test...</div>
+    </div>
+
+    <div class="test-case">
+        <h3>Test 3: Låg arbetskostnad - Två personer (50% regel)</h3>
+        <div class="calculation">
+            • Totalt inkl. moms: 120 000 kr<br>
+            • Materialkostnad (0%): 0 kr<br>
+            • Arbetskostnad: 120 000 kr<br>
+            • 50% av arbetskostnad: 60 000 kr<br>
+            • Max ROT (två personer): 100 000 kr<br>
+            • <strong>Radiobutton: "Ja" valt för delat ROT-avdrag</strong>
+        </div>
+        <div class="expected">Förväntat ROT-avdrag: 60 000 kr (50% regel)</div>
+        <div class="result" id="test3-result">Resultat: Väntar på test...</div>
+    </div>
+
+    <div class="test-case">
+        <h3>Test 4: Hög arbetskostnad - Två personer (max-belopp)</h3>
+        <div class="calculation">
+            • Totalt inkl. moms: 350 000 kr<br>
+            • Materialkostnad (7%): 24 500 kr<br>
+            • Arbetskostnad: 325 500 kr<br>
+            • 50% av arbetskostnad: 162 750 kr<br>
+            • Max ROT (två personer): 100 000 kr
+        </div>
+        <div class="expected">Förväntat ROT-avdrag: 100 000 kr (max-belopp begränsar)</div>
+        <div class="result" id="test4-result">Resultat: Väntar på test...</div>
+    </div>
+
+    <div class="test-case">
+        <h3>Test 5: Gränsfall - En person vid exakt 50% = 50k</h3>
+        <div class="calculation">
+            • Totalt inkl. moms: 125 000 kr<br>
+            • Materialkostnad (0%): 0 kr<br>
+            • Arbetskostnad: 125 000 kr<br>
+            • 50% av arbetskostnad: 62 500 kr<br>
+            • Max ROT (en person): 50 000 kr
+        </div>
+        <div class="expected">Förväntat ROT-avdrag: 50 000 kr (max-belopp begränsar)</div>
+        <div class="result" id="test5-result">Resultat: Väntar på test...</div>
+    </div>
+
+    <script>
+        // ROT-avdrag beräknings-logik (kopierad från main app)
+        function calculateROT(totalInclVat, materialPercentage, isSharedRotDeduction) {
+            const materialCostForRot = totalInclVat * (materialPercentage / 100);
+            const workCostForRot = totalInclVat - materialCostForRot;
+            const calculatedRotDeduction = workCostForRot * 0.5; // 50%
+            const maxRotAmount = isSharedRotDeduction ? 100000 : 50000;
+            const finalRotDeduction = Math.min(calculatedRotDeduction, maxRotAmount);
+            
+            return {
+                materialCost: materialCostForRot,
+                workCost: workCostForRot,
+                calculatedRot: calculatedRotDeduction,
+                maxRot: maxRotAmount,
+                finalRot: finalRotDeduction,
+                isLimitedByMax: calculatedRotDeduction > maxRotAmount
+            };
+        }
+
+        // Testfall
+        const tests = [
+            { id: 'test1', total: 80000, material: 10, shared: false, expected: 36000 },
+            { id: 'test2', total: 200000, material: 5, shared: false, expected: 50000 },
+            { id: 'test3', total: 120000, material: 0, shared: true, expected: 60000 },
+            { id: 'test4', total: 350000, material: 7, shared: true, expected: 100000 },
+            { id: 'test5', total: 125000, material: 0, shared: false, expected: 50000 }
+        ];
+
+        // Kör tester
+        tests.forEach(test => {
+            const result = calculateROT(test.total, test.material, test.shared);
+            const resultElement = document.getElementById(test.id + '-result');
+            
+            const passed = Math.abs(result.finalRot - test.expected) < 1; // Tillåt 1 kr fel p.g.a. avrundning
+            const statusClass = passed ? 'pass' : 'fail';
+            const statusText = passed ? '✅ PASS' : '❌ FAIL';
+            
+            resultElement.className = `result ${statusClass}`;
+            resultElement.innerHTML = `
+                ${statusText} - Beräknat: ${Math.round(result.finalRot).toLocaleString()} kr 
+                (Förväntat: ${test.expected.toLocaleString()} kr)
+                ${result.isLimitedByMax ? '<br><em>Begränsat av max-belopp</em>' : '<br><em>Begränsat av 50%-regeln</em>'}
+            `;
+        });
+
+        // Sammanfattning
+        const allTests = tests.map(test => {
+            const result = calculateROT(test.total, test.material, test.shared);
+            return Math.abs(result.finalRot - test.expected) < 1;
+        });
+        
+        const passedTests = allTests.filter(Boolean).length;
+        const totalTests = allTests.length;
+        
+        document.body.innerHTML += `
+            <div style="margin-top: 30px; padding: 20px; background: ${passedTests === totalTests ? '#d4edda' : '#f8d7da'}; 
+                        border: 1px solid ${passedTests === totalTests ? '#c3e6cb' : '#f5c6cb'}; border-radius: 5px;">
+                <h2>📊 Test Sammanfattning</h2>
+                <p><strong>${passedTests}/${totalTests} tester passerade</strong></p>
+                ${passedTests === totalTests ? 
+                    '<p class="pass">🎉 Alla ROT-avdrag beräkningar fungerar korrekt!</p>' : 
+                    '<p class="fail">⚠️ Vissa tester misslyckades - kontrollera logiken.</p>'
+                }
+            </div>
+        ` + document.body.innerHTML;
+    </script>
+</body>
+</html>

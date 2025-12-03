@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spröjs Validering Test - Sternbecks</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { 
+            border: 1px solid #ddd; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            background: #f8f9fa;
+        }
+        .test-case h3 { margin-top: 0; color: #2c5aa0; }
+        .scenario { background: #fff; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .expected { color: #28a745; font-weight: bold; margin: 5px 0; }
+        .error-case { border-color: #dc3545; background: #f8d7da; }
+        .success-case { border-color: #28a745; background: #d4edda; }
+        .validation-msg { font-family: monospace; background: #f1f3f4; padding: 8px; margin: 5px 0; }
+        .error { color: #dc3545; }
+        .success { color: #28a745; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Spröjs Validering Test</h1>
+    <p>Testar att "Fönster med spröjs" inte kan överstiga "Fönsterpartier".</p>
+    
+    <div style="background: #e7f3ff; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #2c5aa0;">
+        <h4>🎯 Ny Validering:</h4>
+        <ul>
+            <li><strong>Regel:</strong> Antal fönster med spröjs ≤ Antal fönsterpartier</li>
+            <li><strong>Prioritet:</strong> Spröjs-validering körs före luftare-validering</li>
+            <li><strong>Realtid:</strong> Validering körs vid varje fältändring</li>
+            <li><strong>Submit-blockering:</strong> Formulär kan inte skickas vid fel</li>
+        </ul>
+    </div>
+
+    <div class="test-case success-case">
+        <h3>✅ Test 1: Giltig Konfiguration</h3>
+        <div class="scenario">
+            • <strong>Fönsterpartier:</strong> 5<br>
+            • <strong>Spröjs:</strong> Ja<br>
+            • <strong>Fönster med spröjs:</strong> 3<br>
+            • <strong>Luftare totalt:</strong> 5 (matchar fönsterpartier)
+        </div>
+        <div class="expected">Förväntat resultat:</div>
+        <div class="validation-msg success">✓ Antal luftare (5) matchar antal fönsterpartier (5) • Spröjs på 3 fönster ✓</div>
+    </div>
+
+    <div class="test-case error-case">
+        <h3>❌ Test 2: Ogiltigt - För många spröjs-fönster</h3>
+        <div class="scenario">
+            • <strong>Fönsterpartier:</strong> 4<br>
+            • <strong>Spröjs:</strong> Ja<br>
+            • <strong>Fönster med spröjs:</strong> 6 <em>(mer än fönsterpartier!)</em><br>
+            • <strong>Luftare totalt:</strong> 4
+        </div>
+        <div class="expected">Förväntat resultat:</div>
+        <div class="validation-msg error">Fönster med spröjs (6) kan inte överstiga antal fönsterpartier (4)</div>
+    </div>
+
+    <div class="test-case success-case">
+        <h3>✅ Test 3: Gränsfall - Lika många</h3>
+        <div class="scenario">
+            • <strong>Fönsterpartier:</strong> 3<br>
+            • <strong>Spröjs:</strong> Ja<br>
+            • <strong>Fönster med spröjs:</strong> 3 <em>(samma som fönsterpartier)</em><br>
+            • <strong>Luftare totalt:</strong> 3
+        </div>
+        <div class="expected">Förväntat resultat:</div>
+        <div class="validation-msg success">✓ Antal luftare (3) matchar antal fönsterpartier (3) • Spröjs på 3 fönster ✓</div>
+    </div>
+
+    <div class="test-case success-case">
+        <h3>✅ Test 4: Spröjs inaktivt</h3>
+        <div class="scenario">
+            • <strong>Fönsterpartier:</strong> 4<br>
+            • <strong>Spröjs:</strong> Nej<br>
+            • <strong>Fönster med spröjs:</strong> 0 <em>(automatiskt nollställt)</em><br>
+            • <strong>Luftare totalt:</strong> 4
+        </div>
+        <div class="expected">Förväntat resultat:</div>
+        <div class="validation-msg success">✓ Antal luftare (4) matchar antal fönsterpartier (4)</div>
+    </div>
+
+    <div class="test-case error-case">
+        <h3>❌ Test 5: Kombinerat fel - Spröjs prioriteras</h3>
+        <div class="scenario">
+            • <strong>Fönsterpartier:</strong> 3<br>
+            • <strong>Spröjs:</strong> Ja<br>
+            • <strong>Fönster med spröjs:</strong> 5 <em>(för många!)</em><br>
+            • <strong>Luftare totalt:</strong> 7 <em>(matchar inte heller)</em>
+        </div>
+        <div class="expected">Förväntat resultat (spröjs-fel visas först):</div>
+        <div class="validation-msg error">Fönster med spröjs (5) kan inte överstiga antal fönsterpartier (3)</div>
+        <p><small><em>💡 Luftare-validering körs efter att spröjs-felet fixats</em></small></p>
+    </div>
+
+    <div class="test-case success-case">
+        <h3>✅ Test 6: Tomma värden</h3>
+        <div class="scenario">
+            • <strong>Fönsterpartier:</strong> 0 eller tomt<br>
+            • <strong>Spröjs:</strong> Nej<br>
+            • <strong>Fönster med spröjs:</strong> 0<br>
+            • <strong>Luftare totalt:</strong> 0
+        </div>
+        <div class="expected">Förväntat resultat:</div>
+        <div class="validation-msg">Inget valideringsmeddelande visas (alla fält tomma/noll)</div>
+    </div>
+
+    <div style="margin-top: 30px; padding: 20px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px;">
+        <h2>📋 Manual Test Checklista</h2>
+        <p>För att testa i appen:</p>
+        <ol>
+            <li><strong>Logga in</strong> i Sternbecks anbudsapp</li>
+            <li><strong>Ange fönsterpartier:</strong> t.ex. 3</li>
+            <li><strong>Ange luftare:</strong> samma antal för att passera luftare-validering</li>
+            <li><strong>Välj spröjs:</strong> "Ja"</li>
+            <li><strong>Testa ogiltig:</strong> Ange fönster med spröjs > fönsterpartier</li>
+            <li><strong>Kontrollera:</strong> Rött felmeddelande visas, submit-knapp inaktiverad</li>
+            <li><strong>Korrigera:</strong> Minska spröjs-fönster ≤ fönsterpartier</li>
+            <li><strong>Kontrollera:</strong> Grönt framgångsmeddelande, submit-knapp aktiv</li>
+        </ol>
+    </div>
+
+    <div style="margin-top: 20px; padding: 15px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 5px;">
+        <h3>🔧 Teknisk Implementation</h3>
+        <div style="font-family: monospace; background: #f8f9fa; padding: 10px; margin: 10px 0;">
+            <strong>validateParties():</strong><br>
+            1. Kontrollera spröjs-validering först<br>
+            2. if (windowsWithSprojs > windowSections) → ERROR<br>
+            3. Sedan luftare-validering<br>
+            4. if (totalLuftare !== windowSections) → ERROR<br>
+            5. Visa framgångsmeddelande med båda ✓
+        </div>
+        
+        <p><strong>Event listeners:</strong> Finns redan på <code>antal_fonster_med_sprojs</code> i <code>priceAffectingFields</code></p>
+        <p><strong>Submit-blockering:</strong> <code>this.submitBtn.disabled = true</code> vid valideringsfel</p>
+    </div>
+</body>
+</html>

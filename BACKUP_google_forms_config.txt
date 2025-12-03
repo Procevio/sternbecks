@@ -1,0 +1,66 @@
+# BACKUP - Google Forms Konfiguration
+# Skapad: 2025-08-23
+# Denna fil innehåller alla Google Forms URLs, Entry IDs och mappningar innan webhook-implementation
+
+## GOOGLE FORMS URLS
+GOOGLE_FORMS_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSeWgToYq-djzYjwlx51cg6NG8hk9hhK2ryusZCJxE3FSMeDlw/formResponse'
+
+## ARBETSBESKRIVNING FORMS
+ARBETSBESKRIVNING_FORMS: {
+    'Traditionell - Linoljebehandling': 'https://docs.google.com/forms/d/e/EXAMPLE_LINOLJA_FORM/formResponse',
+    'Modern - Alcro bestå': 'https://docs.google.com/forms/d/e/EXAMPLE_ALCRO_FORM/formResponse'
+}
+
+## FORM_FIELDS MAPPING
+FORM_FIELDS: {
+    'company': 'entry.840064910',           // Kundnamn (namn)
+    'contact_person': 'entry.840064910',    // Använder samma som kundnamn
+    'email': 'entry.34850442',             // E-post (email)
+    'phone': 'entry.1576794399',           // Telefonnummer (telefon)
+    'address': 'entry.451691303',          // Adress (adress)
+    'postal_code': 'entry.183003918',      // Postnummer (postnummer)
+    'city': 'entry.1773944220',            // Ort (ort)
+    'fastighetsbeteckning': 'entry.1947831774', // Fastighetsbeteckning (fakturaAdress)
+    'typ_av_renovering': 'entry.1934080355',   // Typ av renovering (behandling)
+    'arbetsbeskrivning': 'entry.1861019243',   // Arbetsbeskrivning (invändigRenovering)
+    'fonsteroppning': 'entry.PLACEHOLDER',     // Fönsteröppning - UPPDATERA MED KORREKT ENTRY ID
+    'typ_av_fonster': 'entry.1440374029',      // Typ av fönster (fönstertyp)
+    'extra_hours': 'entry.280137558',          // Extra timmar - behålls som fallback
+    'materialkostnad': 'entry.1813106945',     // Materialkostnad (materialandel)
+    'window_sections': 'entry.1639140622',     // Antal fönsterpartier (antalFönsterpartier)
+    'antal_dorrpartier': 'entry.1842862088',   // Antal dörrpartier (antalDörrpartier)
+    'antal_kallare_glugg': 'entry.PLACEHOLDER', // Antal källare/glugg - UPPDATERA MED KORREKT ENTRY ID
+    'antal_pardorr_balkong': 'entry.PLACEHOLDER', // Antal pardörr balkong/altan - UPPDATERA MED KORREKT ENTRY ID
+    'antal_1_luftare': 'entry.1428207307',     // Antal 1 luftare (antal1Luftare)
+    'antal_2_luftare': 'entry.540142171',      // Antal 2 luftare (antal2Luftare)
+    'antal_3_luftare': 'entry.1537980468',     // Antal 3 luftare (antal3Luftare)
+    'antal_4_luftare': 'entry.686402548',      // Antal 4 luftare (antal4Luftare)
+    'antal_5_luftare': 'entry.2023128952',     // Antal 5 luftare (antal5Luftare)
+    'antal_6_luftare': 'entry.683589882',      // Antal 6 luftare (antal6Luftare)
+    'sprojs': 'entry.105600632',               // Spröjs - behålls som fallback
+    'antal_sprojs_per_bage': 'entry.1553251704', // Antal spröjs per båge - behålls som fallback
+    'byte_till_le_glas': 'entry.1641252616',   // Byte till LE-glas - behålls som fallback
+    'le_kvm': 'entry.1217325448',              // LE-glas kvm - behålls som fallback
+    'fastighet_rot_berättigad': 'entry.1262384694', // Fastighet ROT-berättigad (rotBerättigad)
+    'är_du_berättigad_rot_avdrag': 'entry.256618009', // Kund ROT-berättigad (kundRot)
+    // Nya mappade fält
+    'fukt': 'entry.500959437',                 // Fukt
+    'våning': 'entry.939071348',               // Våning
+    'fastighetstyp': 'entry.1882358343'        // Fastighetstyp
+}
+
+## ARBETSBESKRIVNING_FIELDS MAPPING
+ARBETSBESKRIVNING_FIELDS: {
+    'arb_company': 'entry.PLACEHOLDER',           // Kundnamn
+    'arb_email': 'entry.PLACEHOLDER',             // E-post  
+    'arb_phone': 'entry.PLACEHOLDER',             // Telefonnummer
+    'arb_address': 'entry.PLACEHOLDER',           // Adress
+    'arb_typ_av_renovering': 'entry.PLACEHOLDER', // Renoveringstyp
+    'arb_arbetsbeskrivning': 'entry.PLACEHOLDER', // Arbetsbeskrivning
+    'arb-gdpr-consent': 'entry.PLACEHOLDER'       // GDPR samtycke
+}
+
+## FUNKTIONER SOM KOMMER ATT TAS BORT:
+- submitToGoogleForms()
+- handleArbetsbeskrivningSubmission() (Google Forms delen)
+- Google Forms-relaterad kod i form submission

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Parti Konfiguration</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { padding: 8px; width: 300px; border: 1px solid #ccc; border-radius: 4px; }
+        .parti-section { 
+            border: 1px solid #ddd; 
+            margin: 10px 0; 
+            padding: 15px; 
+            border-radius: 8px; 
+            background: #f9f9f9;
+        }
+        .parti-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .parti-controls { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr 1fr; 
+            gap: 15px; 
+        }
+        .form-group.compact { margin-bottom: 10px; }
+        .price-display-inline { color: green; font-weight: bold; }
+        #parties-container { margin-top: 20px; }
+        #parti-config-section { 
+            background: #f5f5f5; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test - Parti Konfiguration</h1>
+    
+    <div class="form-group">
+        <label for="window_sections">Antal partier att konfigurera *</label>
+        <input type="number" id="window_sections" name="window_sections" min="1" max="10" placeholder="Ange antal partier" value="">
+        <div id="debug-info" style="margin-top: 10px; color: blue; font-size: 12px;"></div>
+    </div>
+
+    <div id="parti-config-section" style="display: none;">
+        <h3>Konfigurera varje parti individuellt</h3>
+        <div id="parties-container">
+            <!-- Dynamiskt genererat innehåll -->
+        </div>
+    </div>
+
+    <script>
+        // Enkel test-version av parti-funktionaliteten
+        const PARTI_TYPES = [
+            { value: "fonster", label: "Fönsterparti" },
+            { value: "dorr", label: "Dörrparti" },
+            { value: "kallare_glugg", label: "Källare/Glugg" },
+            { value: "pardorr_balkong", label: "Pardörr balkong/altan" }
+        ];
+
+        const LUFTARE_TYPES = [
+            { value: "1_luftare", label: "1 luftare" },
+            { value: "2_luftare", label: "2 luftare" },
+            { value: "3_luftare", label: "3 luftare" }
+        ];
+
+        let partis = [];
+
+        function createParties(n) {
+            console.log(`Creating ${n} parties`);
+            partis = Array.from({length: n}, (_, i) => ({
+                id: i + 1,
+                partiType: "",
+                luftareType: "",
+                pris: 0
+            }));
+            renderParties();
+        }
+
+        function renderParties() {
+            const container = document.getElementById('parties-container');
+            const configSection = document.getElementById('parti-config-section');
+            
+            if (partis.length === 0) {
+                configSection.style.display = 'none';
+                return;
+            }
+
+            configSection.style.display = 'block';
+            container.innerHTML = '';
+
+            partis.forEach(parti => {
+                const partiDiv = document.createElement('div');
+                partiDiv.className = 'parti-section';
+                partiDiv.innerHTML = `
+                    <div class="parti-header">
+                        <h4>Parti ${parti.id}</h4>
+                        <div class="price-display-inline">
+                            <strong>0 kr</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="parti-controls">
+                        <div class="form-group compact">
+                            <label>Typ av parti *</label>
+                            <select required>
+                                <option value="">Välj typ...</option>
+                                ${PARTI_TYPES.map(type => `
+                                    <option value="${type.value}">${type.label}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+
+                        <div class="form-group compact">
+                            <label>Antal luftare *</label>
+                            <select required>
+                                <option value="">Välj antal luftare...</option>
+                                ${LUFTARE_TYPES.map(luftare => `
+                                    <option value="${luftare.value}">${luftare.label}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+
+                        <div class="form-group compact">
+                            <label>Test fält</label>
+                            <select>
+                                <option value="">Välj...</option>
+                                <option value="a">Option A</option>
+                                <option value="b">Option B</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(partiDiv);
+            });
+        }
+
+        function handleWindowSectionsChange() {
+            const windowSections = parseInt(document.getElementById('window_sections').value) || 0;
+            const debugInfo = document.getElementById('debug-info');
+            
+            debugInfo.textContent = `Debug: windowSections = ${windowSections}`;
+            console.log(`Window sections changed to: ${windowSections}`);
+            
+            if (windowSections > 0) {
+                createParties(windowSections);
+            } else {
+                partis = [];
+                renderParties();
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded');
+            const windowSectionsField = document.getElementById('window_sections');
+            
+            if (windowSectionsField) {
+                console.log('Found window_sections field, adding listeners');
+                
+                windowSectionsField.addEventListener('input', () => {
+                    console.log('Input event fired:', windowSectionsField.value);
+                    handleWindowSectionsChange();
+                });
+                
+                windowSectionsField.addEventListener('change', () => {
+                    console.log('Change event fired:', windowSectionsField.value);
+                    handleWindowSectionsChange();
+                });
+            } else {
+                console.error('Could not find window_sections field!');
+            }
+        });
+    </script>
+</body>
+</html>

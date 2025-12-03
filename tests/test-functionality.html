@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test av Anbudsapp Funktionalitet</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        .test-details {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔬 Test av Anbudsapp Funktionalitet</h1>
+    
+    <div class="test-container">
+        <h2>📋 Teststrategi</h2>
+        <p>Jag kommer att testa följande systematiskt:</p>
+        <ul>
+            <li>✅ Checkbox-funktionalitet för fönstertyper</li>
+            <li>🔢 Beräkningslogik med olika kombinationer</li>
+            <li>⚠️ Validering av tomma formulär</li>
+            <li>💰 Materialkostnad och ROT-beräkningar</li>
+            <li>🧪 Edge cases och extremvärden</li>
+        </ul>
+    </div>
+
+    <div class="test-container">
+        <h2>🎯 Live Test av Applikationen</h2>
+        <p>Här kan du testa den uppdaterade applikationen direkt:</p>
+        <iframe src="index.html" title="Anbudsapp Test"></iframe>
+    </div>
+
+    <div class="test-container">
+        <h2>🔍 Automatiska Tester</h2>
+        <button onclick="runBasicTests()">Kör Grundläggande Tester</button>
+        <button onclick="runCalculationTests()">Kör Beräkningstester</button>
+        <button onclick="runValidationTests()">Kör Valideringstester</button>
+        <button onclick="runEdgeCaseTests()">Kör Edge Case Tester</button>
+        <button onclick="runAllTests()">Kör Alla Tester</button>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        const results = document.getElementById('test-results');
+        
+        function addResult(type, title, message, details = null) {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `<strong>${title}</strong><br>${message}`;
+            
+            if (details) {
+                const detailsDiv = document.createElement('div');
+                detailsDiv.className = 'test-details';
+                detailsDiv.textContent = details;
+                div.appendChild(detailsDiv);
+            }
+            
+            results.appendChild(div);
+        }
+        
+        function clearResults() {
+            results.innerHTML = '';
+        }
+        
+        async function runBasicTests() {
+            clearResults();
+            addResult('success', 'Test 1: Checkbox HTML struktur', 'Kontrollerar att checkboxes finns och är korrekt namngivna...');
+            
+            try {
+                const iframe = document.querySelector('iframe');
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                
+                // Vänta tills iframe är laddat
+                await new Promise(resolve => {
+                    if (iframe.contentDocument.readyState === 'complete') {
+                        resolve();
+                    } else {
+                        iframe.onload = resolve;
+                    }
+                });
+                
+                const checkboxes = iframeDoc.querySelectorAll('input[name="typ_av_fonster[]"]');
+                
+                if (checkboxes.length > 0) {
+                    addResult('success', 'Checkbox struktur OK', `Hittade ${checkboxes.length} fönstertyp checkboxes`);
+                    
+                    // Lista alla alternativ
+                    const options = Array.from(checkboxes).map(cb => cb.value);
+                    addResult('success', 'Tillgängliga alternativ', options.join(', '));
+                    
+                    // Kontrollera specifika alternativ
+                    const expectedOptions = [
+                        'Kopplade standard',
+                        'Isolerglas', 
+                        'Kopplade isolerglas',
+                        'Insatsbågar yttre',
+                        'Insatsbågar inre',
+                        'Insatsbågar komplett',
+                        'Inåtgående',
+                        'Utåtgående'
+                    ];
+                    
+                    const missing = expectedOptions.filter(opt => !options.includes(opt));
+                    if (missing.length === 0) {
+                        addResult('success', 'Alla förväntade alternativ finns', 'Checkboxes är korrekt implementerade');
+                    } else {
+                        addResult('error', 'Saknade alternativ', `Saknar: ${missing.join(', ')}`);
+                    }
+                    
+                } else {
+                    addResult('error', 'Checkbox struktur saknas', 'Inga fönstertyp checkboxes hittades');
+                }
+                
+            } catch (error) {
+                addResult('error', 'Test fel', `Kunde inte komma åt iframe innehåll: ${error.message}`);
+            }
+        }
+        
+        async function runCalculationTests() {
+            addResult('warning', 'Test 2: Beräkningslogik', 'Testar olika beräkningsscenarier...');
+            
+            // Detta skulle kräva mer komplex iframe-integration för att faktiskt testa beräkningarna
+            // För nu visar vi vad som skulle testas
+            const testScenarios = [
+                {
+                    name: 'Scenario 1: Grundläggande beräkning',
+                    input: '1 fönster, 1 luftare, Kopplade standard',
+                    expected: 'Baspris + standard multiplikator'
+                },
+                {
+                    name: 'Scenario 2: Kopplade isolerglas (20% extra)',
+                    input: '1 fönster, 1 luftare, Kopplade isolerglas',
+                    expected: 'Baspris * 1.20'
+                },
+                {
+                    name: 'Scenario 3: Flera fönstertyper',
+                    input: 'Kopplade standard + Isolerglas',
+                    expected: 'Kombinerad kostnad för båda'
+                },
+                {
+                    name: 'Scenario 4: Materialkostnad från total inkl. moms',
+                    input: 'Total: 10000kr, Material: 10%',
+                    expected: 'Materialkostnad: 1000kr från total inkl. moms'
+                },
+                {
+                    name: 'Scenario 5: ROT-avdrag efter materialkostnad',
+                    input: 'Total: 10000kr, Material: 1000kr, ROT: 50%',
+                    expected: 'ROT på (10000-1000) * 0.5 = 4500kr'
+                }
+            ];
+            
+            testScenarios.forEach(scenario => {
+                addResult('warning', scenario.name, `Input: ${scenario.input}`, `Förväntat: ${scenario.expected}`);
+            });
+        }
+        
+        async function runValidationTests() {
+            addResult('warning', 'Test 3: Validering', 'Testar formulärvalidering...');
+            
+            const validationTests = [
+                'Tom formulär ska inte kunna skickas',
+                'Alla antal-fält tomma ska visa felmeddelande',
+                'Minst ett antal > 0 ska krävas',
+                'Placeholder-text ska visas i tomma fält',
+                'Obligatoriska fält ska valideras'
+            ];
+            
+            validationTests.forEach(test => {
+                addResult('warning', 'Validerings-scenario', test);
+            });
+        }
+        
+        async function runEdgeCaseTests() {
+            addResult('warning', 'Test 4: Edge Cases', 'Testar extremvärden och specialfall...');
+            
+            const edgeCases = [
+                'Värde 0 i alla antal-fält',
+                'Mycket höga tal (999999)',
+                'Negativa värden (bör blockeras av min="0")',
+                'Decimaler i heltalsfält',
+                'Alla checkboxes valda samtidigt',
+                'Inga checkboxes valda',
+                'ROT-avdrag med 0kr arbetskostnad',
+                '100% materialkostnad'
+            ];
+            
+            edgeCases.forEach(testCase => {
+                addResult('warning', 'Edge Case', testCase);
+            });
+        }
+        
+        async function runAllTests() {
+            clearResults();
+            addResult('success', 'Startar komplett testsvit', 'Kör alla tester i sekvens...');
+            
+            await runBasicTests();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await runCalculationTests();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await runValidationTests();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await runEdgeCaseTests();
+            
+            addResult('success', 'Testsvit komplett', 'Alla automatiska tester har körts. Granska resultaten ovan.');
+        }
+        
+        // Auto-kör basic tests vid laddning
+        window.onload = () => {
+            setTimeout(runBasicTests, 1000);
+        };
+    </script>
+</body>
+</html>

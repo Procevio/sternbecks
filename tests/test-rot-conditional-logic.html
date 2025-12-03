@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROT-avdrag Villkorlig Logik Test - Sternbecks</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { 
+            border: 1px solid #ddd; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            background: #f8f9fa;
+        }
+        .test-case h3 { margin-top: 0; color: #2c5aa0; }
+        .scenario { background: #fff; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .expected { color: #28a745; font-weight: bold; margin: 5px 0; }
+        .sections { font-family: monospace; background: #f1f3f4; padding: 8px; margin: 5px 0; }
+        .visible { color: #28a745; }
+        .hidden { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>🧪 ROT-avdrag Villkorlig Logik Test</h1>
+    <p>Testar att "Delat ROT-avdrag" sektionen endast visas när BÅDA ROT-frågorna är "Ja".</p>
+    
+    <div style="background: #e7f3ff; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #2c5aa0;">
+        <h4>🎯 Nya Regler:</h4>
+        <ul>
+            <li><strong>Radiobutton ordning:</strong> "Nej" överst, "Ja" nederst</li>
+            <li><strong>"Delat ROT-avdrag"</strong> visas ENDAST när båda ROT-frågorna är "Ja"</li>
+            <li><strong>"Materialkostnad"</strong> visas när kunden är "Ja" (även om fastighet är "Nej")</li>
+        </ul>
+    </div>
+
+    <div class="test-case">
+        <h3>Scenario 1: Båda Nej (Standard)</h3>
+        <div class="scenario">
+            • Fastighet ROT-berättigad: <strong>Nej - Hyresrätt/Kommersiell fastighet</strong><br>
+            • Kund ROT-berättigad: <strong>Nej - visa fullpris utan avdrag</strong>
+        </div>
+        <div class="expected">Förväntat resultat:</div>
+        <div class="sections">
+            • Materialkostnad sektion: <span class="hidden">DOLD ❌</span><br>
+            • Delat ROT-avdrag sektion: <span class="hidden">DOLD ❌</span><br>
+            • ROT-avdrag i prisberäkning: <span class="hidden">DOLT ❌</span>
+        </div>
+    </div>
+
+    <div class="test-case">
+        <h3>Scenario 2: Fastighet Nej, Kund Ja</h3>
+        <div class="scenario">
+            • Fastighet ROT-berättigad: <strong>Nej - Hyresrätt/Kommersiell fastighet</strong><br>
+            • Kund ROT-berättigad: <strong>Ja - inkludera ROT-avdrag i anbudet</strong>
+        </div>
+        <div class="expected">Förväntat resultat:</div>
+        <div class="sections">
+            • Materialkostnad sektion: <span class="visible">SYNLIG ✅</span><br>
+            • Delat ROT-avdrag sektion: <span class="hidden">DOLD ❌</span> (fastighet ej berättigad)<br>
+            • ROT-avdrag i prisberäkning: <span class="visible">SYNLIGT ✅</span>
+        </div>
+    </div>
+
+    <div class="test-case">
+        <h3>Scenario 3: Fastighet Ja, Kund Nej</h3>
+        <div class="scenario">
+            • Fastighet ROT-berättigad: <strong>Ja - Villa/Radhus</strong><br>
+            • Kund ROT-berättigad: <strong>Nej - visa fullpris utan avdrag</strong>
+        </div>
+        <div class="expected">Förväntat resultat:</div>
+        <div class="sections">
+            • Materialkostnad sektion: <span class="hidden">DOLD ❌</span><br>
+            • Delat ROT-avdrag sektion: <span class="hidden">DOLD ❌</span> (kund ej berättigad)<br>
+            • ROT-avdrag i prisberäkning: <span class="hidden">DOLT ❌</span>
+        </div>
+    </div>
+
+    <div class="test-case">
+        <h3>Scenario 4: Båda Ja ⭐</h3>
+        <div class="scenario">
+            • Fastighet ROT-berättigad: <strong>Ja - Villa/Radhus</strong><br>
+            • Kund ROT-berättigad: <strong>Ja - inkludera ROT-avdrag i anbudet</strong>
+        </div>
+        <div class="expected">Förväntat resultat:</div>
+        <div class="sections">
+            • Materialkostnad sektion: <span class="visible">SYNLIG ✅</span><br>
+            • Delat ROT-avdrag sektion: <span class="visible">SYNLIG ✅</span> (båda berättigade!)<br>
+            • ROT-avdrag i prisberäkning: <span class="visible">SYNLIGT ✅</span><br>
+            • Preliminär text: <span class="visible">SYNLIG ✅</span>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px; padding: 20px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px;">
+        <h2>📋 Test Checklista</h2>
+        <p>För att testa manuellt, gör följande:</p>
+        <ol>
+            <li>Logga in i appen</li>
+            <li>Kontrollera att båda ROT-frågorna är förinställda på "Nej"</li>
+            <li>Kontrollera att "Nej" är överst och "Ja" nederst på båda ROT-frågor</li>
+            <li>Testa varje scenario ovan och verifiera att rätt sektioner visas/döljs</li>
+            <li>Kontrollera att "Delat ROT-avdrag" endast visas i Scenario 4</li>
+            <li>Verifiera att ROT-beräkningar fungerar korrekt i alla scenarion</li>
+        </ol>
+    </div>
+
+    <div style="margin-top: 20px; padding: 15px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px;">
+        <h3>🎯 Logik Sammanfattning</h3>
+        <div style="font-family: monospace; background: #f8f9fa; padding: 10px; margin: 10px 0;">
+            if (fastighet === "Ja" && kund === "Ja") {<br>
+            &nbsp;&nbsp;// Visa: Materialkostnad + Delat ROT + ROT i prisberäkning<br>
+            } else if (kund === "Ja" && fastighet === "Nej") {<br>
+            &nbsp;&nbsp;// Visa: Endast Materialkostnad + ROT i prisberäkning<br>
+            } else {<br>
+            &nbsp;&nbsp;// Dölj: Allt ROT-relaterat<br>
+            }
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Spröjs Fix Test - Sternbecks</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { 
+            border: 1px solid #ddd; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            background: #f8f9fa;
+        }
+        .test-case h3 { margin-top: 0; color: #2c5aa0; }
+        .step { background: #fff; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .expected { color: #28a745; font-weight: bold; margin: 5px 0; }
+        .before-fix { background: #f8d7da; border: 1px solid #f5c6cb; }
+        .after-fix { background: #d4edda; border: 1px solid #c3e6cb; }
+        .code-fix { font-family: monospace; background: #f1f3f4; padding: 8px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Reset Spröjs Fix Test</h1>
+    <p>Testar att "Hur många av fönstren har spröjs?" återställs korrekt vid reset och logout/login.</p>
+    
+    <div style="background: #fff3cd; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #ffc107;">
+        <h4>🐛 Identifierat Problem:</h4>
+        <ul>
+            <li><strong>Fel:</strong> <code>antal_fonster_med_sprojs</code> återställdes INTE vid reset</li>
+            <li><strong>Orsak:</strong> Fältet saknades i <code>textInputs</code> listan i reset-funktionen</li>
+            <li><strong>Påverkan:</strong> Värdet fanns kvar efter reset/logout</li>
+        </ul>
+    </div>
+
+    <div class="test-case before-fix">
+        <h3>❌ Före Fix: Buggy Beteende</h3>
+        <div class="step">
+            <strong>Scenario:</strong><br>
+            1. Logga in<br>
+            2. Välj "Spröjs: Ja"<br>
+            3. Ange "Antal spröjs per båge: 4"<br>
+            4. Ange "Hur många av fönstren har spröjs: 3"<br>
+            5. Tryck på "Reset" ELLER logga ut och in igen
+        </div>
+        <div class="expected">Buggy resultat:</div>
+        <div class="code-fix">
+            • "Antal spröjs per båge": ✅ Återställs till 0<br>
+            • "Hur många av fönstren har spröjs": ❌ Behåller värdet "3"
+        </div>
+    </div>
+
+    <div class="test-case after-fix">
+        <h3>✅ Efter Fix: Korrekt Beteende</h3>
+        <div class="step">
+            <strong>Samma scenario:</strong><br>
+            1. Logga in<br>
+            2. Välj "Spröjs: Ja"<br>
+            3. Ange "Antal spröjs per båge: 4"<br>
+            4. Ange "Hur många av fönstren har spröjs: 3"<br>
+            5. Tryck på "Reset" ELLER logga ut och in igen
+        </div>
+        <div class="expected">Korrekt resultat:</div>
+        <div class="code-fix">
+            • "Antal spröjs per båge": ✅ Återställs till 0<br>
+            • "Hur många av fönstren har spröjs": ✅ Återställs till 0
+        </div>
+    </div>
+
+    <div style="margin-top: 30px; padding: 20px; background: #e7f3ff; border: 1px solid #bee5eb; border-radius: 5px;">
+        <h2>🔧 Teknisk Fix</h2>
+        
+        <h4>Problem:</h4>
+        <div class="code-fix">
+            <strong>textInputs</strong> array i resetApp() saknade:<br>
+            'antal_fonster_med_sprojs'
+        </div>
+        
+        <h4>Lösning - Två listor uppdaterade:</h4>
+        
+        <div class="code-fix">
+            <strong>1. textInputs</strong> (reset-funktionen):<br>
+            const textInputs = [<br>
+            &nbsp;&nbsp;// ... andra fält ...<br>
+            &nbsp;&nbsp;'antal_sprojs_per_bage',<br>
+            &nbsp;&nbsp;<span style="background: #28a745; color: white; padding: 2px;">'antal_fonster_med_sprojs',</span> ← TILLAGT<br>
+            &nbsp;&nbsp;'le_kvm',<br>
+            &nbsp;&nbsp;// ...<br>
+            ];
+        </div>
+        
+        <div class="code-fix">
+            <strong>2. numericFields</strong> (auto-fill med 0):<br>
+            const numericFields = [<br>
+            &nbsp;&nbsp;// ... andra fält ...<br>
+            &nbsp;&nbsp;'antal_sprojs_per_bage',<br>
+            &nbsp;&nbsp;<span style="background: #28a745; color: white; padding: 2px;">'antal_fonster_med_sprojs',</span> ← TILLAGT<br>
+            &nbsp;&nbsp;'le_kvm',<br>
+            &nbsp;&nbsp;// ...<br>
+            ];
+        </div>
+    </div>
+
+    <div class="test-case">
+        <h3>📋 Manual Test Checklista</h3>
+        <div class="step">
+            <strong>Test 1: Reset-knapp</strong><br>
+            1. Logga in i appen<br>
+            2. Välj "Spröjs: Ja"<br>
+            3. Ange spröjs-värden (t.ex. 4 och 3)<br>
+            4. Tryck på "Återställ" knappen<br>
+            5. ✅ Kontrollera att båda spröjs-fält är tomma/0
+        </div>
+        
+        <div class="step">
+            <strong>Test 2: Logout/Login</strong><br>
+            1. Ange spröjs-värden igen<br>
+            2. Logga ut från appen<br>
+            3. Logga in igen<br>
+            4. ✅ Kontrollera att alla fält är återställda (inklusive spröjs)
+        </div>
+        
+        <div class="step">
+            <strong>Test 3: Spröjs auto-dölj/visa</strong><br>
+            1. Välj "Spröjs: Ja" → Fält visas<br>
+            2. Ange värden i båda spröjs-fält<br>
+            3. Välj "Spröjs: Nej" → Fält döljs och nollställs automatiskt<br>
+            4. ✅ Kontrollera att båda värden är 0 när fält visas igen
+        </div>
+    </div>
+
+    <div style="margin-top: 20px; padding: 15px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 5px;">
+        <h3>📚 Relaterade Funktioner</h3>
+        <ul>
+            <li><strong>resetApp():</strong> Huvudfunktion som nollställer alla fält</li>
+            <li><strong>resetFormOnly():</strong> Reset-knapp anropar resetApp()</li>
+            <li><strong>Spröjs auto-nollställning:</strong> När "Spröjs: Nej" väljs</li>
+            <li><strong>priceAffectingFields:</strong> Redan innehöll fältet för prisberäkning</li>
+        </ul>
+    </div>
+
+    <div style="margin-top: 20px; padding: 15px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px;">
+        <h3>✅ Status: FIXED</h3>
+        <p><strong>Fix implementerad:</strong> <code>antal_fonster_med_sprojs</code> tillagt i båda listor</p>
+        <p><strong>Test krävs:</strong> Manuell verifiering att reset fungerar som förväntat</p>
+        <p><strong>Impact:</strong> Både reset-knapp och logout/login nollställer nu alla spröjs-fält</p>
+    </div>
+</body>
+</html>

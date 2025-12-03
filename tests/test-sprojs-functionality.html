@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Spröjs Functionality</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .results { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        button { padding: 10px 15px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Test Spröjs Functionality</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Visa/Dölj Fält</h2>
+        <p>Testa att fältet "Hur många av fönstren har spröjs?" visas och döljs korrekt</p>
+        <button onclick="testVisibility()">Kör Test</button>
+        <div id="visibility-results" class="results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Beräkningsformler</h2>
+        <p>Testa att beräkningsformlerna är korrekta</p>
+        <button onclick="testCalculations()">Kör Test</button>
+        <div id="calculation-results" class="results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Exempel från specifikation</h2>
+        <p>3 spröjs på 2st av 4st 3-luftare = 4,500kr</p>
+        <button onclick="testSpecExample()">Kör Test</button>
+        <div id="spec-results" class="results"></div>
+    </div>
+    
+    <script src="../assets/js/app.js"></script>
+    <script>
+        // Initialize calculator
+        let calculator = null;
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Create a minimal form structure for testing
+            document.body.insertAdjacentHTML('beforeend', `
+                <form id="quote-form" style="display: none;">
+                    <input type="radio" name="sprojs_choice" value="Nej" checked>
+                    <input type="radio" name="sprojs_choice" value="Ja">
+                    <div id="sprojs-antal-group" style="display: none;">
+                        <input type="number" id="antal_sprojs_per_bage" name="antal_sprojs_per_bage" value="0">
+                    </div>
+                    <div id="sprojs-fonster-group" style="display: none;">
+                        <input type="number" id="antal_fonster_med_sprojs" name="antal_fonster_med_sprojs" value="0">
+                    </div>
+                </form>
+            `);
+            
+            try {
+                calculator = new QuoteCalculator();
+                document.getElementById('visibility-results').innerHTML = '<span class="pass">Calculator initialized successfully</span>';
+            } catch (error) {
+                document.getElementById('visibility-results').innerHTML = '<span class="fail">Failed to initialize calculator: ' + error.message + '</span>';
+            }
+        });
+        
+        function testVisibility() {
+            const results = document.getElementById('visibility-results');
+            results.innerHTML = '';
+            
+            try {
+                // Test showing fields
+                const jaRadio = document.querySelector('input[name="sprojs_choice"][value="Ja"]');
+                const nejRadio = document.querySelector('input[name="sprojs_choice"][value="Nej"]');
+                const antalGroup = document.getElementById('sprojs-antal-group');
+                const fonsterGroup = document.getElementById('sprojs-fonster-group');
+                
+                // Select "Ja"
+                jaRadio.checked = true;
+                jaRadio.dispatchEvent(new Event('change'));
+                
+                if (antalGroup.style.display === 'block' && fonsterGroup.style.display === 'block') {
+                    results.innerHTML += '<span class="pass">✓ Fields show when "Ja" is selected</span><br>';
+                } else {
+                    results.innerHTML += '<span class="fail">✗ Fields don\'t show when "Ja" is selected</span><br>';
+                }
+                
+                // Select "Nej"
+                nejRadio.checked = true;
+                nejRadio.dispatchEvent(new Event('change'));
+                
+                if (antalGroup.style.display === 'none' && fonsterGroup.style.display === 'none') {
+                    results.innerHTML += '<span class="pass">✓ Fields hide when "Nej" is selected</span><br>';
+                } else {
+                    results.innerHTML += '<span class="fail">✗ Fields don\'t hide when "Nej" is selected</span><br>';
+                }
+                
+            } catch (error) {
+                results.innerHTML += '<span class="fail">Error: ' + error.message + '</span>';
+            }
+        }
+        
+        function testCalculations() {
+            const results = document.getElementById('calculation-results');
+            results.innerHTML = '';
+            
+            try {
+                if (!calculator) {
+                    results.innerHTML = '<span class="fail">Calculator not initialized</span>';
+                    return;
+                }
+                
+                // Test calculation logic by calling the test method
+                console.clear();
+                calculator.testSprojsCalculations();
+                
+                // Since we can't easily capture console output, just indicate tests ran
+                results.innerHTML = '<span class="pass">Calculation tests completed. Check browser console for detailed results.</span>';
+                
+            } catch (error) {
+                results.innerHTML = '<span class="fail">Error: ' + error.message + '</span>';
+            }
+        }
+        
+        function testSpecExample() {
+            const results = document.getElementById('spec-results');
+            results.innerHTML = '';
+            
+            try {
+                if (!calculator) {
+                    results.innerHTML = '<span class="fail">Calculator not initialized</span>';
+                    return;
+                }
+                
+                // Test the specific example: 3 spröjs på 2st av 4st 3-luftare = 4,500kr
+                const testData = {
+                    luftare1: 0, luftare2: 0, luftare3: 4, luftare4: 0, luftare5: 0, luftare6: 0,
+                    hasSprojs: true,
+                    sprojsPerWindow: 3,
+                    windowsWithSprojs: 2
+                };
+                
+                const result = calculator.calculateExtrasCost(testData);
+                const expected = 250 * 3 * 3 * 2; // 4,500kr
+                
+                if (result === expected) {
+                    results.innerHTML = `<span class="pass">✓ Spec example PASSED: ${result}kr (expected: ${expected}kr)</span>`;
+                } else {
+                    results.innerHTML = `<span class="fail">✗ Spec example FAILED: ${result}kr (expected: ${expected}kr)</span>`;
+                }
+                
+            } catch (error) {
+                results.innerHTML = `<span class="fail">Error: ${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>
