@@ -3816,122 +3816,207 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
 
-                const customerFields = this.getCustomerFields();
+                // ——————————————————————————————
+                // DATA
+                // ——————————————————————————————
+                const customer = this.getCustomerFields();
+                const calc = this.getCalculatedPriceData();
                 const offerHTML = this.generateOfferHTML();
                 const offerText = this.generateOfferTextFromHTML(offerHTML);
 
-                if (!offerText) {
-                    reject(new Error('Ingen offertdata att generera PDF från'));
-                    return;
-                }
+                const today = new Date().toLocaleDateString('sv-SE');
 
-                // --- LOGOTYP HÖGERJUSTERAD I HEADER ---
+                // ——————————————————————————————
+                // HEADER
+                // ——————————————————————————————
+                // Logotyp
                 try {
-                    const logoImg = new Image();
-                    logoImg.crossOrigin = 'anonymous';
+                    const logo = new Image();
+                    logo.src = "assets/images/Sternbecks logotyp.png";
+                    await new Promise(res => { logo.onload = res; logo.onerror = res; });
+                    doc.addImage(logo, "PNG", 150, 10, 40, 40);
+                } catch (_) {}
 
-                    await new Promise((imgResolve) => {
-                        logoImg.onload = () => imgResolve();
-                        logoImg.onerror = () => {
-                            console.warn('Kunde inte ladda logotyp för PDF');
-                            imgResolve();
-                        };
-                        logoImg.src = 'assets/images/Sternbecks logotyp.png';
-                    });
+                // Titel
+                doc.setFontSize(22);
+                doc.setFont(undefined, "bold");
+                doc.text("Offert", 20, 20);
 
-                    if (logoImg.complete && logoImg.naturalWidth > 0) {
-                        const logoWidth = 40;
-                        const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
-                        doc.addImage(logoImg, 'PNG', 150, 15, logoWidth, logoHeight);
-                    }
-                } catch (e) {
-                    console.warn('Kunde inte lägga till logotyp i PDF:', e);
-                }
-
-                // --- HEADER ---
-                doc.setFontSize(20);
-                doc.setFont(undefined, 'bold');
-                doc.text('Offert', 20, 20);
-
-                doc.setFontSize(10);
-                doc.setFont(undefined, 'normal');
-                doc.text('Sternbecks Måleri & Fönsterhantverk', 20, 30);
-                doc.text(new Date().toLocaleDateString('sv-SE'), 20, 35);
-
-                // --- INNEHÅLL ---
                 doc.setFontSize(11);
+                doc.setFont(undefined, "normal");
+                doc.text("Sternbecks Måleri & Fönsterhantverk", 20, 30);
+                doc.text(today, 20, 36);
+
+                // ——————————————————————————————
+                // KUNDBLOCK
+                // ——————————————————————————————
                 let y = 50;
-                const lines = offerText.split('\n');
+                doc.setFontSize(13);
+                doc.setFont(undefined, "bold");
+                doc.text("Kund", 20, y);
 
-                lines.forEach(line => {
-                    if (y > 270) {
-                        doc.addPage();
-                        y = 20;
-                    }
+                doc.setFontSize(11);
+                doc.setFont(undefined, "normal");
+                y += 7;
 
-                    const trimmed = line.trim();
-                    if (!trimmed) {
-                        // tom rad = extra luft
-                        y += 6;
-                        return;
-                    }
+                const lines = [];
+                if (customer.company) lines.push(customer.company);
+                if (customer.contact) lines.push(customer.contact);
+                if (customer.personnummer) lines.push("Personnummer: " + customer.personnummer);
+                if (customer.address) lines.push(customer.address);
+                if (customer.postal || customer.city) lines.push([customer.postal, customer.city].filter(Boolean).join(" "));
+                if (customer.fastighet) lines.push("Fastighetsbeteckning: " + customer.fastighet);
+                if (customer.phone) lines.push("Telefon: " + customer.phone);
+                if (customer.email) lines.push("E-post: " + customer.email);
 
-                    // Rubriker vi vill lyfta fram
-                    const isHeading = /^(Kund|ANBUD|PRIS:|PRIS VID GODKÄNT ROTAVDRAG:|För anbudet gäller:)$/.test(trimmed);
-
-                    if (isHeading) {
-                        doc.setFontSize(13);
-                        doc.setFont(undefined, 'bold');
-                        doc.text(trimmed, 20, y);
-                        y += 9;
-                        doc.setFontSize(11);
-                        doc.setFont(undefined, 'normal');
-                    } else {
-                        const wrapped = this._pdfMultiline(doc, trimmed, 170);
-                        wrapped.forEach(wLine => {
-                            doc.text(wLine, 20, y);
-                            y += 7;
-                        });
-                    }
+                lines.forEach(l => {
+                    doc.text(l, 20, y);
+                    y += 6;
                 });
 
-                // --- SAMMANFATTNINGSBLOCK (oförändrad logik, bara layout) ---
-                try {
-                    const calc = this.getCalculatedPriceData();
-                    const totalIncl = this.formatPrice(calc.total_incl_vat);
-                    const rotLine = calc.rot_applicable
-                        ? `ROT-avdrag (50% på arbetskostnad): -${this.formatPrice(calc.rot_deduction)}`
-                        : 'ROT-avdrag: Ej tillämpligt';
-                    const customerPays = this.formatPrice(calc.customer_pays);
+                y += 6;
 
-                    if (y > 240) {
-                        doc.addPage();
-                        y = 20;
-                    }
+                // ——————————————————————————————
+                // ANBUDSTEXT
+                // ——————————————————————————————
+                doc.setFontSize(13);
+                doc.setFont(undefined, "bold");
+                doc.text("ANBUD", 20, y);
+                y += 8;
 
-                    doc.setLineWidth(0.5);
-                    doc.line(20, y, 190, y);
+                doc.setFontSize(11);
+                doc.setFont(undefined, "normal");
+
+                const paragraph = offerText.split("\n").filter(row =>
+                    !row.startsWith("Kund") &&
+                    !row.startsWith("För anbudet gäller:") &&
+                    !row.match(/^\d\./)
+                );
+
+                paragraph.forEach(row => {
+                    const block = doc.splitTextToSize(row, 170);
+                    block.forEach(line => {
+                        doc.text(line, 20, y);
+                        y += 6;
+                    });
+                    y += 2;
+                });
+
+                // ——————————————————————————————
+                // PRISTABELL (pris ex moms)
+                // ——————————————————————————————
+                y += 8;
+                doc.setFontSize(12);
+                doc.setFont(undefined, "bold");
+                doc.text("Arbetsmoment / artiklar", 20, y);
+                doc.text("ex. moms", 160, y, { align: "right" });
+
+                y += 5;
+                doc.setLineWidth(0.3);
+                doc.line(20, y, 190, y);
+                y += 6;
+
+                // Dina partier
+                const partis = window.partisState?.partis || [];
+                partis.forEach(p => {
+                    const name = p.typ || p.type || p.partiType || "Arbete";
+                    const price = this.formatPrice((p.pris || 0) / 1.25); // ex moms
+                    doc.setFont(undefined, "normal");
+
+                    doc.text(name, 20, y);
+                    doc.text(price + " kr", 190, y, { align: "right" });
+
                     y += 6;
+                });
 
-                    doc.setFontSize(13);
-                    doc.setFont(undefined, 'bold');
-                    doc.text(`Totalt inkl. moms: ${totalIncl}`, 20, y); y += 7;
-                    doc.text(rotLine, 20, y); y += 7;
-                    doc.text(`KUNDEN BETALAR: ${customerPays}`, 20, y); y += 7;
+                y += 4;
+                doc.line(20, y, 190, y);
+                y += 8;
 
-                    doc.setFont(undefined, 'normal');
-                    doc.setFontSize(11);
-                    doc.line(20, y, 190, y);
-                    y += 4;
-                } catch (e) {
-                    console.warn('Kunde inte rita sammanfattningsblock i PDF:', e);
+                // ——————————————————————————————
+                // TOTALPRIS-BLOCK
+                // ——————————————————————————————
+                const blockTop = y;
+
+                doc.setFillColor(240, 240, 240);
+                doc.rect(20, blockTop, 170, 30, "F");
+
+                doc.setFontSize(14);
+                doc.setFont(undefined, "bold");
+                doc.text("Totalpris", 30, blockTop + 10);
+
+                doc.setFontSize(16);
+                doc.text(this.formatPrice(calc.total_excl_vat) + " kr", 180, blockTop + 10, { align: "right" });
+
+                doc.setFontSize(10);
+                doc.setFont(undefined, "normal");
+                doc.text("ex. moms", 30, blockTop + 16);
+                y = blockTop + 38;
+
+                // ——————————————————————————————
+                // EX / MOMS / INKL / ROT
+                // ——————————————————————————————
+                y += 4;
+                doc.setFontSize(11);
+
+                doc.text("Pris exkl. moms:", 20, y);
+                doc.text(this.formatPrice(calc.total_excl_vat) + " kr", 190, y, { align: "right" });
+                y += 7;
+
+                doc.text("Moms:", 20, y);
+                doc.text(this.formatPrice(calc.vat_amount) + " kr", 190, y, { align: "right" });
+                y += 7;
+
+                doc.text("Totalpris inkl. moms:", 20, y);
+                doc.text(this.formatPrice(calc.total_incl_vat) + " kr", 190, y, { align: "right" });
+                y += 7;
+
+                if (calc.rot_applicable) {
+                    doc.text("ROT-avdrag:", 20, y);
+                    doc.text("-" + this.formatPrice(calc.rot_deduction) + " kr", 190, y, { align: "right" });
+                    y += 7;
                 }
 
-                const blob = doc.output('blob');
-                resolve(blob);
-            } catch (error) {
-                console.error('Fel vid PDF-generering (Offert):', error);
-                reject(error);
+                doc.setFont(undefined, "bold");
+                doc.setFontSize(13);
+                doc.text("KUNDEN BETALAR: " + this.formatPrice(calc.customer_pays) + " kr", 20, y);
+                y += 10;
+
+                // ——————————————————————————————
+                // VILLKOR
+                // ——————————————————————————————
+                doc.setFontSize(13);
+                doc.setFont(undefined, "bold");
+                doc.text("För anbudet gäller:", 20, y);
+                y += 7;
+
+                doc.setFontSize(11);
+                doc.setFont(undefined, "normal");
+
+                const conditions = offerText.split("\n").filter(row => row.match(/^\d\./));
+                conditions.forEach(c => {
+                    doc.text(c, 20, y);
+                    y += 6;
+                });
+
+                y += 8;
+
+                // ——————————————————————————————
+                // SIGNATUR
+                // ——————————————————————————————
+                const city = customer.city || "Ludvika";
+                doc.text(`${city} ${today}`, 20, y); y += 6;
+                doc.text("Johan Sternbeck", 20, y); y += 6;
+                doc.text("Sternbecks Fönsterhantverk i Dalarna AB", 20, y); y += 6;
+                doc.text("Lavendelstigen 7", 20, y); y += 6;
+                doc.text("77143 Ludvika", 20, y); y += 6;
+                doc.text("Org.nr 559389-0717", 20, y); y += 6;
+                doc.text("Tel.nr 076-846 52 79 – Företaget innehar F-skatt", 20, y);
+
+                resolve(doc.output("blob"));
+
+            } catch (e) {
+                reject(e);
             }
         });
     }
