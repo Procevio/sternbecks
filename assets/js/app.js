@@ -3720,22 +3720,58 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         const content = tempDiv.querySelector('.offer-content, .offer--locked, .offer');
         if (!content) return '';
 
-        // 1) Gör alla <br> till riktiga radbrytningar
-        content.querySelectorAll('br').forEach((br) => {
+        // Bygg kundblock från .offer-recipient
+        const recipient = content.querySelector('.offer-recipient');
+        let linesFromCustomerBlock = [];
+        
+        if (recipient) {
+            // Samla alla div från recipient
+            const customerDivs = recipient.querySelectorAll('div');
+            const customerLines = Array.from(customerDivs)
+                .map(div => div.textContent.trim())
+                .filter(line => line.length > 0);
+            
+            if (customerLines.length > 0) {
+                linesFromCustomerBlock.push('Kund');
+                linesFromCustomerBlock.push(...customerLines);
+                linesFromCustomerBlock.push(''); // tom rad som mellanrum efter kundblocket
+            }
+            
+            // Ta bort recipient från content så att dess text inte kommer med en gång till
+            recipient.remove();
+        }
+
+        // Konvertera alla <br> till riktiga radbrytningar
+        content.querySelectorAll('br').forEach(br => {
             br.replaceWith(document.createTextNode('\n'));
         });
 
-        // 2) Extrahera text
+        // Extrahera text från resten av content
         let text = content.textContent || content.innerText || '';
 
-        // 3) Rensa upp whitespace men behåll radbrytningar
-        text = text
+        // Städa upp whitespace men behåll radbrytningar
+        let bodyLines = text
             .split('\n')
-            .map(line => line.replace(/\s+/g, ' ').trim()) // städa upp multipla mellanslag
-            .filter(line => line.length > 0)
-            .join('\n');
+            .map(line => line.replace(/\s+/g, ' ').trim()) // städa multipla mellanslag
+            .filter(line => line.length > 0);
 
-        return text.trim();
+        // Lägg in en extra tom rad efter rubriken "För anbudet gäller:"
+        const processedBodyLines = [];
+        bodyLines.forEach(line => {
+            processedBodyLines.push(line);
+            if (line === 'För anbudet gäller:') {
+                processedBodyLines.push(''); // tom rad
+            }
+        });
+
+        // Kombinera kundblocket (om det finns) med övrig text
+        let resultLines = [];
+        if (linesFromCustomerBlock.length > 0) {
+            resultLines = resultLines.concat(linesFromCustomerBlock);
+        }
+        resultLines = resultLines.concat(processedBodyLines);
+
+        return resultLines.join('\n').trim();
     }
 
     renderOfferPreview() {
@@ -3773,7 +3809,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
     }
 
     createOfferPdfBlob() {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             try {
                 if (!window.jspdf || !window.jspdf.jsPDF) {
                     throw new Error('jsPDF ej laddad');
@@ -3788,6 +3824,30 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 if (!offerText) {
                     reject(new Error('Ingen offertdata att generera PDF från'));
                     return;
+                }
+
+                // Lägg till logotyp (högerjusterad i header)
+                try {
+                    const logoImg = new Image();
+                    logoImg.crossOrigin = 'anonymous';
+                    
+                    // Vänta på att logotypen laddas
+                    await new Promise((imgResolve, imgReject) => {
+                        logoImg.onload = () => imgResolve();
+                        logoImg.onerror = () => {
+                            console.warn('Kunde inte ladda logotyp för PDF');
+                            imgResolve(); // Fortsätt även om logotypen inte laddas
+                        };
+                        logoImg.src = 'assets/images/Sternbecks logotyp.png';
+                    });
+
+                    if (logoImg.complete && logoImg.naturalWidth > 0) {
+                        const logoWidth = 40;
+                        const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+                        doc.addImage(logoImg, 'PNG', 150, 15, logoWidth, logoHeight);
+                    }
+                } catch (e) {
+                    console.warn('Kunde inte lägga till logotyp i PDF:', e);
                 }
 
                 // Header
@@ -3809,21 +3869,21 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                         y = 20;
                     }
 
-                    if (line.match(/^(Kund|Renovering|Partier|Prissättning|ROT-avdrag)$/)) {
+                    if (line.match(/^(Kund|Renovering|Partier|Prissättning|ROT-avdrag|För anbudet gäller:?)$/)) {
                         doc.setFontSize(14);
                         doc.setFont(undefined, 'bold');
                         doc.text(line, 20, y);
-                        y += 7;
+                        y += 9; // Ökad spacing för rubriker
                         doc.setFontSize(11);
                         doc.setFont(undefined, 'normal');
                     } else if (line.trim()) {
                         const wrapped = this._pdfMultiline(doc, line, 170);
                         wrapped.forEach(wLine => {
                             doc.text(wLine, 20, y);
-                            y += 6;
+                            y += 7; // Ökad spacing för vanlig text
                         });
                     } else {
-                        y += 4;
+                        y += 6; // Ökad spacing för tomma rader
                     }
                 });
 
