@@ -3716,32 +3716,31 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         const infoMsg = tempDiv.querySelector('.info-message');
         if (infoMsg) return '';
 
-        // Hitta offer-containern (antingen .offer-content eller .offer--locked)
+        // Hitta offer-containern (antingen .offer-content eller .offer--locked eller .offer)
         const content = tempDiv.querySelector('.offer-content, .offer--locked, .offer');
         if (!content) return '';
 
-        // Bygg kundblock från .offer-recipient
+        // --- BYGG KUNDBLOCK ---
         const recipient = content.querySelector('.offer-recipient');
         let linesFromCustomerBlock = [];
-        
+
         if (recipient) {
-            // Samla alla div från recipient
             const customerDivs = recipient.querySelectorAll('div');
             const customerLines = Array.from(customerDivs)
                 .map(div => div.textContent.trim())
                 .filter(line => line.length > 0);
-            
+
             if (customerLines.length > 0) {
                 linesFromCustomerBlock.push('Kund');
                 linesFromCustomerBlock.push(...customerLines);
-                linesFromCustomerBlock.push(''); // tom rad som mellanrum efter kundblocket
+                linesFromCustomerBlock.push(''); // tom rad efter kundblocket
             }
-            
-            // Ta bort recipient från content så att dess text inte kommer med en gång till
+
+            // Ta bort recipient från content så att texten inte dupliceras
             recipient.remove();
         }
 
-        // Konvertera alla <br> till riktiga radbrytningar
+        // --- KONVERTERA <br> TILL RIKTIGA RADBRYTNINGAR ---
         content.querySelectorAll('br').forEach(br => {
             br.replaceWith(document.createTextNode('\n'));
         });
@@ -3760,7 +3759,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         bodyLines.forEach(line => {
             processedBodyLines.push(line);
             if (line === 'För anbudet gäller:') {
-                processedBodyLines.push(''); // tom rad
+                processedBodyLines.push(''); // extra tom rad
             }
         });
 
@@ -3826,17 +3825,16 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                     return;
                 }
 
-                // Lägg till logotyp (högerjusterad i header)
+                // --- LOGOTYP HÖGERJUSTERAD I HEADER ---
                 try {
                     const logoImg = new Image();
                     logoImg.crossOrigin = 'anonymous';
-                    
-                    // Vänta på att logotypen laddas
-                    await new Promise((imgResolve, imgReject) => {
+
+                    await new Promise((imgResolve) => {
                         logoImg.onload = () => imgResolve();
                         logoImg.onerror = () => {
                             console.warn('Kunde inte ladda logotyp för PDF');
-                            imgResolve(); // Fortsätt även om logotypen inte laddas
+                            imgResolve();
                         };
                         logoImg.src = 'assets/images/Sternbecks logotyp.png';
                     });
@@ -3850,18 +3848,20 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                     console.warn('Kunde inte lägga till logotyp i PDF:', e);
                 }
 
-                // Header
+                // --- HEADER ---
                 doc.setFontSize(20);
+                doc.setFont(undefined, 'bold');
                 doc.text('Offert', 20, 20);
 
                 doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
                 doc.text('Sternbecks Måleri & Fönsterhantverk', 20, 30);
                 doc.text(new Date().toLocaleDateString('sv-SE'), 20, 35);
 
-                // Content
+                // --- INNEHÅLL ---
                 doc.setFontSize(11);
-                const lines = offerText.split('\n');
                 let y = 50;
+                const lines = offerText.split('\n');
 
                 lines.forEach(line => {
                     if (y > 270) {
@@ -3869,25 +3869,33 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                         y = 20;
                     }
 
-                    if (line.match(/^(Kund|Renovering|Partier|Prissättning|ROT-avdrag|För anbudet gäller:?)$/)) {
-                        doc.setFontSize(14);
+                    const trimmed = line.trim();
+                    if (!trimmed) {
+                        // tom rad = extra luft
+                        y += 6;
+                        return;
+                    }
+
+                    // Rubriker vi vill lyfta fram
+                    const isHeading = /^(Kund|ANBUD|PRIS:|PRIS VID GODKÄNT ROTAVDRAG:|För anbudet gäller:)$/.test(trimmed);
+
+                    if (isHeading) {
+                        doc.setFontSize(13);
                         doc.setFont(undefined, 'bold');
-                        doc.text(line, 20, y);
-                        y += 9; // Ökad spacing för rubriker
+                        doc.text(trimmed, 20, y);
+                        y += 9;
                         doc.setFontSize(11);
                         doc.setFont(undefined, 'normal');
-                    } else if (line.trim()) {
-                        const wrapped = this._pdfMultiline(doc, line, 170);
+                    } else {
+                        const wrapped = this._pdfMultiline(doc, trimmed, 170);
                         wrapped.forEach(wLine => {
                             doc.text(wLine, 20, y);
-                            y += 7; // Ökad spacing för vanlig text
+                            y += 7;
                         });
-                    } else {
-                        y += 6; // Ökad spacing för tomma rader
                     }
                 });
 
-                // Sammanfattningsblock (fetstil): Totalt inkl. moms, ROT, Kunden betalar
+                // --- SAMMANFATTNINGSBLOCK (oförändrad logik, bara layout) ---
                 try {
                     const calc = this.getCalculatedPriceData();
                     const totalIncl = this.formatPrice(calc.total_incl_vat);
@@ -3896,9 +3904,14 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                         : 'ROT-avdrag: Ej tillämpligt';
                     const customerPays = this.formatPrice(calc.customer_pays);
 
-                    if (y > 240) { doc.addPage(); y = 20; }
+                    if (y > 240) {
+                        doc.addPage();
+                        y = 20;
+                    }
+
                     doc.setLineWidth(0.5);
-                    doc.line(20, y, 190, y); y += 6;
+                    doc.line(20, y, 190, y);
+                    y += 6;
 
                     doc.setFontSize(13);
                     doc.setFont(undefined, 'bold');
@@ -3908,7 +3921,8 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
 
                     doc.setFont(undefined, 'normal');
                     doc.setFontSize(11);
-                    doc.line(20, y, 190, y); y += 4;
+                    doc.line(20, y, 190, y);
+                    y += 4;
                 } catch (e) {
                     console.warn('Kunde inte rita sammanfattningsblock i PDF:', e);
                 }
