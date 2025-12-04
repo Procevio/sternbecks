@@ -3708,86 +3708,61 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
     }
 
     generateOfferTextFromHTML(html) {
-        // Konvertera HTML till ren text för PDF
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
 
-        // Ta bort info-message om den finns
         const infoMsg = tempDiv.querySelector('.info-message');
         if (infoMsg) return '';
 
-        // Hitta offer-containern (antingen .offer-content eller .offer--locked)
         const content = tempDiv.querySelector('.offer-content, .offer--locked, .offer');
         if (!content) return '';
 
-        // Plocka ut kundblocket (offer-recipient) separat
-        const recipientEl = content.querySelector('.offer-recipient');
-        const linesFromCustomerBlock = [];
-        
-        if (recipientEl) {
-            // Extrahera alla div-element från recipient och bygg customerLines
-            const customerLines = [];
-            const divs = recipientEl.querySelectorAll('div');
-            divs.forEach(div => {
-                const text = (div.textContent || div.innerText || '').trim();
-                if (text) {
-                    customerLines.push(text);
-                }
-            });
+        // Plocka ut kundblock (.offer-recipient) separat
+        const recipient = content.querySelector('.offer-recipient');
+        const customerLines = [];
 
-            // Om inga divs hittades, försök med innerText/textContent direkt
-            if (customerLines.length === 0) {
-                const rawText = (recipientEl.innerText || recipientEl.textContent || '').trim();
-                if (rawText) {
-                    rawText.split('\n').forEach(line => {
-                        const trimmed = line.trim();
-                        if (trimmed) customerLines.push(trimmed);
-                    });
-                }
-            }
+        if (recipient) {
+            const rawLines = (recipient.innerText || recipient.textContent || '')
+                .split('\n')
+                .map(l => l.trim())
+                .filter(Boolean);
 
-            // Bygg kundblock om vi har rader
-            if (customerLines.length > 0) {
-                linesFromCustomerBlock.push('Kund');
-                linesFromCustomerBlock.push(...customerLines);
-                linesFromCustomerBlock.push(''); // tom rad efter kundblocket
-            }
-
-            // Ta bort kundblocket från resten innan vi extraherar text
-            recipientEl.remove();
+            customerLines.push(...rawLines);
+            recipient.remove(); // ta bort kundblocket från resten
         }
 
-        // Konvertera alla <br> i content till \n
+        // Gör om <br> till radbrytningar
         content.querySelectorAll('br').forEach(br => {
             br.replaceWith(document.createTextNode('\n'));
         });
 
-        // Extrahera text från resten av content
         let text = content.textContent || content.innerText || '';
 
-        // Bygg bodyLines genom att split på \n, trimma rader, kasta tomma rader
         let bodyLines = text
             .split('\n')
-            .map(line => line.trim())
+            .map(line => line.replace(/\s+/g, ' ').trim())
             .filter(line => line.length > 0);
 
-        // Lägg in en extra tom rad direkt efter raden som är exakt "För anbudet gäller:"
+        // Extra tom rad efter "För anbudet gäller:"
         const processedBodyLines = [];
         bodyLines.forEach(line => {
             processedBodyLines.push(line);
             if (line === 'För anbudet gäller:') {
-                processedBodyLines.push(''); // extra tom rad
+                processedBodyLines.push('');
             }
         });
 
-        // Kombinera kundblocket (om det finns) med övrig text
-        let resultLines = [];
-        if (linesFromCustomerBlock.length > 0) {
-            resultLines = resultLines.concat(linesFromCustomerBlock);
-        }
-        resultLines = resultLines.concat(processedBodyLines);
+        const resultLines = [];
 
-        // Returnera en enda sträng med alla rader samlade via join('\n')
+        // Kundblock överst
+        if (customerLines.length > 0) {
+            resultLines.push('Kund');
+            resultLines.push(...customerLines);
+            resultLines.push('');
+        }
+
+        resultLines.push(...processedBodyLines);
+
         return resultLines.join('\n').trim();
     }
 
@@ -3826,8 +3801,6 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
     }
 
     createOfferPdfBlob() {
-        console.log('📄 createOfferPdfBlob – ny layout används');
-        
         return new Promise(async (resolve, reject) => {
             try {
                 if (!window.jspdf || !window.jspdf.jsPDF) {
@@ -3836,12 +3809,8 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
 
-                doc.setFontSize(8);
-                doc.text('LAYOUT V3', 200, 10, { align: 'right' });
+                console.log('📄 createOfferPdfBlob – NY layout används');
 
-                // ——————————————————————————————
-                // DATA
-                // ——————————————————————————————
                 const customer = this.getCustomerFields();
                 const calc = this.getCalculatedPriceData();
                 const offerHTML = this.generateOfferHTML();
@@ -3854,25 +3823,21 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
 
                 const today = new Date().toLocaleDateString('sv-SE');
 
-                // Liten hjälpare för sidbrytning
-                const ensureSpace = (extra = 0) => {
+                const ensureSpace = extra => {
                     if (y + extra > 280) {
                         doc.addPage();
                         y = 20;
                     }
                 };
 
-                // ——————————————————————————————
-                // HEADER
-                // ——————————————————————————————
+                // HEADER + logga
                 try {
                     const logo = new Image();
                     logo.src = 'assets/images/Sternbecks logotyp.png';
                     await new Promise(res => { logo.onload = res; logo.onerror = res; });
-                    // högerjusterad logga
                     doc.addImage(logo, 'PNG', 150, 10, 40, 40);
-                } catch (_) {
-                    console.warn('Kunde inte lägga till logotyp i PDF');
+                } catch (e) {
+                    console.warn('Kunde inte ladda logotyp i offert-PDF', e);
                 }
 
                 doc.setFontSize(22);
@@ -3884,17 +3849,15 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 doc.text('Sternbecks Måleri & Fönsterhantverk', 20, 30);
                 doc.text(today, 20, 36);
 
-                // ——————————————————————————————
                 // KUNDBLOCK
-                // ——————————————————————————————
                 let y = 50;
                 doc.setFontSize(13);
                 doc.setFont(undefined, 'bold');
                 doc.text('Kund', 20, y);
+                y += 7;
 
                 doc.setFontSize(11);
                 doc.setFont(undefined, 'normal');
-                y += 7;
 
                 const customerLines = [];
                 if (customer.company) customerLines.push(customer.company);
@@ -3916,9 +3879,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
 
                 y += 6;
 
-                // ——————————————————————————————
                 // ANBUDSTEXT
-                // ——————————————————————————————
                 doc.setFontSize(13);
                 doc.setFont(undefined, 'bold');
                 doc.text('ANBUD', 20, y);
@@ -3945,9 +3906,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                     y += 2;
                 });
 
-                // ——————————————————————————————
-                // PRISTABELL (per parti, ex moms)
-                // ——————————————————————————————
+                // PRISTABELL
                 y += 8;
                 ensureSpace(20);
 
@@ -3980,9 +3939,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 doc.line(20, y, 190, y);
                 y += 8;
 
-                // ——————————————————————————————
                 // TOTALPRIS-BLOCK
-                // ——————————————————————————————
                 ensureSpace(40);
                 const blockTop = y;
 
@@ -4001,9 +3958,8 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 doc.text('ex. moms', 30, blockTop + 16);
 
                 y = blockTop + 38;
-
-                // Prisuppställning
                 y += 4;
+
                 doc.setFontSize(11);
 
                 doc.text('Pris exkl. moms:', 20, y);
@@ -4029,9 +3985,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 doc.text('KUNDEN BETALAR: ' + this.formatPrice(calc.customer_pays) + ' kr', 20, y);
                 y += 10;
 
-                // ——————————————————————————————
                 // VILLKOR
-                // ——————————————————————————————
                 ensureSpace(30);
                 doc.setFontSize(13);
                 doc.setFont(undefined, 'bold');
@@ -4053,9 +4007,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
 
                 y += 8;
 
-                // ——————————————————————————————
                 // SIGNATUR
-                // ——————————————————————————————
                 ensureSpace(40);
                 const city = customer.city || 'Ludvika';
                 doc.text(`${city} ${today}`, 20, y); y += 6;
@@ -4068,9 +4020,9 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
 
                 resolve(doc.output('blob'));
 
-            } catch (error) {
-                console.error('Fel vid PDF-generering (Offert):', error);
-                reject(error);
+            } catch (e) {
+                console.error('Fel vid generering av offert-PDF:', e);
+                reject(e);
             }
         });
     }
