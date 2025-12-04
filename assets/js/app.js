@@ -3723,22 +3723,41 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         // Plocka ut kundblocket (offer-recipient) separat
         const recipientEl = content.querySelector('.offer-recipient');
         const linesFromCustomerBlock = [];
+        
         if (recipientEl) {
-            const rawLines = (recipientEl.innerText || recipientEl.textContent || '')
-                .split('\n')
-                .map(l => l.trim())
-                .filter(Boolean);
+            // Extrahera alla div-element från recipient och bygg customerLines
+            const customerLines = [];
+            const divs = recipientEl.querySelectorAll('div');
+            divs.forEach(div => {
+                const text = (div.textContent || div.innerText || '').trim();
+                if (text) {
+                    customerLines.push(text);
+                }
+            });
 
-            if (rawLines.length > 0) {
+            // Om inga divs hittades, försök med innerText/textContent direkt
+            if (customerLines.length === 0) {
+                const rawText = (recipientEl.innerText || recipientEl.textContent || '').trim();
+                if (rawText) {
+                    rawText.split('\n').forEach(line => {
+                        const trimmed = line.trim();
+                        if (trimmed) customerLines.push(trimmed);
+                    });
+                }
+            }
+
+            // Bygg kundblock om vi har rader
+            if (customerLines.length > 0) {
                 linesFromCustomerBlock.push('Kund');
-                linesFromCustomerBlock.push(...rawLines);
+                linesFromCustomerBlock.push(...customerLines);
+                linesFromCustomerBlock.push(''); // tom rad efter kundblocket
             }
 
             // Ta bort kundblocket från resten innan vi extraherar text
             recipientEl.remove();
         }
 
-        // Gör om alla <br> till radbrytningar
+        // Konvertera alla <br> i content till \n
         content.querySelectorAll('br').forEach(br => {
             br.replaceWith(document.createTextNode('\n'));
         });
@@ -3746,13 +3765,13 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         // Extrahera text från resten av content
         let text = content.textContent || content.innerText || '';
 
-        // Städa upp whitespace men behåll radbrytningar
+        // Bygg bodyLines genom att split på \n, trimma rader, kasta tomma rader
         let bodyLines = text
             .split('\n')
-            .map(line => line.replace(/\s+/g, ' ').trim()) // städa multipla mellanslag
+            .map(line => line.trim())
             .filter(line => line.length > 0);
 
-        // Lägg in en extra tom rad efter rubriken "För anbudet gäller:"
+        // Lägg in en extra tom rad direkt efter raden som är exakt "För anbudet gäller:"
         const processedBodyLines = [];
         bodyLines.forEach(line => {
             processedBodyLines.push(line);
@@ -3768,6 +3787,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         }
         resultLines = resultLines.concat(processedBodyLines);
 
+        // Returnera en enda sträng med alla rader samlade via join('\n')
         return resultLines.join('\n').trim();
     }
 
@@ -3806,6 +3826,8 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
     }
 
     createOfferPdfBlob() {
+        console.log('📄 createOfferPdfBlob – ny layout används');
+        
         return new Promise(async (resolve, reject) => {
             try {
                 if (!window.jspdf || !window.jspdf.jsPDF) {
@@ -3816,8 +3838,6 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
 
                 doc.setFontSize(8);
                 doc.text('LAYOUT V3', 200, 10, { align: 'right' });
-
-                console.log('📄 createOfferPdfBlob – ny layout används');
 
                 // ——————————————————————————————
                 // DATA
