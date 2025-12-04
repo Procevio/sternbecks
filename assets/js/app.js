@@ -3785,8 +3785,8 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
     }
 
     async getOrBuildPdfs(force = false) {
-        const maxAgeMs = 60 * 1000; // bygg om efter 60s eller vid force
-        const fresh = this._pdfCache.offerBlob && this._pdfCache.workBlob && (Date.now() - this._pdfCache.ts < maxAgeMs);
+        const maxAgeMs = 0; // tillfälligt, för debug
+        const fresh = false; // tillfälligt, för debug
         if (fresh && !force) return this._pdfCache;
 
         // Säkerställ att pris och förhandsvisning är uppdaterade innan PDF byggs
@@ -3813,6 +3813,9 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 }
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
+
+                doc.setFontSize(8);
+                doc.text('LAYOUT V3', 200, 10, { align: 'right' });
 
                 console.log('📄 createOfferPdfBlob – ny layout används');
 
