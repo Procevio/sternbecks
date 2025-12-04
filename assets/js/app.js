@@ -3716,31 +3716,29 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         const infoMsg = tempDiv.querySelector('.info-message');
         if (infoMsg) return '';
 
-        // Hitta offer-containern (antingen .offer-content eller .offer--locked eller .offer)
+        // Hitta offer-containern (antingen .offer-content eller .offer--locked)
         const content = tempDiv.querySelector('.offer-content, .offer--locked, .offer');
         if (!content) return '';
 
-        // --- BYGG KUNDBLOCK ---
-        const recipient = content.querySelector('.offer-recipient');
-        let linesFromCustomerBlock = [];
+        // Plocka ut kundblocket (offer-recipient) separat
+        const recipientEl = content.querySelector('.offer-recipient');
+        const linesFromCustomerBlock = [];
+        if (recipientEl) {
+            const rawLines = (recipientEl.innerText || recipientEl.textContent || '')
+                .split('\n')
+                .map(l => l.trim())
+                .filter(Boolean);
 
-        if (recipient) {
-            const customerDivs = recipient.querySelectorAll('div');
-            const customerLines = Array.from(customerDivs)
-                .map(div => div.textContent.trim())
-                .filter(line => line.length > 0);
-
-            if (customerLines.length > 0) {
+            if (rawLines.length > 0) {
                 linesFromCustomerBlock.push('Kund');
-                linesFromCustomerBlock.push(...customerLines);
-                linesFromCustomerBlock.push(''); // tom rad efter kundblocket
+                linesFromCustomerBlock.push(...rawLines);
             }
 
-            // Ta bort recipient från content så att texten inte dupliceras
-            recipient.remove();
+            // Ta bort kundblocket från resten innan vi extraherar text
+            recipientEl.remove();
         }
 
-        // --- KONVERTERA <br> TILL RIKTIGA RADBRYTNINGAR ---
+        // Gör om alla <br> till radbrytningar
         content.querySelectorAll('br').forEach(br => {
             br.replaceWith(document.createTextNode('\n'));
         });
@@ -3816,6 +3814,8 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
 
+                console.log('📄 createOfferPdfBlob – ny layout används');
+
                 // ——————————————————————————————
                 // DATA
                 // ——————————————————————————————
@@ -3824,27 +3824,41 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 const offerHTML = this.generateOfferHTML();
                 const offerText = this.generateOfferTextFromHTML(offerHTML);
 
+                if (!offerText) {
+                    reject(new Error('Ingen offertdata att generera PDF från'));
+                    return;
+                }
+
                 const today = new Date().toLocaleDateString('sv-SE');
+
+                // Liten hjälpare för sidbrytning
+                const ensureSpace = (extra = 0) => {
+                    if (y + extra > 280) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                };
 
                 // ——————————————————————————————
                 // HEADER
                 // ——————————————————————————————
-                // Logotyp
                 try {
                     const logo = new Image();
-                    logo.src = "assets/images/Sternbecks logotyp.png";
+                    logo.src = 'assets/images/Sternbecks logotyp.png';
                     await new Promise(res => { logo.onload = res; logo.onerror = res; });
-                    doc.addImage(logo, "PNG", 150, 10, 40, 40);
-                } catch (_) {}
+                    // högerjusterad logga
+                    doc.addImage(logo, 'PNG', 150, 10, 40, 40);
+                } catch (_) {
+                    console.warn('Kunde inte lägga till logotyp i PDF');
+                }
 
-                // Titel
                 doc.setFontSize(22);
-                doc.setFont(undefined, "bold");
-                doc.text("Offert", 20, 20);
+                doc.setFont(undefined, 'bold');
+                doc.text('Offert', 20, 20);
 
                 doc.setFontSize(11);
-                doc.setFont(undefined, "normal");
-                doc.text("Sternbecks Måleri & Fönsterhantverk", 20, 30);
+                doc.setFont(undefined, 'normal');
+                doc.text('Sternbecks Måleri & Fönsterhantverk', 20, 30);
                 doc.text(today, 20, 36);
 
                 // ——————————————————————————————
@@ -3852,25 +3866,28 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 // ——————————————————————————————
                 let y = 50;
                 doc.setFontSize(13);
-                doc.setFont(undefined, "bold");
-                doc.text("Kund", 20, y);
+                doc.setFont(undefined, 'bold');
+                doc.text('Kund', 20, y);
 
                 doc.setFontSize(11);
-                doc.setFont(undefined, "normal");
+                doc.setFont(undefined, 'normal');
                 y += 7;
 
-                const lines = [];
-                if (customer.company) lines.push(customer.company);
-                if (customer.contact) lines.push(customer.contact);
-                if (customer.personnummer) lines.push("Personnummer: " + customer.personnummer);
-                if (customer.address) lines.push(customer.address);
-                if (customer.postal || customer.city) lines.push([customer.postal, customer.city].filter(Boolean).join(" "));
-                if (customer.fastighet) lines.push("Fastighetsbeteckning: " + customer.fastighet);
-                if (customer.phone) lines.push("Telefon: " + customer.phone);
-                if (customer.email) lines.push("E-post: " + customer.email);
+                const customerLines = [];
+                if (customer.company) customerLines.push(customer.company);
+                if (customer.contact) customerLines.push(customer.contact);
+                if (customer.personnummer) customerLines.push('Personnummer: ' + customer.personnummer);
+                if (customer.address) customerLines.push(customer.address);
+                if (customer.postal || customer.city) {
+                    customerLines.push([customer.postal, customer.city].filter(Boolean).join(' '));
+                }
+                if (customer.fastighet) customerLines.push('Fastighetsbeteckning: ' + customer.fastighet);
+                if (customer.phone) customerLines.push('Telefon: ' + customer.phone);
+                if (customer.email) customerLines.push('E-post: ' + customer.email);
 
-                lines.forEach(l => {
-                    doc.text(l, 20, y);
+                customerLines.forEach(line => {
+                    ensureSpace(6);
+                    doc.text(line, 20, y);
                     y += 6;
                 });
 
@@ -3880,22 +3897,25 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 // ANBUDSTEXT
                 // ——————————————————————————————
                 doc.setFontSize(13);
-                doc.setFont(undefined, "bold");
-                doc.text("ANBUD", 20, y);
+                doc.setFont(undefined, 'bold');
+                doc.text('ANBUD', 20, y);
                 y += 8;
 
                 doc.setFontSize(11);
-                doc.setFont(undefined, "normal");
+                doc.setFont(undefined, 'normal');
 
-                const paragraph = offerText.split("\n").filter(row =>
-                    !row.startsWith("Kund") &&
-                    !row.startsWith("För anbudet gäller:") &&
-                    !row.match(/^\d\./)
-                );
+                const paragraphLines = offerText
+                    .split('\n')
+                    .filter(row =>
+                        !row.startsWith('Kund') &&
+                        row !== 'För anbudet gäller:' &&
+                        !row.match(/^\d\./)
+                    );
 
-                paragraph.forEach(row => {
+                paragraphLines.forEach(row => {
                     const block = doc.splitTextToSize(row, 170);
                     block.forEach(line => {
+                        ensureSpace(6);
                         doc.text(line, 20, y);
                         y += 6;
                     });
@@ -3903,29 +3923,33 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 });
 
                 // ——————————————————————————————
-                // PRISTABELL (pris ex moms)
+                // PRISTABELL (per parti, ex moms)
                 // ——————————————————————————————
                 y += 8;
+                ensureSpace(20);
+
                 doc.setFontSize(12);
-                doc.setFont(undefined, "bold");
-                doc.text("Arbetsmoment / artiklar", 20, y);
-                doc.text("ex. moms", 160, y, { align: "right" });
+                doc.setFont(undefined, 'bold');
+                doc.text('Arbetsmoment / artiklar', 20, y);
+                doc.text('ex. moms', 190, y, { align: 'right' });
 
                 y += 5;
                 doc.setLineWidth(0.3);
                 doc.line(20, y, 190, y);
                 y += 6;
 
-                // Dina partier
-                const partis = window.partisState?.partis || [];
+                const partis = (window.partisState && window.partisState.partis) || [];
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'normal');
+
                 partis.forEach(p => {
-                    const name = p.typ || p.type || p.partiType || "Arbete";
-                    const price = this.formatPrice((p.pris || 0) / 1.25); // ex moms
-                    doc.setFont(undefined, "normal");
+                    const name = p.typ || p.type || p.partiType || 'Arbete';
+                    const priceExVat = (p.pris || 0) / 1.25;
+                    const price = this.formatPrice(priceExVat);
 
+                    ensureSpace(6);
                     doc.text(name, 20, y);
-                    doc.text(price + " kr", 190, y, { align: "right" });
-
+                    doc.text(price + ' kr', 190, y, { align: 'right' });
                     y += 6;
                 });
 
@@ -3936,65 +3960,70 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 // ——————————————————————————————
                 // TOTALPRIS-BLOCK
                 // ——————————————————————————————
+                ensureSpace(40);
                 const blockTop = y;
 
                 doc.setFillColor(240, 240, 240);
-                doc.rect(20, blockTop, 170, 30, "F");
+                doc.rect(20, blockTop, 170, 30, 'F');
 
                 doc.setFontSize(14);
-                doc.setFont(undefined, "bold");
-                doc.text("Totalpris", 30, blockTop + 10);
+                doc.setFont(undefined, 'bold');
+                doc.text('Totalpris', 30, blockTop + 10);
 
                 doc.setFontSize(16);
-                doc.text(this.formatPrice(calc.total_excl_vat) + " kr", 180, blockTop + 10, { align: "right" });
+                doc.text(this.formatPrice(calc.total_excl_vat) + ' kr', 190, blockTop + 10, { align: 'right' });
 
                 doc.setFontSize(10);
-                doc.setFont(undefined, "normal");
-                doc.text("ex. moms", 30, blockTop + 16);
+                doc.setFont(undefined, 'normal');
+                doc.text('ex. moms', 30, blockTop + 16);
+
                 y = blockTop + 38;
 
-                // ——————————————————————————————
-                // EX / MOMS / INKL / ROT
-                // ——————————————————————————————
+                // Prisuppställning
                 y += 4;
                 doc.setFontSize(11);
 
-                doc.text("Pris exkl. moms:", 20, y);
-                doc.text(this.formatPrice(calc.total_excl_vat) + " kr", 190, y, { align: "right" });
+                doc.text('Pris exkl. moms:', 20, y);
+                doc.text(this.formatPrice(calc.total_excl_vat) + ' kr', 190, y, { align: 'right' });
                 y += 7;
 
-                doc.text("Moms:", 20, y);
-                doc.text(this.formatPrice(calc.vat_amount) + " kr", 190, y, { align: "right" });
+                doc.text('Moms:', 20, y);
+                doc.text(this.formatPrice(calc.vat_amount) + ' kr', 190, y, { align: 'right' });
                 y += 7;
 
-                doc.text("Totalpris inkl. moms:", 20, y);
-                doc.text(this.formatPrice(calc.total_incl_vat) + " kr", 190, y, { align: "right" });
+                doc.text('Totalpris inkl. moms:', 20, y);
+                doc.text(this.formatPrice(calc.total_incl_vat) + ' kr', 190, y, { align: 'right' });
                 y += 7;
 
                 if (calc.rot_applicable) {
-                    doc.text("ROT-avdrag:", 20, y);
-                    doc.text("-" + this.formatPrice(calc.rot_deduction) + " kr", 190, y, { align: "right" });
+                    doc.text('ROT-avdrag:', 20, y);
+                    doc.text('-' + this.formatPrice(calc.rot_deduction) + ' kr', 190, y, { align: 'right' });
                     y += 7;
                 }
 
-                doc.setFont(undefined, "bold");
+                doc.setFont(undefined, 'bold');
                 doc.setFontSize(13);
-                doc.text("KUNDEN BETALAR: " + this.formatPrice(calc.customer_pays) + " kr", 20, y);
+                doc.text('KUNDEN BETALAR: ' + this.formatPrice(calc.customer_pays) + ' kr', 20, y);
                 y += 10;
 
                 // ——————————————————————————————
                 // VILLKOR
                 // ——————————————————————————————
+                ensureSpace(30);
                 doc.setFontSize(13);
-                doc.setFont(undefined, "bold");
-                doc.text("För anbudet gäller:", 20, y);
+                doc.setFont(undefined, 'bold');
+                doc.text('För anbudet gäller:', 20, y);
                 y += 7;
 
                 doc.setFontSize(11);
-                doc.setFont(undefined, "normal");
+                doc.setFont(undefined, 'normal');
 
-                const conditions = offerText.split("\n").filter(row => row.match(/^\d\./));
+                const conditions = offerText
+                    .split('\n')
+                    .filter(row => row.match(/^\d\./));
+
                 conditions.forEach(c => {
+                    ensureSpace(6);
                     doc.text(c, 20, y);
                     y += 6;
                 });
@@ -4004,19 +4033,21 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 // ——————————————————————————————
                 // SIGNATUR
                 // ——————————————————————————————
-                const city = customer.city || "Ludvika";
+                ensureSpace(40);
+                const city = customer.city || 'Ludvika';
                 doc.text(`${city} ${today}`, 20, y); y += 6;
-                doc.text("Johan Sternbeck", 20, y); y += 6;
-                doc.text("Sternbecks Fönsterhantverk i Dalarna AB", 20, y); y += 6;
-                doc.text("Lavendelstigen 7", 20, y); y += 6;
-                doc.text("77143 Ludvika", 20, y); y += 6;
-                doc.text("Org.nr 559389-0717", 20, y); y += 6;
-                doc.text("Tel.nr 076-846 52 79 – Företaget innehar F-skatt", 20, y);
+                doc.text('Johan Sternbeck', 20, y); y += 6;
+                doc.text('Sternbecks Fönsterhantverk i Dalarna AB', 20, y); y += 6;
+                doc.text('Lavendelstigen 7', 20, y); y += 6;
+                doc.text('77143 Ludvika', 20, y); y += 6;
+                doc.text('Org.nr 559389-0717', 20, y); y += 6;
+                doc.text('Tel.nr 076-846 52 79 – Företaget innehar F-skatt', 20, y);
 
-                resolve(doc.output("blob"));
+                resolve(doc.output('blob'));
 
-            } catch (e) {
-                reject(e);
+            } catch (error) {
+                console.error('Fel vid PDF-generering (Offert):', error);
+                reject(error);
             }
         });
     }
