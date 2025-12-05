@@ -51,6 +51,7 @@
       console.log('📄 generateOfferPdf – NY modul används');
 
       // 1) Plocka ut text + kundblock från offerHTML
+      let extractedCustomerLines = []; // Spara för att kunna filtrera bort från ANBUD-sektionen
       const offerText = (function () {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = offerHTML;
@@ -67,6 +68,7 @@
             .map(l => l.trim())
             .filter(Boolean);
           customerLines.push(...rawLines);
+          extractedCustomerLines = [...customerLines]; // Spara för senare filtrering
           recipient.remove();
         }
 
@@ -171,13 +173,30 @@
       doc.setFontSize(11);
       doc.setFont(undefined, 'normal');
 
+      // Filtrera bort kunduppgifter från ANBUD-sektionen
+      const customerLinesSet = new Set(extractedCustomerLines.map(l => l.toLowerCase().trim()));
       const paragraphLines = offerText
         .split('\n')
-        .filter(row =>
-          !row.startsWith('Kund') &&
-          row !== 'För anbudet gäller:' &&
-          !row.match(/^\d\./)
-        );
+        .filter(row => {
+          const rowTrimmed = row.trim();
+          // Ta bort "Kund"-rubriken
+          if (rowTrimmed.startsWith('Kund')) return false;
+          // Ta bort "För anbudet gäller:"-rubriken
+          if (rowTrimmed === 'För anbudet gäller:') return false;
+          // Ta bort numrerade villkor
+          if (rowTrimmed.match(/^\d\./)) return false;
+          // Ta bort tomma rader
+          if (rowTrimmed === '') return false;
+          // Ta bort kunduppgifter (exakt match)
+          if (customerLinesSet.has(rowTrimmed.toLowerCase())) return false;
+          // Ta bort rader som innehåller kunduppgifter (för att fånga kombinerade rader)
+          for (const customerLine of extractedCustomerLines) {
+            if (customerLine.length > 3 && rowTrimmed.toLowerCase().includes(customerLine.toLowerCase().trim())) {
+              return false;
+            }
+          }
+          return true;
+        });
 
       paragraphLines.forEach(row => {
         const block = doc.splitTextToSize(row, 170);
