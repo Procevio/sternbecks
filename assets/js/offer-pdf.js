@@ -46,10 +46,6 @@
       offerHTML,
       partis = [],
     }) {
-      if (!jsPDF) {
-        throw new Error('jsPDF är inte tillgängligt');
-      }
-      
       const doc = new jsPDF();
 
       console.log('📄 generateOfferPdf – NY modul används');
@@ -325,31 +321,24 @@
     };
 
     console.log('✅ offer-pdf.js modul initierad');
-    console.log('✅ window.generateOfferPdf definierad:', typeof window.generateOfferPdf === 'function');
   }
 
-  // Starta initieringen direkt (jsPDF ska redan vara laddad eftersom scriptet är i head)
-  console.log('🔧 offer-pdf.js: Startar initiering...');
-  console.log('🔧 offer-pdf.js: window.jspdf finns?', !!window.jspdf);
-  if (window.jspdf) {
-    console.log('🔧 offer-pdf.js: window.jspdf.jsPDF finns?', !!window.jspdf.jsPDF);
-  }
-  
-  // Om jsPDF inte är redo ännu, vänta på DOMContentLoaded
-  if (!window.jspdf || !window.jspdf.jsPDF) {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        console.log('🔧 offer-pdf.js: DOMContentLoaded - startar initiering...');
-        initOfferPdf();
-      });
-    } else {
-      // DOM är redan laddad, vänta lite extra
-      setTimeout(() => {
-        initOfferPdf();
-      }, 100);
-    }
+  // Starta initieringen när DOM är redo
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('🔧 offer-pdf.js: DOMContentLoaded - startar initiering...');
+      initOfferPdf();
+    });
   } else {
-    // jsPDF är redan redo, initiera direkt
-    initOfferPdf();
+    // DOM är redan laddad
+    console.log('🔧 offer-pdf.js: DOM redan laddad - startar initiering...');
+    console.log('🔧 offer-pdf.js: window.jspdf finns?', !!window.jspdf);
+    if (window.jspdf) {
+      console.log('🔧 offer-pdf.js: window.jspdf.jsPDF finns?', !!window.jspdf.jsPDF);
+    }
+    // Vänta lite extra för att säkerställa att jsPDF är laddad
+    setTimeout(() => {
+      initOfferPdf();
+    }, 100);
   }
 })();
