@@ -1,4 +1,6 @@
 (function () {
+  console.log('🚀 offer-pdf.js: Filen laddas!');
+  
   // Vänta på att jsPDF laddas (eftersom det laddas med defer)
   let initAttempts = 0;
   const maxAttempts = 50; // Max 5 sekunder (50 * 100ms)
@@ -22,13 +24,13 @@
 
     // Hjälpfunktion för prisformatering
     function formatPrice(amount) {
-    return new Intl.NumberFormat('sv-SE', {
-      style: 'currency',
-      currency: 'SEK',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount).replace(/\s/g, '');
-  }
+      return new Intl.NumberFormat('sv-SE', {
+        style: 'currency',
+        currency: 'SEK',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(amount).replace(/\s/g, '');
+    }
 
     /**
      * Skapar offert-PDF.
@@ -110,7 +112,7 @@
         }
       };
 
-    const today = new Date().toLocaleDateString('sv-SE');
+      const today = new Date().toLocaleDateString('sv-SE');
 
     // HEADER + logga
     try {
