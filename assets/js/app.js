@@ -3801,6 +3801,10 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
     }
 
     createOfferPdfBlob() {
+        console.log('🔍 createOfferPdfBlob anropad');
+        console.log('🔍 window.generateOfferPdf finns?', typeof window.generateOfferPdf);
+        console.log('🔍 window.jspdf finns?', !!window.jspdf);
+        
         const customer = this.getCustomerFields();
         const calc = this.getCalculatedPriceData();
         const offerHTML = this.generateOfferHTML();
@@ -3809,9 +3813,11 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         if (!window.generateOfferPdf) {
             console.error('❌ generateOfferPdf saknas - modulen har inte laddats korrekt');
             console.error('Kontrollera att offer-pdf.js laddas före app.js och att jsPDF är tillgängligt');
+            console.error('window.jspdf:', window.jspdf);
             return Promise.reject(new Error('PDF-modul saknas - kontrollera att offer-pdf.js laddas korrekt'));
         }
 
+        console.log('✅ Anropar window.generateOfferPdf...');
         return window.generateOfferPdf({ customer, calc, offerHTML, partis });
     }
 
