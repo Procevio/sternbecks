@@ -3814,7 +3814,23 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
             console.error('❌ generateOfferPdf saknas - modulen har inte laddats korrekt');
             console.error('Kontrollera att offer-pdf.js laddas före app.js och att jsPDF är tillgängligt');
             console.error('window.jspdf:', window.jspdf);
-            return Promise.reject(new Error('PDF-modul saknas - kontrollera att offer-pdf.js laddas korrekt'));
+            console.error('window.generateOfferPdf:', window.generateOfferPdf);
+            // Vänta lite och försök igen (modulen kanske inte är initierad ännu)
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const maxAttempts = 10;
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    if (window.generateOfferPdf) {
+                        clearInterval(checkInterval);
+                        console.log('✅ generateOfferPdf hittades efter', attempts, 'försök');
+                        resolve(window.generateOfferPdf({ customer, calc, offerHTML, partis }));
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(checkInterval);
+                        reject(new Error('PDF-modul saknas - kontrollera att offer-pdf.js laddas korrekt'));
+                    }
+                }, 100);
+            });
         }
 
         console.log('✅ Anropar window.generateOfferPdf...');
