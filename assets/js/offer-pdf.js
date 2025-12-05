@@ -1,13 +1,27 @@
 (function () {
-  if (!window.jspdf || !window.jspdf.jsPDF) {
-    console.error('jsPDF ej tillgänglig för offer-pdf');
-    return;
-  }
+  // Vänta på att jsPDF laddas (eftersom det laddas med defer)
+  let initAttempts = 0;
+  const maxAttempts = 50; // Max 5 sekunder (50 * 100ms)
 
-  const { jsPDF } = window.jspdf;
+  function initOfferPdf() {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      initAttempts++;
+      if (initAttempts >= maxAttempts) {
+        console.error('❌ jsPDF kunde inte laddas efter', maxAttempts, 'försök');
+        console.error('Kontrollera att jsPDF-scriptet laddas korrekt');
+        return;
+      }
+      if (initAttempts <= 3) {
+        console.warn('⏳ jsPDF ej tillgänglig ännu, försöker igen... (försök', initAttempts, 'av', maxAttempts, ')');
+      }
+      setTimeout(initOfferPdf, 100);
+      return;
+    }
 
-  // Hjälpfunktion för prisformatering
-  function formatPrice(amount) {
+    const { jsPDF } = window.jspdf;
+
+    // Hjälpfunktion för prisformatering
+    function formatPrice(amount) {
     return new Intl.NumberFormat('sv-SE', {
       style: 'currency',
       currency: 'SEK',
@@ -16,27 +30,27 @@
     }).format(amount).replace(/\s/g, '');
   }
 
-  /**
-   * Skapar offert-PDF.
-   * @param {Object} params
-   * @param {Object} params.customer  // fält från getCustomerFields()
-   * @param {Object} params.calc      // fält från getCalculatedPriceData()
-   * @param {string} params.offerHTML // HTML från generateOfferHTML()
-   * @param {Array}  params.partis    // window.partisState.partis
-   * @returns {Promise<Blob>}
-   */
-  window.generateOfferPdf = async function generateOfferPdf({
-    customer,
-    calc,
-    offerHTML,
-    partis = [],
-  }) {
-    const doc = new jsPDF();
+    /**
+     * Skapar offert-PDF.
+     * @param {Object} params
+     * @param {Object} params.customer  // fält från getCustomerFields()
+     * @param {Object} params.calc      // fält från getCalculatedPriceData()
+     * @param {string} params.offerHTML // HTML från generateOfferHTML()
+     * @param {Array}  params.partis    // window.partisState.partis
+     * @returns {Promise<Blob>}
+     */
+    window.generateOfferPdf = async function generateOfferPdf({
+      customer,
+      calc,
+      offerHTML,
+      partis = [],
+    }) {
+      const doc = new jsPDF();
 
-    console.log('📄 generateOfferPdf – NY modul används');
+      console.log('📄 generateOfferPdf – NY modul används');
 
-    // 1) Plocka ut text + kundblock från offerHTML
-    const offerText = (function () {
+      // 1) Plocka ut text + kundblock från offerHTML
+      const offerText = (function () {
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = offerHTML;
 
@@ -83,13 +97,13 @@
       resultLines.push(...processedBodyLines);
 
       return resultLines.join('\n').trim();
-    })();
+      })();
 
-    if (!offerText) {
-      throw new Error('Ingen offertdata att generera PDF från');
-    }
+      if (!offerText) {
+        throw new Error('Ingen offertdata att generera PDF från');
+      }
 
-    const ensureSpace = extra => {
+      const ensureSpace = extra => {
       if (y + extra > 280) {
         doc.addPage();
         y = 20;
@@ -286,5 +300,26 @@
     return doc.output('blob');
   };
 
+    console.log('✅ offer-pdf.js modul initierad');
+    console.log('✅ window.generateOfferPdf definierad:', typeof window.generateOfferPdf === 'function');
+  }
+
+  // Starta initieringen
+  console.log('🔧 offer-pdf.js: Startar initiering...');
+  console.log('🔧 offer-pdf.js: window.jspdf finns?', !!window.jspdf);
+  if (window.jspdf) {
+    console.log('🔧 offer-pdf.js: window.jspdf.jsPDF finns?', !!window.jspdf.jsPDF);
+  }
+  
+  // Om jsPDF inte är redo ännu, vänta på DOMContentLoaded eller kör direkt
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('🔧 offer-pdf.js: DOMContentLoaded - startar initiering...');
+      initOfferPdf();
+    });
+  } else {
+    // DOM är redan laddad, starta initiering direkt
+    initOfferPdf();
+  }
 })();
 
