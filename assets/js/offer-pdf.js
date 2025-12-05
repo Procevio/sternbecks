@@ -22,97 +22,97 @@
 
     const { jsPDF } = window.jspdf;
 
-    // Hjälpfunktion för prisformatering
-    function formatPrice(amount) {
-      return new Intl.NumberFormat('sv-SE', {
-        style: 'currency',
-        currency: 'SEK',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(amount).replace(/\s/g, '');
-    }
+  // Hjälpfunktion för prisformatering
+  function formatPrice(amount) {
+    return new Intl.NumberFormat('sv-SE', {
+      style: 'currency',
+      currency: 'SEK',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount).replace(/\s/g, '');
+  }
 
-    /**
-     * Skapar offert-PDF.
-     * @param {Object} params
-     * @param {Object} params.customer  // fält från getCustomerFields()
-     * @param {Object} params.calc      // fält från getCalculatedPriceData()
-     * @param {string} params.offerHTML // HTML från generateOfferHTML()
-     * @param {Array}  params.partis    // window.partisState.partis
-     * @returns {Promise<Blob>}
-     */
-    window.generateOfferPdf = async function generateOfferPdf({
-      customer,
-      calc,
-      offerHTML,
-      partis = [],
-    }) {
-      const doc = new jsPDF();
+  /**
+   * Skapar offert-PDF.
+   * @param {Object} params
+   * @param {Object} params.customer  // fält från getCustomerFields()
+   * @param {Object} params.calc      // fält från getCalculatedPriceData()
+   * @param {string} params.offerHTML // HTML från generateOfferHTML()
+   * @param {Array}  params.partis    // window.partisState.partis
+   * @returns {Promise<Blob>}
+   */
+  window.generateOfferPdf = async function generateOfferPdf({
+    customer,
+    calc,
+    offerHTML,
+    partis = [],
+  }) {
+    const doc = new jsPDF();
 
-      console.log('📄 generateOfferPdf – NY modul används');
+    console.log('📄 generateOfferPdf – NY modul används');
 
-      // 1) Plocka ut text + kundblock från offerHTML
-      const offerText = (function () {
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = offerHTML;
+    // 1) Plocka ut text + kundblock från offerHTML
+    const offerText = (function () {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = offerHTML;
 
-        const content = tempDiv.querySelector('.offer-content, .offer--locked, .offer');
-        if (!content) return '';
+      const content = tempDiv.querySelector('.offer-content, .offer--locked, .offer');
+      if (!content) return '';
 
-        const recipient = content.querySelector('.offer-recipient');
-        const customerLines = [];
+      const recipient = content.querySelector('.offer-recipient');
+      const customerLines = [];
 
-        if (recipient) {
-          const rawLines = (recipient.innerText || recipient.textContent || '')
-            .split('\n')
-            .map(l => l.trim())
-            .filter(Boolean);
-          customerLines.push(...rawLines);
-          recipient.remove();
-        }
-
-        content.querySelectorAll('br').forEach(br => {
-          br.replaceWith(document.createTextNode('\n'));
-        });
-
-        let text = content.textContent || content.innerText || '';
-
-        let bodyLines = text
+      if (recipient) {
+        const rawLines = (recipient.innerText || recipient.textContent || '')
           .split('\n')
-          .map(line => line.replace(/\s+/g, ' ').trim())
-          .filter(line => line.length > 0);
-
-        const processedBodyLines = [];
-        bodyLines.forEach(line => {
-          processedBodyLines.push(line);
-          if (line === 'För anbudet gäller:') {
-            processedBodyLines.push('');
-          }
-        });
-
-        const resultLines = [];
-        if (customerLines.length > 0) {
-          resultLines.push('Kund');
-          resultLines.push(...customerLines);
-          resultLines.push('');
-        }
-        resultLines.push(...processedBodyLines);
-
-        return resultLines.join('\n').trim();
-      })();
-
-      if (!offerText) {
-        throw new Error('Ingen offertdata att generera PDF från');
+          .map(l => l.trim())
+          .filter(Boolean);
+        customerLines.push(...rawLines);
+        recipient.remove();
       }
 
-      const ensureSpace = extra => {
-        if (y + extra > 280) {
-          doc.addPage();
-          y = 20;
-        }
-      };
+      content.querySelectorAll('br').forEach(br => {
+        br.replaceWith(document.createTextNode('\n'));
+      });
 
-      const today = new Date().toLocaleDateString('sv-SE');
+      let text = content.textContent || content.innerText || '';
+
+      let bodyLines = text
+        .split('\n')
+        .map(line => line.replace(/\s+/g, ' ').trim())
+        .filter(line => line.length > 0);
+
+      const processedBodyLines = [];
+      bodyLines.forEach(line => {
+        processedBodyLines.push(line);
+        if (line === 'För anbudet gäller:') {
+          processedBodyLines.push('');
+        }
+      });
+
+      const resultLines = [];
+      if (customerLines.length > 0) {
+        resultLines.push('Kund');
+        resultLines.push(...customerLines);
+        resultLines.push('');
+      }
+      resultLines.push(...processedBodyLines);
+
+      return resultLines.join('\n').trim();
+    })();
+
+    if (!offerText) {
+      throw new Error('Ingen offertdata att generera PDF från');
+    }
+
+    const ensureSpace = extra => {
+      if (y + extra > 280) {
+        doc.addPage();
+        y = 20;
+      }
+    };
+
+    const today = new Date().toLocaleDateString('sv-SE');
 
     // HEADER + logga
     try {
@@ -172,29 +172,13 @@
     doc.setFontSize(11);
     doc.setFont(undefined, 'normal');
 
-    // Filtrera bort priser, rubriker och annat som ska vara i tabeller/block
     const paragraphLines = offerText
       .split('\n')
-      .filter(row => {
-        const rowTrimmed = row.trim();
-        // Ta bort "Kund"-rubriken
-        if (rowTrimmed.startsWith('Kund')) return false;
-        // Ta bort "För anbudet gäller:"-rubriken
-        if (rowTrimmed === 'För anbudet gäller:') return false;
-        // Ta bort numrerade villkor
-        if (rowTrimmed.match(/^\d\./)) return false;
-        // Ta bort tomma rader
-        if (rowTrimmed === '') return false;
-        // Ta bort priser (PRIS: X KR INKLUSIVE MOMS, PRIS VID GODKÄNT ROTAVDRAG, etc.)
-        if (rowTrimmed.match(/^PRIS.*KR/i)) return false;
-        if (rowTrimmed.match(/Totalt inkl\. moms/i)) return false;
-        if (rowTrimmed.match(/ROT-avdrag.*Ej tillämpligt/i)) return false;
-        if (rowTrimmed.match(/ROT-avdrag.*50%/i)) return false;
-        if (rowTrimmed.match(/I anbudet ingår material/i)) return false;
-        // Ta bort signaturblock (Ludvika datum, Johan Sternbeck, etc.)
-        if (rowTrimmed.match(/^Ludvika|^Johan Sternbeck|^Sternbecks Fönsterhantverk|^Lavendelstigen|^77143|^Org\.nr|^Tel\.nr/i)) return false;
-        return true;
-      });
+      .filter(row =>
+        !row.startsWith('Kund') &&
+        row !== 'För anbudet gäller:' &&
+        !row.match(/^\d\./)
+      );
 
     paragraphLines.forEach(row => {
       const block = doc.splitTextToSize(row, 170);
