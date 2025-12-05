@@ -3807,8 +3807,9 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         const partis = (window.partisState && window.partisState.partis) || [];
 
         if (!window.generateOfferPdf) {
-            console.error('generateOfferPdf saknas');
-            return Promise.reject(new Error('PDF-modul saknas'));
+            console.error('❌ generateOfferPdf saknas - modulen har inte laddats korrekt');
+            console.error('Kontrollera att offer-pdf.js laddas före app.js och att jsPDF är tillgängligt');
+            return Promise.reject(new Error('PDF-modul saknas - kontrollera att offer-pdf.js laddas korrekt'));
         }
 
         return window.generateOfferPdf({ customer, calc, offerHTML, partis });
