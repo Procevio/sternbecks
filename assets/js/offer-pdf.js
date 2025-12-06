@@ -44,11 +44,11 @@ console.log('🚀 offer-pdf.js: Filen laddas - FÖRE IIFE!');
      * @returns {Promise<Blob>}
      */
     window.generateOfferPdf = async function generateOfferPdf({
-    customer,
-    calc,
-    offerHTML,
-    partis = [],
-  }) {
+      customer,
+      calc,
+      offerHTML,
+      partis = [],
+    }) {
     const doc = new jsPDF();
 
     console.log('📄 generateOfferPdf – NY modul används');
