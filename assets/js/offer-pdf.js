@@ -22,26 +22,26 @@
 
     const { jsPDF } = window.jspdf;
 
-  // Hjälpfunktion för prisformatering
-  function formatPrice(amount) {
-    return new Intl.NumberFormat('sv-SE', {
-      style: 'currency',
-      currency: 'SEK',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount).replace(/\s/g, '');
-  }
+    // Hjälpfunktion för prisformatering
+    function formatPrice(amount) {
+      return new Intl.NumberFormat('sv-SE', {
+        style: 'currency',
+        currency: 'SEK',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(amount).replace(/\s/g, '');
+    }
 
-  /**
-   * Skapar offert-PDF.
-   * @param {Object} params
-   * @param {Object} params.customer  // fält från getCustomerFields()
-   * @param {Object} params.calc      // fält från getCalculatedPriceData()
-   * @param {string} params.offerHTML // HTML från generateOfferHTML()
-   * @param {Array}  params.partis    // window.partisState.partis
-   * @returns {Promise<Blob>}
-   */
-  window.generateOfferPdf = async function generateOfferPdf({
+    /**
+     * Skapar offert-PDF.
+     * @param {Object} params
+     * @param {Object} params.customer  // fält från getCustomerFields()
+     * @param {Object} params.calc      // fält från getCalculatedPriceData()
+     * @param {string} params.offerHTML // HTML från generateOfferHTML()
+     * @param {Array}  params.partis    // window.partisState.partis
+     * @returns {Promise<Blob>}
+     */
+    window.generateOfferPdf = async function generateOfferPdf({
     customer,
     calc,
     offerHTML,
