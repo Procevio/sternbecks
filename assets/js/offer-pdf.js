@@ -1,5 +1,7 @@
+console.log('🚀 offer-pdf.js: Filen laddas - FÖRE IIFE!');
+
 (function () {
-  console.log('🚀 offer-pdf.js: Filen laddas!');
+  console.log('🚀 offer-pdf.js: Filen laddas - INNE I IIFE!');
   
   // Vänta på att jsPDF laddas (eftersom det laddas med defer)
   let initAttempts = 0;
