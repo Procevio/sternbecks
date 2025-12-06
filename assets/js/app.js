@@ -3711,59 +3711,19 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
 
-        const infoMsg = tempDiv.querySelector('.info-message');
-        if (infoMsg) return '';
-
         const content = tempDiv.querySelector('.offer-content, .offer--locked, .offer');
         if (!content) return '';
 
-        // Plocka ut kundblock (.offer-recipient) separat
-        const recipient = content.querySelector('.offer-recipient');
-        const customerLines = [];
-
-        if (recipient) {
-            const rawLines = (recipient.innerText || recipient.textContent || '')
-                .split('\n')
-                .map(l => l.trim())
-                .filter(Boolean);
-
-            customerLines.push(...rawLines);
-            recipient.remove(); // ta bort kundblocket från resten
-        }
-
-        // Gör om <br> till radbrytningar
         content.querySelectorAll('br').forEach(br => {
             br.replaceWith(document.createTextNode('\n'));
         });
 
         let text = content.textContent || content.innerText || '';
-
-        let bodyLines = text
+        return text
             .split('\n')
             .map(line => line.replace(/\s+/g, ' ').trim())
-            .filter(line => line.length > 0);
-
-        // Extra tom rad efter "För anbudet gäller:"
-        const processedBodyLines = [];
-        bodyLines.forEach(line => {
-            processedBodyLines.push(line);
-            if (line === 'För anbudet gäller:') {
-                processedBodyLines.push('');
-            }
-        });
-
-        const resultLines = [];
-
-        // Kundblock överst
-        if (customerLines.length > 0) {
-            resultLines.push('Kund');
-            resultLines.push(...customerLines);
-            resultLines.push('');
-        }
-
-        resultLines.push(...processedBodyLines);
-
-        return resultLines.join('\n').trim();
+            .filter(line => line.length > 0)
+            .join('\n');
     }
 
     renderOfferPreview() {
@@ -3801,23 +3761,19 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
     }
 
     createOfferPdfBlob() {
-        console.log('🔍 createOfferPdfBlob anropad');
-        console.log('🔍 window.generateOfferPdf finns?', typeof window.generateOfferPdf);
-        console.log('🔍 window.jspdf finns?', !!window.jspdf);
-        
         const customer = this.getCustomerFields();
         const calc = this.getCalculatedPriceData();
         const offerHTML = this.generateOfferHTML();
         const partis = (window.partisState && window.partisState.partis) || [];
 
-        if (!window.generateOfferPdf) {
-            console.error('❌ generateOfferPdf saknas - modulen har inte laddats korrekt');
-            console.error('Kontrollera att offer-pdf.js laddas före app.js och att jsPDF är tillgängligt');
-            console.error('window.jspdf:', window.jspdf);
-            return Promise.reject(new Error('PDF-modul saknas - kontrollera att offer-pdf.js laddas korrekt'));
+        console.log('🔍 createOfferPdfBlob anropad');
+        console.log('🔍 window.generateOfferPdf finns?', typeof window.generateOfferPdf);
+
+        if (typeof window.generateOfferPdf !== 'function') {
+            console.error('❌ generateOfferPdf saknas. window.jspdf:', !!window.jspdf);
+            return Promise.reject(new Error('PDF-modul saknas (offer-pdf.js laddades inte).'));
         }
 
-        console.log('✅ Anropar window.generateOfferPdf...');
         return window.generateOfferPdf({ customer, calc, offerHTML, partis });
     }
 
