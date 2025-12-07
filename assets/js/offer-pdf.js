@@ -187,6 +187,16 @@
           if (row.startsWith('Telefon:')) return false;
           if (row.startsWith('E-post:')) return false;
 
+          // Ta bort företagsinformation som ska bara finnas i signaturblocket
+          if (row.includes('Sternbecks Fönsterhantverk i Dalarna AB')) return false;
+          if (row.includes('Lavendelstigen 7')) return false;
+          if (row.includes('77143 Ludvika')) return false;
+          if (row.startsWith('Org.nr')) return false;
+          if (row.startsWith('Tel.nr')) return false;
+          if (row.includes('Johan Sternbeck')) return false;
+          if (row.includes('Företaget innehar F-skatt')) return false;
+          if (row.includes('076-846 52 79')) return false;
+
           return true;
         });
 
