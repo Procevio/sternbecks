@@ -2536,9 +2536,15 @@ body.dark .info-text {
 }
 
 .summary-box-subtitle {
-  font-size: 10px;
+  font-size: 11px;
   color: #666;
   margin-top: 4px;
+  font-weight: normal;
+}
+
+.preview-signature > div {
+  margin: 4px 0;
+  line-height: 1.5;
 }
 
 .preview-signature {

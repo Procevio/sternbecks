@@ -79,13 +79,13 @@ window.buildOfferPreview = function buildOfferPreview({
       </ul>
 
       <div class="preview-signature">
-        ${city} ${date}<br>
-        Johan Sternbeck<br>
-        Sternbecks Fönsterhantverk i Dalarna AB<br>
-        Lavendelstigen 7<br>
-        77143 Ludvika<br>
-        Org.nr 559389-0717<br>
-        Tel.nr 076-846 52 79 – Företaget innehar F-skatt
+        <div>${city} ${date}</div>
+        <div>Johan Sternbeck</div>
+        <div>Sternbecks Fönsterhantverk i Dalarna AB</div>
+        <div>Lavendelstigen 7</div>
+        <div>77143 Ludvika</div>
+        <div>Org.nr 559389-0717</div>
+        <div>Tel.nr 076-846 52 79 – Företaget innehar F-skatt</div>
       </div>
 
     </div>
