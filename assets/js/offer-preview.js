@@ -1,8 +1,8 @@
 window.buildOfferPreview = function buildOfferPreview({
   customer,
-  calc,
-  offerText,
+  offerBodyText,
   items,
+  calc,
   conditions,
   date,
   city
@@ -23,21 +23,29 @@ window.buildOfferPreview = function buildOfferPreview({
 
       <h2>Kund</h2>
       <div class="preview-kund">
-        ${customer.company || ""}<br>
-        ${customer.contact || ""}<br>
-        ${customer.address || ""}<br>
-        ${customer.postal || ""} ${customer.city || ""}<br>
-        Telefon: ${customer.phone || ""}<br>
-        E-post: ${customer.email || ""}
+        ${customer.company ? customer.company + '<br>' : ''}
+        ${customer.contact ? customer.contact + '<br>' : ''}
+        ${customer.personnummer ? 'Personnummer: ' + customer.personnummer + '<br>' : ''}
+        ${customer.address ? customer.address + '<br>' : ''}
+        ${customer.postal || customer.city ? [customer.postal, customer.city].filter(Boolean).join(' ') + '<br>' : ''}
+        ${customer.fastighet ? 'Fastighetsbeteckning: ' + customer.fastighet + '<br>' : ''}
+        ${customer.phone ? 'Telefon: ' + customer.phone + '<br>' : ''}
+        ${customer.email ? 'E-post: ' + customer.email : ''}
       </div>
 
       <h2>ANBUD</h2>
       <div class="preview-anbud">
-        ${offerText}
+        ${offerBodyText}
       </div>
 
       <h2>Arbetsmoment / artiklar</h2>
       <table class="preview-items">
+        <thead>
+          <tr>
+            <th>Arbetsmoment / artiklar</th>
+            <th class="right">ex. moms</th>
+          </tr>
+        </thead>
         <tbody>
           ${items.map(i => `
             <tr>

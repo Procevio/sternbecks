@@ -3771,24 +3771,85 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         const calc = this.getCalculatedPriceData();
         const offerHTML = this.generateOfferHTML();
         
-        // Extrahera offerText (brödtexten) från HTML
+        // Extrahera offerBodyText på samma sätt som PDF:en gör
+        // Detta är ren anbudstext utan kund, priser, villkor, signatur
+        const offerBodyText = (function () {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = offerHTML;
+
+            const content = tempDiv.querySelector('.offer-content, .offer--locked, .offer');
+            if (!content) return '';
+
+            // Ta bort kundblocket
+            const recipient = content.querySelector('.offer-recipient');
+            if (recipient) {
+                recipient.remove();
+            }
+
+            // Konvertera <br> till newlines
+            content.querySelectorAll('br').forEach(br => {
+                br.replaceWith(document.createTextNode('\n'));
+            });
+
+            let text = content.textContent || content.innerText || '';
+
+            let bodyLines = text
+                .split('\n')
+                .map(line => line.replace(/\s+/g, ' ').trim())
+                .filter(line => line.length > 0);
+
+            // Filtrera bort allt som inte ska vara i anbudstexten
+            const paragraphLines = bodyLines.filter(row => {
+                if (!row) return false;
+
+                // Ta bort rubriker
+                if (row.startsWith('Kund')) return false;
+                if (row === 'ANBUD') return false;
+                if (row === 'För anbudet gäller:') return false;
+
+                // Ta bort numrerade villkor
+                if (/^\d\./.test(row)) return false;
+
+                // Ta bort alla prisrader
+                if (row.startsWith('PRIS:')) return false;
+                if (row.startsWith('PRIS VID GODKÄNT ROTAVDRAG:')) return false;
+                if (row.startsWith('Totalt inkl. moms:')) return false;
+                if (row.startsWith('ROT-avdrag')) return false;
+
+                // Ta bort kund-relaterade rader
+                if (customer.company && row.includes(customer.company)) return false;
+                if (customer.contact && row.includes(customer.contact)) return false;
+                if (customer.address && row.includes(customer.address)) return false;
+                if (customer.postal || customer.city) {
+                    const pcCity = [customer.postal, customer.city].filter(Boolean).join(' ').trim();
+                    if (pcCity && row.includes(pcCity)) return false;
+                }
+                if (row.startsWith('Personnummer:')) return false;
+                if (row.startsWith('Telefon:')) return false;
+                if (row.startsWith('E-post:')) return false;
+
+                // Ta bort företagsinformation som ska bara finnas i signaturblocket
+                if (row.includes('Sternbecks Fönsterhantverk i Dalarna AB')) return false;
+                if (row.includes('Lavendelstigen 7')) return false;
+                if (row.includes('77143 Ludvika')) return false;
+                if (row.startsWith('Org.nr')) return false;
+                if (row.startsWith('Tel.nr')) return false;
+                if (row.includes('Johan Sternbeck')) return false;
+                if (row.includes('Företaget innehar F-skatt')) return false;
+                if (row.includes('076-846 52 79')) return false;
+
+                return true;
+            });
+
+            // Konvertera till HTML med <br> för radbrytningar
+            return paragraphLines.join('<br>');
+        })();
+
+        // Extrahera villkor på samma sätt som PDF:en gör
         let offerText = this.generateOfferTextFromHTML(offerHTML);
-        
-        // Ta bort villkorslistan från offerText (de ska visas separat)
-        const conditions = [
-            '1. Vi ansvarar för rengöring av fönsterglas efter renovering. Ej fönsterputs.',
-            '2. Miljö- och kvalitetsansvarig: Johan Sternbeck',
-            '3. Entreprenörens ombud: Johan Sternbeck',
-            '4. Timtid vid tillkommande arbeten debiteras med 625 kr inkl moms.'
-        ];
-        
-        // Ta bort villkorsraderna från offerText
-        offerText = offerText
+        const conditions = offerText
             .split('\n')
-            .filter(line => !line.match(/^\d\./))
-            .join('\n')
-            .replace(/För anbudet gäller:\s*/g, '')
-            .trim();
+            .filter(row => row.match(/^\d\./));
 
         // Mappa partis till items
         const partis = (window.partisState && window.partisState.partis) || [];
@@ -3804,6 +3865,8 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
 
         const html = window.buildOfferPreview({
             customer,
+            offerBodyText,
+            items,
             calc: {
                 total_excl_vat: this.formatPrice(calc.total_excl_vat).replace(/\s*kr/i, '').trim(),
                 vat_amount: this.formatPrice(calc.vat_amount).replace(/\s*kr/i, '').trim(),
@@ -3812,8 +3875,6 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 rot_deduction: calc.rot_applicable ? this.formatPrice(calc.rot_deduction).replace(/\s*kr/i, '').trim() : 0,
                 customer_pays: this.formatPrice(calc.customer_pays).replace(/\s*kr/i, '').trim()
             },
-            offerText: offerText.split('\n').join('<br>'),
-            items,
             conditions,
             date,
             city

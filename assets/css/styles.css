@@ -2500,8 +2500,20 @@ body.dark .info-text {
   width: 120px;
 }
 
+.preview-items {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.preview-items th,
 .preview-items td {
   padding: 6px 0;
+  text-align: left;
+}
+
+.preview-items th.right,
+.preview-items td.right {
+  text-align: right;
 }
 
 .preview-summary {
