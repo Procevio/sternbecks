@@ -46,15 +46,10 @@
         if (!content) return '';
 
         const recipient = content.querySelector('.offer-recipient');
-        const customerLines = [];
-
         if (recipient) {
-          const rawLines = (recipient.innerText || recipient.textContent || '')
-            .split('\n')
-            .map(l => l.trim())
-            .filter(Boolean);
-          customerLines.push(...rawLines);
-          recipient.remove();
+          // Vi läser ev. kundinfo här om vi vill i framtiden,
+          // men vi använder den INTE längre i offerText.
+          recipient.remove(); // ta bort så det inte kommer med i bodyLines
         }
 
         content.querySelectorAll('br').forEach(br => {
@@ -72,19 +67,12 @@
         bodyLines.forEach(line => {
           processedBodyLines.push(line);
           if (line === 'För anbudet gäller:') {
-            processedBodyLines.push('');
+            processedBodyLines.push(''); // extra tom rad direkt efter rubriken
           }
         });
 
-        const resultLines = [];
-        if (customerLines.length > 0) {
-          resultLines.push('Kund');
-          resultLines.push(...customerLines);
-          resultLines.push('');
-        }
-        resultLines.push(...processedBodyLines);
-
-        return resultLines.join('\n').trim();
+        // Ingen "Kund"-header här längre, bara ren body-text
+        return processedBodyLines.join('\n').trim();
       })();
 
       if (!offerText) {
@@ -172,6 +160,9 @@
           // Ta bort ev. kvarvarande kund-rader (säkerhetsbälte)
           if (row.startsWith('Kund')) return false;
 
+          // Ta bort enkelrad "ANBUD" – vi har redan rubriken i fetstil via jsPDF
+          if (row === 'ANBUD') return false;
+
           // Ta bort villkorsrubriken – den hanteras i VILLKOR-sektionen
           if (row === 'För anbudet gäller:') return false;
 
@@ -183,6 +174,18 @@
           if (row.startsWith('PRIS VID GODKÄNT ROTAVDRAG:')) return false;
           if (row.startsWith('Totalt inkl. moms:')) return false;
           if (row.startsWith('ROT-avdrag')) return false;
+
+          // Kund-relaterade rader som aldrig ska in i ANBUD-brödtexten
+          if (customer.company && row.includes(customer.company)) return false;
+          if (customer.contact && row.includes(customer.contact)) return false;
+          if (customer.address && row.includes(customer.address)) return false;
+          if (customer.postal || customer.city) {
+            const pcCity = [customer.postal, customer.city].filter(Boolean).join(' ').trim();
+            if (pcCity && row.includes(pcCity)) return false;
+          }
+          if (row.startsWith('Personnummer:')) return false;
+          if (row.startsWith('Telefon:')) return false;
+          if (row.startsWith('E-post:')) return false;
 
           return true;
         });
