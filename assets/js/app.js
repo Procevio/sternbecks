@@ -3760,8 +3760,65 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
             return;
         }
 
-        const html = this.generateOfferHTML();
-        console.log('✅ Generated HTML length:', html.length);
+        if (typeof window.buildOfferPreview !== 'function') {
+            console.error('❌ buildOfferPreview saknas. Använder fallback.');
+            const html = this.generateOfferHTML();
+            previewEl.innerHTML = html;
+            return;
+        }
+
+        const customer = this.getCustomerFields();
+        const calc = this.getCalculatedPriceData();
+        const offerHTML = this.generateOfferHTML();
+        
+        // Extrahera offerText (brödtexten) från HTML
+        let offerText = this.generateOfferTextFromHTML(offerHTML);
+        
+        // Ta bort villkorslistan från offerText (de ska visas separat)
+        const conditions = [
+            '1. Vi ansvarar för rengöring av fönsterglas efter renovering. Ej fönsterputs.',
+            '2. Miljö- och kvalitetsansvarig: Johan Sternbeck',
+            '3. Entreprenörens ombud: Johan Sternbeck',
+            '4. Timtid vid tillkommande arbeten debiteras med 625 kr inkl moms.'
+        ];
+        
+        // Ta bort villkorsraderna från offerText
+        offerText = offerText
+            .split('\n')
+            .filter(line => !line.match(/^\d\./))
+            .join('\n')
+            .replace(/För anbudet gäller:\s*/g, '')
+            .trim();
+
+        // Mappa partis till items
+        const partis = (window.partisState && window.partisState.partis) || [];
+        const items = partis.map(p => {
+            const name = p.typ || p.type || p.partiType || 'Arbete';
+            const priceExVat = Math.round((p.pris || 0) / 1.25);
+            return { name, priceExVat: this.formatPrice(priceExVat).replace(/\s*kr/i, '').trim() };
+        });
+
+        const today = new Date();
+        const date = today.toLocaleDateString('sv-SE');
+        const city = customer.city || 'Ludvika';
+
+        const html = window.buildOfferPreview({
+            customer,
+            calc: {
+                total_excl_vat: this.formatPrice(calc.total_excl_vat).replace(/\s*kr/i, '').trim(),
+                vat_amount: this.formatPrice(calc.vat_amount).replace(/\s*kr/i, '').trim(),
+                total_incl_vat: this.formatPrice(calc.total_incl_vat).replace(/\s*kr/i, '').trim(),
+                rot_applicable: calc.rot_applicable,
+                rot_deduction: calc.rot_applicable ? this.formatPrice(calc.rot_deduction).replace(/\s*kr/i, '').trim() : 0,
+                customer_pays: this.formatPrice(calc.customer_pays).replace(/\s*kr/i, '').trim()
+            },
+            offerText: offerText.split('\n').join('<br>'),
+            items,
+            conditions,
+            date,
+            city
+        });
+
         previewEl.innerHTML = html;
     }
 

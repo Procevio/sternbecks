@@ -2481,3 +2481,45 @@ body.dark .info-text {
 #offer-preview {
   max-width: 760px;
 }
+
+/* Offer Preview Module Styles */
+.offer-preview {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preview-logo {
+  width: 120px;
+}
+
+.preview-items td {
+  padding: 6px 0;
+}
+
+.preview-summary {
+  background: #f3f3f3;
+  padding: 15px;
+  margin-top: 20px;
+  border-radius: 6px;
+}
+
+.preview-signature {
+  margin-top: 40px;
+  line-height: 1.4;
+}
+
+.right {
+  float: right;
+}
+
+.bold {
+  font-weight: bold;
+}
