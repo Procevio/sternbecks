@@ -2516,11 +2516,29 @@ body.dark .info-text {
   text-align: right;
 }
 
+.preview-kund > div {
+  margin: 4px 0;
+  line-height: 1.5;
+}
+
 .preview-summary {
   background: #f3f3f3;
   padding: 15px;
   margin-top: 20px;
   border-radius: 6px;
+}
+
+.summary-box {
+  background: #f0f0f0;
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+}
+
+.summary-box-subtitle {
+  font-size: 10px;
+  color: #666;
+  margin-top: 4px;
 }
 
 .preview-signature {

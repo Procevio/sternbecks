@@ -23,14 +23,14 @@ window.buildOfferPreview = function buildOfferPreview({
 
       <h2>Kund</h2>
       <div class="preview-kund">
-        ${customer.company ? customer.company + '<br>' : ''}
-        ${customer.contact ? customer.contact + '<br>' : ''}
-        ${customer.personnummer ? 'Personnummer: ' + customer.personnummer + '<br>' : ''}
-        ${customer.address ? customer.address + '<br>' : ''}
-        ${customer.postal || customer.city ? [customer.postal, customer.city].filter(Boolean).join(' ') + '<br>' : ''}
-        ${customer.fastighet ? 'Fastighetsbeteckning: ' + customer.fastighet + '<br>' : ''}
-        ${customer.phone ? 'Telefon: ' + customer.phone + '<br>' : ''}
-        ${customer.email ? 'E-post: ' + customer.email : ''}
+        ${customer.company ? '<div>' + customer.company + '</div>' : ''}
+        ${customer.contact ? '<div>' + customer.contact + '</div>' : ''}
+        ${customer.personnummer ? '<div>Personnummer: ' + customer.personnummer + '</div>' : ''}
+        ${customer.address ? '<div>' + customer.address + '</div>' : ''}
+        ${customer.postal || customer.city ? '<div>' + [customer.postal, customer.city].filter(Boolean).join(' ') + '</div>' : ''}
+        ${customer.fastighet ? '<div>Fastighetsbeteckning: ' + customer.fastighet + '</div>' : ''}
+        ${customer.phone ? '<div>Telefon: ' + customer.phone + '</div>' : ''}
+        ${customer.email ? '<div>E-post: ' + customer.email + '</div>' : ''}
       </div>
 
       <h2>ANBUD</h2>
@@ -60,9 +60,9 @@ window.buildOfferPreview = function buildOfferPreview({
         <div class="summary-box">
           <h3>Totalpris</h3>
           <div class="right">${calc.total_excl_vat} kr</div>
+          <div class="summary-box-subtitle">ex. moms</div>
         </div>
 
-        <p>Pris exkl. moms: <span class="right">${calc.total_excl_vat} kr</span></p>
         <p>Moms: <span class="right">${calc.vat_amount} kr</span></p>
         <p>Totalpris inkl. moms: <span class="right">${calc.total_incl_vat} kr</span></p>
 

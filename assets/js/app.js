@@ -3838,6 +3838,11 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 if (row.includes('Företaget innehar F-skatt')) return false;
                 if (row.includes('076-846 52 79')) return false;
 
+                // Ta bort datum (t.ex. "Ludvika 2025-12-07")
+                const city = customer.city || 'Ludvika';
+                const datePattern = /\d{4}-\d{2}-\d{2}/;
+                if (row.includes(city) && datePattern.test(row)) return false;
+
                 return true;
             });
 
