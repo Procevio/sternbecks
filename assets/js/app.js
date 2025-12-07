@@ -3708,26 +3708,52 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
     }
 
     generateOfferTextFromHTML(html) {
+        // Konvertera HTML till ren text för PDF (utan kundblock)
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
 
+        // Ta bort info-message om den finns
+        const infoMsg = tempDiv.querySelector('.info-message');
+        if (infoMsg) return '';
+
+        // Hitta offer-containern (antingen .offer-content eller .offer--locked eller .offer)
         const content = tempDiv.querySelector('.offer-content, .offer--locked, .offer');
         if (!content) return '';
 
+        // Ta bort kundblocket (offer-recipient) helt – kund hämtas från formuläret
+        const recipientEl = content.querySelector('.offer-recipient');
+        if (recipientEl) {
+            recipientEl.remove();
+        }
+
+        // Gör om alla <br> till radbrytningar
         content.querySelectorAll('br').forEach(br => {
             br.replaceWith(document.createTextNode('\n'));
         });
 
+        // Extrahera text från resten av content
         let text = content.textContent || content.innerText || '';
-        return text
+
+        // Städa upp whitespace men behåll radbrytningar
+        let bodyLines = text
             .split('\n')
             .map(line => line.replace(/\s+/g, ' ').trim())
-            .filter(line => line.length > 0)
-            .join('\n');
+            .filter(line => line.length > 0);
+
+        // Lägg in en extra tom rad efter rubriken "För anbudet gäller:"
+        const processedBodyLines = [];
+        bodyLines.forEach(line => {
+            processedBodyLines.push(line);
+            if (line === 'För anbudet gäller:') {
+                processedBodyLines.push('');
+            }
+        });
+
+        // Returnera en ren textrepresentation utan kundblock
+        return processedBodyLines.join('\n').trim();
     }
 
     renderOfferPreview() {
-        console.log('🔍 renderOfferPreview called');
         const previewEl = document.getElementById('offer-preview');
         if (!previewEl) {
             console.error('❌ offer-preview element not found!');
@@ -3740,8 +3766,8 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
     }
 
     async getOrBuildPdfs(force = false) {
-        const maxAgeMs = 0; // tillfälligt, för debug
-        const fresh = false; // tillfälligt, för debug
+        const maxAgeMs = 0;
+        const fresh = false;
         if (fresh && !force) return this._pdfCache;
 
         // Säkerställ att pris och förhandsvisning är uppdaterade innan PDF byggs
@@ -3765,9 +3791,6 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         const calc = this.getCalculatedPriceData();
         const offerHTML = this.generateOfferHTML();
         const partis = (window.partisState && window.partisState.partis) || [];
-
-        console.log('🔍 createOfferPdfBlob anropad');
-        console.log('🔍 window.generateOfferPdf finns?', typeof window.generateOfferPdf);
 
         if (typeof window.generateOfferPdf !== 'function') {
             console.error('❌ generateOfferPdf saknas. window.jspdf:', !!window.jspdf);
@@ -3877,8 +3900,6 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 throw new Error('Arbetsbeskrivning-PDF är tom');
             }
 
-            console.log('PDF sizes:', { offer: offerBlob.size, work: workBlob.size });
-
             // 2) Filnamn enligt krav: "Anbud - adress - datum"
             // Sanitera filnamn: ta bort ogiltiga tecken
             const c = this.getCustomerFields();
@@ -3892,8 +3913,6 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
                 new File([offerBlob], offerName, { type: 'application/pdf', lastModified: Date.now() }),
                 new File([workBlob], workName, { type: 'application/pdf', lastModified: Date.now() })
             ];
-
-            console.log('Files created:', files.map(f => ({ name: f.name, size: f.size })));
 
             // 3) Share-text
             const subject = `Anbud: ${c.address || ''} (${dateStr})`;

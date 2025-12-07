@@ -1,5 +1,3 @@
-console.log('🚀 offer-pdf.js: filen laddas');
-
 (function () {
   function initOfferPdf() {
     if (!window.jspdf || !window.jspdf.jsPDF) {
@@ -35,8 +33,6 @@ console.log('🚀 offer-pdf.js: filen laddas');
       offerHTML,
       partis = [],
     }) {
-      console.log('📄 generateOfferPdf – NY modul används');
-
       const doc = new jsPDF();
 
       // ------------------------
@@ -170,11 +166,26 @@ console.log('🚀 offer-pdf.js: filen laddas');
 
       const paragraphLines = offerText
         .split('\n')
-        .filter(row =>
-          !row.startsWith('Kund') &&
-          row !== 'För anbudet gäller:' &&
-          !row.match(/^\d\./)
-        );
+        .filter(row => {
+          if (!row) return false;
+
+          // Ta bort ev. kvarvarande kund-rader (säkerhetsbälte)
+          if (row.startsWith('Kund')) return false;
+
+          // Ta bort villkorsrubriken – den hanteras i VILLKOR-sektionen
+          if (row === 'För anbudet gäller:') return false;
+
+          // Ta bort numrerade villkor (1., 2., 3. ...) – de hanteras också separat
+          if (/^\d\./.test(row)) return false;
+
+          // Ta bort alla prisrader – priserna visas i den nya tabellen + totalblocket
+          if (row.startsWith('PRIS:')) return false;
+          if (row.startsWith('PRIS VID GODKÄNT ROTAVDRAG:')) return false;
+          if (row.startsWith('Totalt inkl. moms:')) return false;
+          if (row.startsWith('ROT-avdrag')) return false;
+
+          return true;
+        });
 
       paragraphLines.forEach(row => {
         const block = doc.splitTextToSize(row, 170);
@@ -307,8 +318,6 @@ console.log('🚀 offer-pdf.js: filen laddas');
 
       return doc.output('blob');
     };
-
-    console.log('✅ offer-pdf.js modul initierad. window.generateOfferPdf definierad.');
   }
 
   if (document.readyState === 'loading') {
