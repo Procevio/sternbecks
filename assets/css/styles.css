@@ -77,6 +77,13 @@ html, body {
     flex-direction: column;
 }
 
+@media (max-width: 640px) {
+    .container {
+        padding: 0 8px;
+        max-width: 100%;
+    }
+}
+
 /* Main content wrapper */
 .main-content {
   max-width: 960px;
@@ -87,6 +94,12 @@ html, body {
 @media (min-width: 768px) {
   .main-content {
     padding: 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .main-content {
+    padding: 8px;
   }
 }
 
@@ -136,6 +149,27 @@ html, body {
   }
 }
 
+/* MOBIL: Header-knapparna blir lika breda */
+@media (max-width: 640px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .app-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .app-header-actions .btn-small,
+  .app-header-actions .admin-button,
+  .app-header-actions .reset-button {
+    flex: 1 1 0;
+    text-align: center;
+    padding: 8px 0;
+  }
+}
+
 .app-title-block {
   display: flex;
   flex-direction: column;
@@ -157,6 +191,14 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* Bas-stil för små knappar i header */
+.app-header-actions .btn-small,
+.app-header-actions .admin-button,
+.app-header-actions .reset-button {
+  font-size: 13px;
+  padding: 6px 12px;
 }
 
 /* Buttons - Standardized */
@@ -285,6 +327,13 @@ button,
   }
 }
 
+@media (max-width: 640px) {
+  .card {
+    margin-bottom: 12px;
+    padding: 14px 12px;
+  }
+}
+
 .card-title {
   font-size: 18px;
   font-weight: 600;
@@ -326,6 +375,22 @@ button,
     font-size: 12px;
     flex: 1 1 auto;
     min-width: 0;
+  }
+}
+
+/* MOBIL: Tabs fyller bredden */
+@media (max-width: 640px) {
+  .tab-bar,
+  .tabs-nav {
+    width: 100%;
+    gap: 4px;
+  }
+  
+  .tab-button {
+    flex: 1 1 0;
+    text-align: center;
+    padding: 10px 4px;
+    font-size: 15px;
   }
 }
 
@@ -851,10 +916,12 @@ input[readonly] {
     flex-direction: column;
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-md);
+    width: 100%;
 }
 
 .form-group {
     flex: 1;
+    width: 100%;
 }
 
 .form-group label {
@@ -1787,6 +1854,33 @@ body.dark .moment-item label:hover {
     
     .footer {
         margin: var(--spacing-lg) -24px 0 -24px;
+    }
+}
+
+/* MOBIL: Formulärfält utnyttjar mer av skärmen */
+@media (max-width: 640px) {
+    .form-row {
+        display: block;
+    }
+    
+    .form-group.half-width,
+    .form-group.third-width {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+    
+    .quote-form {
+        max-width: 100%;
+        padding: 0;
+    }
+    
+    .form-section {
+        padding-left: 0;
+        padding-right: 0;
+    }
+    
+    .form-container {
+        padding: 0;
     }
 }
 
