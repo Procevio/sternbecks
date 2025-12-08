@@ -4814,8 +4814,8 @@ class PasswordProtection {
             console.log('🔍 Alla nav-btn element:', document.querySelectorAll('.nav-btn'));
         }
         
-        // Reset-knapp (NY FUNKTION)
-        const resetBtn = document.getElementById('reset-btn');
+        // Reset-knapp (NY FUNKTION) - hitta i app-header-actions (inte den dolda i navigation-bar)
+        const resetBtn = document.querySelector('.app-header-actions #reset-btn') || document.getElementById('reset-btn');
         console.log('🔍 Letar efter reset-btn:', resetBtn);
         if (resetBtn) {
             resetBtn.addEventListener('click', (e) => {
@@ -5071,8 +5071,8 @@ class AdminPanel {
         this.currentVersion = 1;
         this.lastUpdated = null;
         
-        // DOM-element
-        this.adminBtn = document.getElementById('admin-btn');
+        // DOM-element - hitta admin-knappen i app-header-actions (inte den dolda i navigation-bar)
+        this.adminBtn = document.querySelector('.app-header-actions #admin-btn') || document.getElementById('admin-btn');
         this.adminPanel = document.getElementById('adminPanel');
         this.closeBtn = document.getElementById('btn_close_admin');
         this.adminCloseBtn = document.getElementById('btn_admin_close');
