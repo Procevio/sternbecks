@@ -3538,3 +3538,53 @@ body.dark .info-text {
     padding: 7px 12px;
   }
 }
+
+/* ===== CENTRERA HEADER OCH KNAPPAR ===== */
+
+/* Centrera hela header-containern */
+.app-header {
+  justify-content: center;
+  gap: 16px;
+}
+
+/* Centrera vänster delen (logo + titel) */
+.app-header-left {
+  justify-content: center;
+  text-align: center;
+}
+
+.app-title-block {
+  text-align: center;
+}
+
+/* Centrera knapparna */
+.app-header-actions {
+  justify-content: center;
+}
+
+/* Centrera texten i knapparna */
+.app-header-actions .admin-button,
+.app-header-actions .reset-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* Mobil: behåll centrering */
+@media (max-width: 640px) {
+  .app-header {
+    align-items: center;
+    text-align: center;
+  }
+
+  .app-header-left {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .app-header-actions {
+    width: 100%;
+    justify-content: center;
+  }
+}
