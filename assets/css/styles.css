@@ -3350,3 +3350,38 @@ body.dark .info-text {
 .bold {
   font-weight: bold;
 }
+
+/* MOBIL: mer luft runt formulärkorten */
+@media (max-width: 640px) {
+  .quote-form,
+  .section-card,
+  .card.form-section {
+    margin-inline: 10px;    /* drar in kortet från skärmkanten */
+    padding-inline: 14px;   /* lite mer padding innanför kortet */
+    padding-top: 14px;
+    padding-bottom: 18px;
+  }
+
+  .form-group {
+    margin-bottom: 12px;    /* lite mer luft mellan fält */
+  }
+}
+
+/* HEADER-KNAPPAR: auto-bredd, inte två gigantiska plattor */
+.app-header-actions .btn-small,
+.app-header-actions .admin-button,
+.app-header-actions .reset-button {
+  flex: 0 0 auto;       /* bredd = innehåll, inte "fyll raden" */
+  width: auto;
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 999px; /* ren pill */
+}
+
+/* Smala telefoner: låt knapparna brytas på två rader */
+@media (max-width: 400px) {
+  .app-header-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
