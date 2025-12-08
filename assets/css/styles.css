@@ -3475,30 +3475,32 @@ body.dark .info-text {
   }
 }
 
-/* ==== SLUTGILTIG TAB-STYLING (ANBUD / ARBETSBESKRIVNING / OFFERT) ==== */
+/* ===== SLUTLIG TAB-FIX: AUTO-BREDD + SNABB KÄNSLA ===== */
 
+/* Centrera hela tabb-gruppen */
 .tabs-container {
   margin: 10px 0 14px;
+  display: flex;
+  justify-content: center;
 }
 
-/* Själva "pill"-bakgrunden */
+/* Outer pill-bakgrund */
 .tabs-container .tabs-nav {
-  display: flex;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--surface);
   box-shadow: none;
 }
 
-/* Flik-knapparna */
+/* Själva flik-knapparna */
 .tabs-container .tab-button {
-  flex: 1 1 0;
-  min-width: 0;
-  max-width: none;         /* ta bort tidigare begränsning */
-  padding: 8px 12px;
+  flex: 0 0 auto;          /* bredd = innehåll */
+  width: auto;
+  padding: 8px 14px;
   margin: 0;
   border: none;
   border-radius: 999px;
@@ -3507,11 +3509,12 @@ body.dark .info-text {
   font-size: 14px;
   font-weight: 500;
   line-height: 1.2;
-  white-space: nowrap;     /* ingen ful radbrytning i texten */
+  white-space: nowrap;
   cursor: pointer;
+  transition: none;        /* ingen seg animation */
 }
 
-/* Aktiv flik: ren, tydlig pill – men inte groteskt stor */
+/* Aktiv flik – svart pill som alltid har samma padding runt texten */
 .tabs-container .tab-button.active,
 .tabs-container .tab-button[aria-selected="true"] {
   background: var(--accent);
@@ -3519,19 +3522,19 @@ body.dark .info-text {
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 
-/* Mobil: lite kompaktare men samma beteende */
+/* Mobil: lite kompaktare men samma logik */
 @media (max-width: 640px) {
   .tabs-container {
     padding-inline: 8px;
   }
 
   .tabs-container .tabs-nav {
-    gap: 4px;
-    padding: 4px;
+    gap: 6px;
+    padding: 4px 6px;
   }
 
   .tabs-container .tab-button {
     font-size: 13px;
-    padding: 8px 8px;
+    padding: 7px 12px;
   }
 }
