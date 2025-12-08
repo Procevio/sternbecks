@@ -149,24 +149,27 @@ html, body {
   }
 }
 
-/* MOBIL: Header-knapparna blir lika breda */
+/* MOBIL: Header-knappar diskreta och kompakta */
 @media (max-width: 640px) {
   .app-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 6px;
   }
   
   .app-header-actions {
-    width: 100%;
+    display: flex;
+    gap: 8px;
     justify-content: flex-start;
+    width: auto;
   }
   
   .app-header-actions .btn-small,
   .app-header-actions .admin-button,
   .app-header-actions .reset-button {
-    flex: 1 1 0;
-    text-align: center;
-    padding: 8px 0;
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    font-size: 12px;
   }
 }
 
@@ -201,20 +204,23 @@ html, body {
   padding: 6px 12px;
 }
 
-/* Buttons - Standardized */
+/* Buttons - Standardized (ghost style) */
 button,
 .btn {
   font-family: inherit;
-  font-size: 14px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  padding: 8px 16px;
+  font-size: 13px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  padding: 6px 12px;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: none;
   background-image: none;
 }
 
@@ -222,42 +228,45 @@ button,
   button,
   .btn {
     font-size: 13px;
-    padding: 7px 14px;
+    padding: 7px 12px;
   }
 }
 
 /* Primary button */
 .btn-primary,
 .submit-btn {
-  background-color: var(--accent);
+  background: var(--accent);
   color: var(--accent-contrast);
   border-color: var(--accent);
-  background-image: none;
+  box-shadow: none;
 }
 
 .btn-primary:hover,
 .submit-btn:hover {
   filter: brightness(1.05);
-  background-image: none;
 }
 
-/* Secondary button */
+/* Secondary button (ghost) */
 .btn-secondary,
-.secondary-btn {
-  background-color: transparent;
-  color: var(--text-primary);
+.secondary-btn,
+.btn.secondary {
+  background: transparent;
   border-color: var(--border);
+  color: var(--text-secondary);
 }
 
 .btn-secondary:hover,
-.secondary-btn:hover {
-  background-color: rgba(0,0,0,0.03);
+.secondary-btn:hover,
+.btn.secondary:hover {
+  background: rgba(0,0,0,0.04);
+  color: var(--text-primary);
 }
 
 @media (prefers-color-scheme: dark) {
   .btn-secondary:hover,
-  .secondary-btn:hover {
-    background-color: rgba(255,255,255,0.05);
+  .secondary-btn:hover,
+  .btn.secondary:hover {
+    background: rgba(255,255,255,0.05);
   }
 }
 
@@ -347,69 +356,28 @@ button,
   margin-bottom: 12px;
 }
 
-/* Tab bar - Modern pill tabs */
-.tab-bar,
-.tabs-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+/* Form/section cards */
+.section-card,
+.quote-form,
+.arbetsbeskrivning-form {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  padding: 16px 16px 18px;
   margin-bottom: 16px;
 }
 
-.tab-button {
-  border-radius: 6px;
-  border: 1px solid transparent;
-  background-color: transparent;
-  color: var(--text-secondary);
-  padding: 5px 12px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  background-image: none;
-}
-
-@media (max-width: 767px) {
-  .tab-button {
-    padding: 4px 10px;
-    font-size: 12px;
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-}
-
-/* MOBIL: Tabs fyller bredden */
 @media (max-width: 640px) {
-  .tab-bar,
-  .tabs-nav {
-    width: 100%;
-    gap: 4px;
+  .section-card,
+  .quote-form,
+  .arbetsbeskrivning-form {
+    padding: 14px;
+    margin-inline: 4px;
   }
-  
-  .tab-button {
-    flex: 1 1 0;
-    text-align: center;
-    padding: 10px 4px;
-    font-size: 15px;
-  }
-}
 
-.tab-button:hover {
-  background-color: rgba(0,0,0,0.03);
-  color: var(--text-primary);
-  background-image: none;
-}
-
-.tab-button.active,
-.tab-button[aria-selected="true"] {
-  background-color: var(--accent);
-  color: var(--accent-contrast);
-  background-image: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .tab-button:hover {
-    background-color: rgba(255,255,255,0.05);
+  .form-group {
+    margin-bottom: 10px;
   }
 }
 
@@ -567,6 +535,9 @@ h3 {
     margin: 20px auto 0;
     padding: 0 20px;
     gap: 24px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
 }
 
 .navigation-bar.visible {
@@ -595,15 +566,14 @@ h3 {
     margin-right: auto;
     width: 36px;
     height: 36px;
-    border: none;
+    border: 1px solid var(--border);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--white);
+    background: var(--surface);
+    color: var(--text-primary);
     cursor: pointer;
     transition: var(--transition-fast);
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .logout-btn-compact.visible {
@@ -616,9 +586,9 @@ h3 {
 }
 
 .logout-btn-compact:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    background: rgba(0,0,0,0.04);
+    transform: none;
+    box-shadow: none;
 }
 
 .nav-btn {
@@ -627,16 +597,16 @@ h3 {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    backdrop-filter: blur(12px);
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     min-width: 88px;
     position: relative;
     overflow: hidden;
+    box-shadow: none;
 }
 
 .nav-btn::before {
@@ -648,10 +618,10 @@ h3 {
 }
 
 .nav-btn:hover {
-    background: rgba(255, 255, 255, 0.18);
-    border-color: rgba(255, 255, 255, 0.25);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    background: rgba(0,0,0,0.04);
+    border-color: var(--border);
+    transform: none;
+    box-shadow: none;
 }
 
 .nav-btn:active {
@@ -737,13 +707,13 @@ h3 {
     display: flex;
     align-items: center;
     gap: 12px;
-    background: rgba(34, 197, 94, 0.95);
+    background: #22c55e;
     color: white;
     padding: 16px 20px;
     border-radius: 12px;
-    box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 10px rgba(34, 197, 94, 0.35);
+    backdrop-filter: none;
+    border: none;
     font-size: 14px;
     font-weight: 500;
     min-width: 250px;
@@ -799,64 +769,50 @@ h3 {
     display: none;
 }
 
-/* Tab Navigation */
+/* Tab Navigation - modern pill style */
 .tabs-container {
-    background: var(--white);
-    border-bottom: 1px solid var(--border-light);
+  margin-top: 8px;
+  margin-bottom: 12px;
 }
 
 .tabs-nav {
-    display: flex;
-    max-width: 100%;
+  display: flex;
+  gap: 8px;
+  background: transparent;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  justify-content: space-between;
 }
 
 .tab-button {
-    flex: 1;
-    background: var(--surface-light);
-    border: none;
-    padding: var(--spacing-lg);
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: var(--transition-fast);
-    border-bottom: 3px solid transparent;
-    position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  font-size: 14px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.tab-button:hover {
-    background: var(--white);
-    color: var(--text-primary);
-}
-
-.tab-button.active {
-    background: var(--white);
-    color: var(--primary-dark);
-    border-bottom-color: var(--accent-beige);
-}
-
-.tab-button:not(:last-child) {
-    border-right: 1px solid var(--border-light);
+.tab-button.active,
+.tab-button[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 /* Tab Content */
 .tab-content {
-    display: none;
-    background: var(--white);
+  display: none;
 }
 
 .tab-content.active {
-    display: block;
-}
-
-.arbetsbeskrivning-form {
-    padding: var(--spacing-xl);
-}
-
-.info-text {
-    color: var(--text-muted);
-    font-style: italic;
-    margin-bottom: var(--spacing-lg);
+  display: block;
 }
 
 /* Readonly fields styling */
@@ -1131,7 +1087,7 @@ input[readonly] {
 
 /* Validation messages */
 .validation-message {
-    background: linear-gradient(135deg, #fff4e6 0%, #fef7ed 100%);
+    background: #fff7ed;
     border: 1px solid #fed7aa;
     border-radius: var(--border-radius);
     padding: var(--spacing-md);
@@ -1143,13 +1099,13 @@ input[readonly] {
 }
 
 .validation-message.error {
-    background: linear-gradient(135deg, #fef2f2 0%, #fef7f7 100%);
+    background: #fef2f2;
     border-color: var(--error-red);
     color: var(--error-red);
 }
 
 .validation-message.success {
-    background: linear-gradient(135deg, #f0fdf4 0%, #f7fef9 100%);
+    background: #f0fdf4;
     border-color: var(--success-green);
     color: #15803d;
 }
@@ -1875,6 +1831,23 @@ body.dark .moment-item label:hover {
     .form-container {
         padding: 0;
     }
+}
+
+/* MOBIL: Tabbar kompakt och inom bredden */
+@media (max-width: 640px) {
+  .tabs-container {
+    padding: 0 4px;
+  }
+
+  .tabs-nav {
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .tab-button {
+    padding-block: 8px;
+    font-size: 13px;
+  }
 }
 
 /* Desktop responsive (1024px+) */

@@ -4732,16 +4732,12 @@ class PasswordProtection {
         Promise.resolve(window.pricingReady).then(() => {
             window.quoteCalculator = new QuoteCalculator();
             new AccessibilityEnhancer();
-            new ThemeToggle();
-
             console.log('Sternbecks Anbudsapplikation initialiserad framgångsrikt efter prisladdning.');
         }).catch(err => {
             console.error('Kunde inte ladda prislista:', err);
             // Falla tillbaka på befintliga defaultvärden i CONFIG så appen ändå fungerar
             window.quoteCalculator = new QuoteCalculator();
             new AccessibilityEnhancer();
-            new ThemeToggle();
-
             console.log('Sternbecks Anbudsapplikation initialiserad med standardpriser efter felaktig prisladdning.');
         });
     }
