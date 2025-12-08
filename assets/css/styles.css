@@ -3474,3 +3474,64 @@ body.dark .info-text {
     margin-inline: 10px;
   }
 }
+
+/* ==== SLUTGILTIG TAB-STYLING (ANBUD / ARBETSBESKRIVNING / OFFERT) ==== */
+
+.tabs-container {
+  margin: 10px 0 14px;
+}
+
+/* Själva "pill"-bakgrunden */
+.tabs-container .tabs-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: none;
+}
+
+/* Flik-knapparna */
+.tabs-container .tab-button {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;         /* ta bort tidigare begränsning */
+  padding: 8px 12px;
+  margin: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;     /* ingen ful radbrytning i texten */
+  cursor: pointer;
+}
+
+/* Aktiv flik: ren, tydlig pill – men inte groteskt stor */
+.tabs-container .tab-button.active,
+.tabs-container .tab-button[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* Mobil: lite kompaktare men samma beteende */
+@media (max-width: 640px) {
+  .tabs-container {
+    padding-inline: 8px;
+  }
+
+  .tabs-container .tabs-nav {
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .tabs-container .tab-button {
+    font-size: 13px;
+    padding: 8px 8px;
+  }
+}
