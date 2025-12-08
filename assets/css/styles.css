@@ -3565,10 +3565,11 @@ body.dark .info-text {
 /* Centrera texten i knapparna */
 .app-header-actions .admin-button,
 .app-header-actions .reset-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  gap: 0; /* Ingen gap eftersom vi bara har text nu */
 }
 
 /* Mobil: behåll centrering */
