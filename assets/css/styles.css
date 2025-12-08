@@ -452,6 +452,8 @@ html, body {
     width: auto;
   }
   
+  /* Kommenterat ut - ersatt av ny regel längre ner i filen */
+  /*
   .app-header-actions .btn-small,
   .app-header-actions .admin-button,
   .app-header-actions .reset-button {
@@ -459,6 +461,7 @@ html, body {
     padding: 6px 10px;
     font-size: 12px;
   }
+  */
 }
 
 .app-title-block {
@@ -656,6 +659,8 @@ button,
   margin-bottom: 16px;
 }
 
+/* Kommenterat ut - ersatt av ny regel längre ner i filen */
+/*
 @media (max-width: 640px) {
   .section-card,
   .quote-form,
@@ -668,6 +673,7 @@ button,
     margin-bottom: 10px;
   }
 }
+*/
 
 /* Form fields */
 input[type="text"],
