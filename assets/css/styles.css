@@ -640,18 +640,11 @@ h3 {
 }
 
 .nav-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transition: left 0.6s ease;
+    display: none;
 }
 
 .nav-btn:hover::before {
-    left: 100%;
+    display: none;
 }
 
 .nav-btn:hover {
@@ -2950,6 +2943,73 @@ body.dark .info-text {
 
 #offer-preview {
   max-width: 760px;
+}
+
+/* ========= Mobilanpassning för navigation & formulär ========= */
+@media (max-width: 768px) {
+  /* Toppknappar (Admin / Återställ) */
+  .top-actions {
+    gap: var(--spacing-sm);
+  }
+
+  .top-button {
+    flex: 1;
+    padding: 0.7rem 0.75rem;
+    font-size: 0.95rem;
+    border-radius: 12px;
+  }
+
+  /* Tabbarna (Anbud / Arbetsbeskrivning / Offert) */
+  .tabs-container {
+    padding-inline: var(--spacing-md);
+  }
+
+  .tabs-nav {
+    gap: var(--spacing-xs);
+  }
+
+  .tab-button {
+    padding-block: 0.75rem;
+    padding-inline: 0.5rem;
+    font-size: 0.95rem;
+    border-radius: 999px;
+    box-shadow: none;
+  }
+
+  .tab-button.active {
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.04),
+                0 4px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Formulärkort / sektioner */
+  .section-card {
+    margin-inline: var(--spacing-md);
+    padding: 1.25rem 1.25rem 1.5rem;
+    border-radius: 18px;
+  }
+
+  /* Se till att rader som ligger “bredvid varandra” staplas snyggt på mobil */
+  .form-row-inline {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  /* Prisöversikt / sammanfattning ska följa samma marginals som övriga kort */
+  .price-summary-card {
+    margin-inline: var(--spacing-md);
+    border-radius: 18px;
+  }
+}
+
+/* Desktop-förfining för tabbar: gör dem lite mindre extrema i bredd */
+.tabs-nav {
+  justify-content: space-between;
+}
+
+.tab-button {
+  flex: 1;
+  min-width: 0;
+  max-width: 12rem;
 }
 
 /* Offer Preview Module Styles */
