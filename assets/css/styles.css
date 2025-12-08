@@ -3391,3 +3391,86 @@ body.dark .info-text {
     gap: 6px;
   }
 }
+
+/* ==== EN RAM PÅ ANBUD ==== */
+
+/* Quote-form är själva kortet */
+.quote-form {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  padding: 18px 16px 20px;
+  margin-inline: 10px;
+}
+
+/* Alla innersektioner med .card i anbudsformuläret ska INTE vara egna kort */
+.quote-form .card.form-section {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0 0 18px 0;
+  margin: 0 0 18px 0;
+}
+
+/* Sista sektionen får ingen extra bottenmarginal */
+.quote-form .card.form-section:last-of-type {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Vanliga .form-section inne i quoten ska bara vara "sektioner" */
+.quote-form .form-section {
+  border-bottom: 1px solid var(--border-light);
+}
+
+.quote-form .form-section:last-of-type {
+  border-bottom: none;
+}
+
+/* ==== EN RAM PÅ OFFERT ==== */
+
+/* Offert-container är kortet */
+.offert-container {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  padding: 18px 16px 20px;
+  margin-inline: 10px;
+}
+
+/* Sektionen inuti ska inte bli ett eget kort */
+.offert-container .card.form-section {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Ta bort extra kort runt preview */
+.offert-container .offer-preview-card,
+.offert-container .offer-preview-inner {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* Själva offert-dokumentet får gärna se ut som ett papper, men bara EN ram */
+.offert-container .offer-preview {
+  background: #ffffff;
+  border: 1px solid #e5e5ea;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+/* ==== MOBIL-LUFT (behåll men justera lite) ==== */
+@media (max-width: 640px) {
+  .quote-form,
+  .offert-container,
+  .arbetsbeskrivning-form {
+    margin-inline: 10px;
+  }
+}
