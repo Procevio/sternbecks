@@ -97,7 +97,12 @@
         const logo = new Image();
         logo.src = 'assets/images/Sternbecks logotyp.png';
         await new Promise(res => { logo.onload = res; logo.onerror = res; });
-        doc.addImage(logo, 'PNG', 150, 10, 40, 40);
+        const logoX = 150;
+        const logoY = 10;
+        const logoDisplayWidth = 60; // större än tidigare (40)
+        const aspectRatio = logo.height > 0 ? logo.height / logo.width : 1;
+        const logoDisplayHeight = logoDisplayWidth * aspectRatio;
+        doc.addImage(logo, 'PNG', logoX, logoY, logoDisplayWidth, logoDisplayHeight);
       } catch (e) {
         console.warn('Kunde inte ladda logotyp i offert-PDF', e);
       }

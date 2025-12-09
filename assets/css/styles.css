@@ -3294,7 +3294,10 @@ body.dark .info-text {
 }
 
 .preview-logo {
-  width: 120px;
+  max-width: 160px;
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .preview-items {
