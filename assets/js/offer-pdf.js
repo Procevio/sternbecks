@@ -32,6 +32,7 @@
       calc,
       offerHTML,
       partis = [],
+      totalParties = 0,
       isBusinessCustomer = false,
     }) {
       const doc = new jsPDF();
@@ -138,9 +139,9 @@
       if (customer.fastighet) customerLines.push('Fastighetsbeteckning: ' + customer.fastighet);
       if (customer.phone) customerLines.push('Telefon: ' + customer.phone);
       if (customer.email) customerLines.push('E-post: ' + customer.email);
-      const totalParties = Array.isArray(partis) ? partis.length : 0;
-      if (totalParties > 0) {
-        customerLines.push('Antal partier: ' + totalParties + ' st');
+      const totalPartiesResolved = totalParties || (Array.isArray(partis) ? partis.length : 0);
+      if (totalPartiesResolved > 0) {
+        customerLines.push('Antal partier: ' + totalPartiesResolved + ' st');
       }
 
       customerLines.forEach(line => {

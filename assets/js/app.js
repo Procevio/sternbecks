@@ -3922,7 +3922,8 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         const today = new Date();
         const date = today.toLocaleDateString('sv-SE');
         const city = customer.city || 'Ludvika';
-        const totalParties = Array.isArray(partis) ? partis.length : 0;
+        const totalPartiesFromInput = parseInt(document.getElementById('window_sections')?.value, 10) || 0;
+        const totalParties = Array.isArray(partis) && partis.length > 0 ? partis.length : totalPartiesFromInput;
 
         const html = window.buildOfferPreview({
             customer,
@@ -3973,13 +3974,17 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         const offerHTML = this.generateOfferHTML();
         const partis = (window.partisState && window.partisState.partis) || [];
         const data = this.collectPricingData?.() || {};
+        const totalPartiesFromInput = parseInt(document.getElementById('window_sections')?.value, 10) || 0;
+        const totalParties = Array.isArray(partis) && partis.length > 0
+            ? partis.length
+            : totalPartiesFromInput;
 
         if (typeof window.generateOfferPdf !== 'function') {
             console.error('❌ generateOfferPdf saknas. window.jspdf:', !!window.jspdf);
             return Promise.reject(new Error('PDF-modul saknas (offer-pdf.js laddades inte).'));
         }
 
-        return window.generateOfferPdf({ customer, calc, offerHTML, partis, isBusinessCustomer: data.isBusinessCustomer === true });
+        return window.generateOfferPdf({ customer, calc, offerHTML, partis, totalParties, isBusinessCustomer: data.isBusinessCustomer === true });
     }
 
     createWorkDescriptionPdfBlob() {
