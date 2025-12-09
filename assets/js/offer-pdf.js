@@ -1,4 +1,5 @@
 (function () {
+  // PDF: HELPER – renderar "Antal partier: X st" raden
   function renderTotalPartiesLine(doc, totalParties, x, y, lineHeight) {
     if (!totalParties || totalParties <= 0) return y;
     doc.setFont(undefined, 'normal');
@@ -15,6 +16,7 @@
 
     const { jsPDF } = window.jspdf;
 
+    // PDF: PRICE FORMATTER – här formateras alla priser (kr läggs på senare).
     function formatPrice(amount) {
       return new Intl.NumberFormat('sv-SE', {
         style: 'currency',
@@ -231,6 +233,7 @@
       y += 8;
       ensureSpace(20);
 
+      // PDF: SECTION HEADER – här byter vi texten till "Arbete enligt bifogad arbetsbeskrivning".
       doc.setFontSize(12);
       doc.setFont(undefined, 'bold');
       doc.text('Arbetsmoment / artiklar', 20, y);
@@ -263,11 +266,13 @@
       // TOTALPRISBLOCK / EX / MOMS / INKL / ROT / KUNDEN BETALAR
       // ------------------------
       const totalPartiesResolved = totalParties || (Array.isArray(partis) ? partis.length : 0);
+      // PDF: PRICE BLOCK – FÖRETAGSKUND (bara exkl. moms)
       if (isBusinessCustomer) {
         ensureSpace(30);
         doc.setFontSize(12);
         doc.setFont(undefined, 'bold');
         doc.text('Totalpris exkl. moms:', 20, y);
+        // PDF: ANTAL PARTIER – rad placeras här i företagskundsgrenen
         y = renderTotalPartiesLine(doc, totalPartiesResolved, 20, y, 6);
         y += 6;
         doc.setFontSize(12);
@@ -276,6 +281,7 @@
         doc.text(formatPrice(calc.total_excl_vat) + ' kr', 190, y, { align: 'right' });
         y += 12;
       } else {
+        // PDF: PRICE BLOCK – PRIVATKUND (exkl. moms, moms, inkl. moms, ROT, KUNDEN BETALAR)
         ensureSpace(40);
         const blockTop = y;
 
@@ -298,6 +304,7 @@
 
         doc.setFontSize(11);
 
+        // PDF: ANTAL PARTIER – rad placeras här i privatkundsgrenen
         y = renderTotalPartiesLine(doc, totalPartiesResolved, 20, y, 6);
 
         doc.text('Pris exkl. moms:', 20, y);
