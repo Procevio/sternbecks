@@ -1170,18 +1170,45 @@ class QuoteCalculator {
         const rotCustomerRadios = this.form.querySelectorAll('input[name="är_du_berättigad_rot_avdrag"]');
         const materialkostnadSection = document.getElementById('materialkostnad-section');
         const delatRotSection = document.getElementById('delat-rot-section');
+        const businessCheckbox = document.getElementById('is_business_customer');
+        const sharedRotRadios = document.querySelectorAll('input[name="delat_rot_avdrag"]');
         
         console.log('ROT property radios found:', rotPropertyRadios.length);
         console.log('ROT customer radios found:', rotCustomerRadios.length);
         console.log('Materialkostnad section:', materialkostnadSection);
         console.log('Delat ROT section:', delatRotSection);
         
+        // Lås upp/lås ROT vid företagskund
+        const setRotLocked = (isLocked) => {
+            if (isLocked) {
+                const propertyNo = Array.from(rotPropertyRadios).find(r => r.value.startsWith('Nej'));
+                const customerNo = Array.from(rotCustomerRadios).find(r => r.value.startsWith('Nej'));
+                const sharedNo = Array.from(sharedRotRadios).find(r => r.value.startsWith('Nej'));
+                if (propertyNo) propertyNo.checked = true;
+                if (customerNo) customerNo.checked = true;
+                if (sharedNo) sharedNo.checked = true;
+            }
+            [...rotPropertyRadios, ...rotCustomerRadios, ...sharedRotRadios].forEach(radio => {
+                radio.disabled = isLocked;
+            });
+        };
+
         // Funktion för att kontrollera ROT-sektioner baserat på båda frågorna
         const checkRotSections = () => {
             const propertyIsJa = this.form.querySelector('input[name="fastighet_rot_berättigad"]:checked')?.value === 'Ja - Villa/Radhus';
             const customerIsJa = this.form.querySelector('input[name="är_du_berättigad_rot_avdrag"]:checked')?.value === 'Ja - inkludera ROT-avdrag i anbudet';
+            const isBusiness = businessCheckbox?.checked || false;
             
-            console.log('ROT check - Property Ja:', propertyIsJa, 'Customer Ja:', customerIsJa);
+            console.log('ROT check - Property Ja:', propertyIsJa, 'Customer Ja:', customerIsJa, 'Business:', isBusiness);
+
+            // Om företagskund, lås och tvinga Nej
+            setRotLocked(isBusiness);
+            if (isBusiness) {
+                materialkostnadSection.style.display = 'none';
+                delatRotSection.style.display = 'none';
+                this.updatePriceCalculation();
+                return;
+            }
             
             if (propertyIsJa && customerIsJa) {
                 // BÅDA är Ja - visa alla ROT-sektioner inklusive delat ROT
@@ -1224,14 +1251,28 @@ class QuoteCalculator {
         });
         
         // Event listeners för delat ROT-avdrag radiobuttons
-        const delatRotRadios = document.querySelectorAll('input[name="delat_rot_avdrag"]');
-        console.log('Delat ROT radios found:', delatRotRadios.length);
-        delatRotRadios.forEach(radio => {
+        console.log('Delat ROT radios found:', sharedRotRadios.length);
+        sharedRotRadios.forEach(radio => {
             radio.addEventListener('change', () => {
                 console.log('🔄 Delat ROT-avdrag ändrat till:', radio.value);
                 this.updatePriceCalculation();
             });
         });
+
+        // Företagskund-checkbox lyssnare
+        if (businessCheckbox) {
+            businessCheckbox.addEventListener('change', () => {
+                const isBusiness = businessCheckbox.checked;
+                setRotLocked(isBusiness);
+                checkRotSections();
+                this.updatePriceCalculation();
+            });
+            // Initläge
+            setRotLocked(businessCheckbox.checked);
+            checkRotSections();
+        } else {
+            checkRotSections();
+        }
     }
     
     initializeTabs() {
@@ -1982,7 +2023,9 @@ class QuoteCalculator {
             return isNaN(parsedValue) ? 0 : Math.round(parsedValue);
         };
         
-        return {
+        const isBusinessCustomer = document.getElementById('is_business_customer')?.checked || false;
+
+        const data = {
             // Antal enheter
             doorSections: getNumericValue('antal_dorrpartier'),
             kallareGlugg: getNumericValue('antal_kallare_glugg'),
@@ -2027,8 +2070,19 @@ class QuoteCalculator {
             propertyRotEligible: this.form.querySelector('input[name="fastighet_rot_berättigad"]:checked')?.value || '',
             customerRotEligible: this.form.querySelector('input[name="är_du_berättigad_rot_avdrag"]:checked')?.value || '',
             hasRotDeduction: this.form.querySelector('input[name="är_du_berättigad_rot_avdrag"]:checked')?.value === 'Ja - inkludera ROT-avdrag i anbudet',
-            isSharedRotDeduction: this.form.querySelector('input[name="delat_rot_avdrag"]:checked')?.value === 'Ja'
+            isSharedRotDeduction: this.form.querySelector('input[name="delat_rot_avdrag"]:checked')?.value === 'Ja',
+            isBusinessCustomer
         };
+
+        // Företagskund: stäng av ROT helt i formdatan
+        if (isBusinessCustomer) {
+            data.propertyRotEligible = 'Nej - Hyresrätt/Kommersiell fastighet';
+            data.customerRotEligible = 'Nej - visa fullpris utan avdrag';
+            data.hasRotDeduction = false;
+            data.isSharedRotDeduction = false;
+        }
+
+        return data;
     }
     
     calculateBaseComponents(data) {
@@ -3760,6 +3814,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
             return;
         }
 
+        const data = this.collectPricingData?.() || {};
         if (typeof window.buildOfferPreview !== 'function') {
             console.error('❌ buildOfferPreview saknas. Använder fallback.');
             const html = this.generateOfferHTML();
@@ -3884,7 +3939,8 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
             conditions,
             date,
             city,
-            totalParties
+            totalParties,
+            isBusinessCustomer: data.isBusinessCustomer === true
         });
 
         previewEl.innerHTML = html;
@@ -3916,13 +3972,14 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         const calc = this.getCalculatedPriceData();
         const offerHTML = this.generateOfferHTML();
         const partis = (window.partisState && window.partisState.partis) || [];
+        const data = this.collectPricingData?.() || {};
 
         if (typeof window.generateOfferPdf !== 'function') {
             console.error('❌ generateOfferPdf saknas. window.jspdf:', !!window.jspdf);
             return Promise.reject(new Error('PDF-modul saknas (offer-pdf.js laddades inte).'));
         }
 
-        return window.generateOfferPdf({ customer, calc, offerHTML, partis });
+        return window.generateOfferPdf({ customer, calc, offerHTML, partis, isBusinessCustomer: data.isBusinessCustomer === true });
     }
 
     createWorkDescriptionPdfBlob() {

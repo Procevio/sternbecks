@@ -32,6 +32,7 @@
       calc,
       offerHTML,
       partis = [],
+      isBusinessCustomer = false,
     }) {
       const doc = new jsPDF();
 
@@ -251,50 +252,61 @@
       // ------------------------
       // TOTALPRISBLOCK / EX / MOMS / INKL / ROT / KUNDEN BETALAR
       // ------------------------
-      ensureSpace(40);
-      const blockTop = y;
+      if (isBusinessCustomer) {
+        ensureSpace(30);
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Totalpris exkl. moms:', 20, y);
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'normal');
+        doc.text(formatPrice(calc.total_excl_vat) + ' kr', 190, y, { align: 'right' });
+        y += 12;
+      } else {
+        ensureSpace(40);
+        const blockTop = y;
 
-      doc.setFillColor(240, 240, 240);
-      doc.rect(20, blockTop, 170, 30, 'F');
+        doc.setFillColor(240, 240, 240);
+        doc.rect(20, blockTop, 170, 30, 'F');
 
-      doc.setFontSize(14);
-      doc.setFont(undefined, 'bold');
-      doc.text('Totalpris', 30, blockTop + 10);
+        doc.setFontSize(14);
+        doc.setFont(undefined, 'bold');
+        doc.text('Totalpris', 30, blockTop + 10);
 
-      doc.setFontSize(16);
-      doc.text(formatPrice(calc.total_excl_vat) + ' kr', 190, blockTop + 10, { align: 'right' });
+        doc.setFontSize(16);
+        doc.text(formatPrice(calc.total_excl_vat) + ' kr', 190, blockTop + 10, { align: 'right' });
 
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'normal');
-      doc.text('ex. moms', 30, blockTop + 16);
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.text('ex. moms', 30, blockTop + 16);
 
-      y = blockTop + 38;
-      y += 4;
+        y = blockTop + 38;
+        y += 4;
 
-      doc.setFontSize(11);
+        doc.setFontSize(11);
 
-      doc.text('Pris exkl. moms:', 20, y);
-      doc.text(formatPrice(calc.total_excl_vat) + ' kr', 190, y, { align: 'right' });
-      y += 7;
-
-      doc.text('Moms:', 20, y);
-      doc.text(formatPrice(calc.vat_amount) + ' kr', 190, y, { align: 'right' });
-      y += 7;
-
-      doc.text('Totalpris inkl. moms:', 20, y);
-      doc.text(formatPrice(calc.total_incl_vat) + ' kr', 190, y, { align: 'right' });
-      y += 7;
-
-      if (calc.rot_applicable) {
-        doc.text('ROT-avdrag:', 20, y);
-        doc.text('-' + formatPrice(calc.rot_deduction) + ' kr', 190, y, { align: 'right' });
+        doc.text('Pris exkl. moms:', 20, y);
+        doc.text(formatPrice(calc.total_excl_vat) + ' kr', 190, y, { align: 'right' });
         y += 7;
-      }
 
-      doc.setFont(undefined, 'bold');
-      doc.setFontSize(13);
-      doc.text('KUNDEN BETALAR: ' + formatPrice(calc.customer_pays) + ' kr', 20, y);
-      y += 10;
+        doc.text('Moms:', 20, y);
+        doc.text(formatPrice(calc.vat_amount) + ' kr', 190, y, { align: 'right' });
+        y += 7;
+
+        doc.text('Totalpris inkl. moms:', 20, y);
+        doc.text(formatPrice(calc.total_incl_vat) + ' kr', 190, y, { align: 'right' });
+        y += 7;
+
+        if (calc.rot_applicable) {
+          doc.text('ROT-avdrag:', 20, y);
+          doc.text('-' + formatPrice(calc.rot_deduction) + ' kr', 190, y, { align: 'right' });
+          y += 7;
+        }
+
+        doc.setFont(undefined, 'bold');
+        doc.setFontSize(13);
+        doc.text('KUNDEN BETALAR: ' + formatPrice(calc.customer_pays) + ' kr', 20, y);
+        y += 10;
+      }
 
       // ------------------------
       // VILLKOR

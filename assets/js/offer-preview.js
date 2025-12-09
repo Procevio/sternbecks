@@ -6,8 +6,34 @@ window.buildOfferPreview = function buildOfferPreview({
   conditions,
   date,
   city,
-  totalParties = 0
+  totalParties = 0,
+  isBusinessCustomer = false
 }) {
+  const summaryHtml = isBusinessCustomer
+    ? `
+      <div class="summary-box">
+        <h3>Totalpris</h3>
+        <div class="right">${calc.total_excl_vat} kr</div>
+        <div class="summary-box-subtitle">ex. moms</div>
+      </div>
+    `
+    : `
+      <div class="summary-box">
+        <h3>Totalpris</h3>
+        <div class="right">${calc.total_excl_vat} kr</div>
+        <div class="summary-box-subtitle">ex. moms</div>
+      </div>
+
+      <p>Moms: <span class="right">${calc.vat_amount} kr</span></p>
+      <p>Totalpris inkl. moms: <span class="right">${calc.total_incl_vat} kr</span></p>
+
+      ${calc.rot_applicable ? `
+        <p>ROT-avdrag: <span class="right">-${calc.rot_deduction} kr</span></p>
+      ` : ""}
+
+      <p class="bold">KUNDEN BETALAR: ${calc.customer_pays} kr</p>
+    `;
+
   // Bygg HTML som matchar PDF-layouten strukturellt
   return `
     <div class="offer-preview">
@@ -59,20 +85,7 @@ window.buildOfferPreview = function buildOfferPreview({
       </table>
 
       <div class="preview-summary">
-        <div class="summary-box">
-          <h3>Totalpris</h3>
-          <div class="right">${calc.total_excl_vat} kr</div>
-          <div class="summary-box-subtitle">ex. moms</div>
-        </div>
-
-        <p>Moms: <span class="right">${calc.vat_amount} kr</span></p>
-        <p>Totalpris inkl. moms: <span class="right">${calc.total_incl_vat} kr</span></p>
-
-        ${calc.rot_applicable ? `
-          <p>ROT-avdrag: <span class="right">-${calc.rot_deduction} kr</span></p>
-        ` : ""}
-
-        <p class="bold">KUNDEN BETALAR: ${calc.customer_pays} kr</p>
+        ${summaryHtml}
       </div>
 
       <h2>För anbudet gäller:</h2>
