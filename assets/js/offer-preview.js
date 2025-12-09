@@ -14,9 +14,10 @@ window.buildOfferPreview = function buildOfferPreview({
       <div class="summary-box">
         <h3>Totalpris</h3>
         ${totalParties > 0 ? `<div>Antal partier: ${totalParties} st</div>` : ''}
-        <div class="summary-row">
-          <span>Pris exkl. moms</span>
-          <span class="right">${calc.total_excl_vat} kr</span>
+        <div class="summary-box-subtitle">ex. moms</div>
+        <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+          <span>Pris exkl. moms:</span>
+          <span class="right" style="font-weight: bold;">${calc.total_excl_vat} kr</span>
         </div>
       </div>
     `
@@ -24,20 +25,30 @@ window.buildOfferPreview = function buildOfferPreview({
       <div class="summary-box">
         <h3>Totalpris</h3>
         ${totalParties > 0 ? `<div>Antal partier: ${totalParties} st</div>` : ''}
-        <div class="summary-row">
-          <span>Pris exkl. moms</span>
+        <div class="summary-box-subtitle">inkl. moms</div>
+        <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+          <span>Pris exkl. moms:</span>
           <span class="right">${calc.total_excl_vat} kr</span>
         </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+          <span>Moms:</span>
+          <span class="right">${calc.vat_amount} kr</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+          <span>Totalpris inkl. moms:</span>
+          <span class="right">${calc.total_incl_vat} kr</span>
+        </div>
+        ${calc.rot_applicable ? `
+          <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+            <span>ROT-avdrag:</span>
+            <span class="right">-${calc.rot_deduction} kr</span>
+          </div>
+        ` : ""}
+        <div style="display: flex; justify-content: space-between; margin-top: 12px; padding-top: 8px; border-top: 1px solid #ddd;">
+          <span style="font-weight: bold; font-size: 13px;">Pris inkl. moms:</span>
+          <span class="right" style="font-weight: bold; font-size: 13px;">${calc.customer_pays} kr</span>
+        </div>
       </div>
-
-      <p>Moms: <span class="right">${calc.vat_amount} kr</span></p>
-      <p>Totalpris inkl. moms: <span class="right">${calc.total_incl_vat} kr</span></p>
-
-      ${calc.rot_applicable ? `
-        <p>ROT-avdrag: <span class="right">-${calc.rot_deduction} kr</span></p>
-      ` : ""}
-
-      <p class="bold">KUNDEN BETALAR: ${calc.customer_pays} kr</p>
     `;
 
   // Bygg HTML som matchar PDF-layouten strukturellt
@@ -71,11 +82,11 @@ window.buildOfferPreview = function buildOfferPreview({
         ${offerBodyText}
       </div>
 
-      <h2>Arbetsmoment / artiklar</h2>
+      <h2>Arbete enligt bifogad arbetsbeskrivning</h2>
       <table class="preview-items">
         <thead>
           <tr>
-            <th>Arbetsmoment / artiklar</th>
+            <th>Arbete enligt bifogad arbetsbeskrivning</th>
             <th class="right">ex. moms</th>
           </tr>
         </thead>
