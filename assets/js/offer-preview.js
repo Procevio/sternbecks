@@ -13,15 +13,21 @@ window.buildOfferPreview = function buildOfferPreview({
     ? `
       <div class="summary-box">
         <h3>Totalpris</h3>
-        <div class="right">${calc.total_excl_vat} kr</div>
-        <div class="summary-box-subtitle">ex. moms</div>
+        ${totalParties > 0 ? `<div>Antal partier: ${totalParties} st</div>` : ''}
+        <div class="summary-row">
+          <span>Pris exkl. moms</span>
+          <span class="right">${calc.total_excl_vat} kr</span>
+        </div>
       </div>
     `
     : `
       <div class="summary-box">
         <h3>Totalpris</h3>
-        <div class="right">${calc.total_excl_vat} kr</div>
-        <div class="summary-box-subtitle">ex. moms</div>
+        ${totalParties > 0 ? `<div>Antal partier: ${totalParties} st</div>` : ''}
+        <div class="summary-row">
+          <span>Pris exkl. moms</span>
+          <span class="right">${calc.total_excl_vat} kr</span>
+        </div>
       </div>
 
       <p>Moms: <span class="right">${calc.vat_amount} kr</span></p>
@@ -58,7 +64,6 @@ window.buildOfferPreview = function buildOfferPreview({
         ${customer.fastighet ? '<div>Fastighetsbeteckning: ' + customer.fastighet + '</div>' : ''}
         ${customer.phone ? '<div>Telefon: ' + customer.phone + '</div>' : ''}
         ${customer.email ? '<div>E-post: ' + customer.email + '</div>' : ''}
-        ${totalParties > 0 ? '<div>Antal partier: ' + totalParties + ' st</div>' : ''}
       </div>
 
       <h2>ANBUD</h2>
