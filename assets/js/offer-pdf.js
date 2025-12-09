@@ -1,12 +1,4 @@
 (function () {
-  function renderTotalPartiesLine(doc, totalParties, x, y, lineHeight) {
-    if (!totalParties || totalParties <= 0) return y;
-    doc.setFont(undefined, 'normal');
-    y += lineHeight;
-    doc.text(`Antal partier: ${totalParties} st`, x, y);
-    return y;
-  }
-
   function initOfferPdf() {
     if (!window.jspdf || !window.jspdf.jsPDF) {
       console.error('❌ jsPDF saknas i window.jspdf.jsPDF. Kontrollera att jspdf.umd.min.js laddas först.');
@@ -147,6 +139,10 @@
       if (customer.fastighet) customerLines.push('Fastighetsbeteckning: ' + customer.fastighet);
       if (customer.phone) customerLines.push('Telefon: ' + customer.phone);
       if (customer.email) customerLines.push('E-post: ' + customer.email);
+      const totalPartiesResolved = totalParties || (Array.isArray(partis) ? partis.length : 0);
+      if (totalPartiesResolved > 0) {
+        customerLines.push('Antal partier: ' + totalPartiesResolved + ' st');
+      }
 
       customerLines.forEach(line => {
         ensureSpace(6);
@@ -267,11 +263,8 @@
         doc.setFontSize(12);
         doc.setFont(undefined, 'bold');
         doc.text('Totalpris exkl. moms:', 20, y);
-        y = renderTotalPartiesLine(doc, totalParties, 20, y, 6);
-        y += 6;
         doc.setFontSize(12);
         doc.setFont(undefined, 'normal');
-        doc.text('ex. moms', 20, y);
         doc.text(formatPrice(calc.total_excl_vat) + ' kr', 190, y, { align: 'right' });
         y += 12;
       } else {
@@ -296,8 +289,6 @@
         y += 4;
 
         doc.setFontSize(11);
-
-        y = renderTotalPartiesLine(doc, totalParties, 20, y, 6);
 
         doc.text('Pris exkl. moms:', 20, y);
         doc.text(formatPrice(calc.total_excl_vat) + ' kr', 190, y, { align: 'right' });
