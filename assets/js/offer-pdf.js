@@ -305,6 +305,10 @@
         // Text inuti boxen
         let boxTextY = blockTop + 10;
 
+        // För privatkund: visa "inkl. moms" och belopp inkl. moms i boxen
+        const mainLabel = 'inkl. moms';
+        const mainAmount = calc.total_incl_vat;
+
         // Rubrik "Totalpris"
         doc.setFontSize(14);
         doc.setFont(undefined, 'bold');
@@ -318,13 +322,13 @@
           doc.text(`Antal partier: ${totalPartiesResolved} st`, boxX + 10, boxTextY);
         }
 
-        // "ex. moms" och belopp på samma rad
+        // Label och belopp på samma rad
         boxTextY += lineHeight;
         doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
-        doc.text('ex. moms', boxX + 10, boxTextY);
+        doc.text(mainLabel, boxX + 10, boxTextY);
         doc.setFontSize(16);
-        doc.text(formatCurrency(calc.total_excl_vat), boxX + boxWidth - 10, boxTextY, { align: 'right' });
+        doc.text(formatCurrency(mainAmount), boxX + boxWidth - 10, boxTextY, { align: 'right' });
 
         y = blockTop + boxHeight + 4;
 
