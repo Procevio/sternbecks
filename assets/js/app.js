@@ -3867,6 +3867,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         const today = new Date();
         const date = today.toLocaleDateString('sv-SE');
         const city = customer.city || 'Ludvika';
+        const totalParties = Array.isArray(partis) ? partis.length : 0;
 
         const html = window.buildOfferPreview({
             customer,
@@ -3882,7 +3883,8 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
             },
             conditions,
             date,
-            city
+            city,
+            totalParties
         });
 
         previewEl.innerHTML = html;

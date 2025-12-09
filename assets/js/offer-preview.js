@@ -5,7 +5,8 @@ window.buildOfferPreview = function buildOfferPreview({
   calc,
   conditions,
   date,
-  city
+  city,
+  totalParties = 0
 }) {
   // Bygg HTML som matchar PDF-layouten strukturellt
   return `
@@ -31,6 +32,7 @@ window.buildOfferPreview = function buildOfferPreview({
         ${customer.fastighet ? '<div>Fastighetsbeteckning: ' + customer.fastighet + '</div>' : ''}
         ${customer.phone ? '<div>Telefon: ' + customer.phone + '</div>' : ''}
         ${customer.email ? '<div>E-post: ' + customer.email + '</div>' : ''}
+        ${totalParties > 0 ? '<div>Antal partier: ' + totalParties + ' st</div>' : ''}
       </div>
 
       <h2>ANBUD</h2>

@@ -132,6 +132,10 @@
       if (customer.fastighet) customerLines.push('Fastighetsbeteckning: ' + customer.fastighet);
       if (customer.phone) customerLines.push('Telefon: ' + customer.phone);
       if (customer.email) customerLines.push('E-post: ' + customer.email);
+      const totalParties = Array.isArray(partis) ? partis.length : 0;
+      if (totalParties > 0) {
+        customerLines.push('Antal partier: ' + totalParties + ' st');
+      }
 
       customerLines.forEach(line => {
         ensureSpace(6);
