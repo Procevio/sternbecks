@@ -28,6 +28,14 @@
         .replace(/\s/g, '');
     }
 
+    // PDF: CURRENCY FORMATTER – formaterar med svenskt tusentals-mellanslag och "kr"
+    function formatCurrency(value) {
+      const number = Number(value) || 0;
+      // sv-SE ger "15 812" (NBSP), vilket är ok i PDF
+      const formatted = number.toLocaleString('sv-SE');
+      return `${formatted} kr`;
+    }
+
     /**
      * Skapar offert-PDF.
      * @param {Object} params
@@ -236,7 +244,7 @@
       // PDF: SECTION HEADER – här byter vi texten till "Arbete enligt bifogad arbetsbeskrivning".
       doc.setFontSize(12);
       doc.setFont(undefined, 'bold');
-      doc.text('Arbetsmoment / artiklar', 20, y);
+      doc.text('Arbete enligt bifogad arbetsbeskrivning', 20, y);
       doc.text('ex. moms', 190, y, { align: 'right' });
 
       y += 5;
@@ -250,11 +258,11 @@
       partis.forEach(p => {
         const name = p.typ || p.type || p.partiType || 'Arbete';
         const priceExVat = (p.pris || 0) / 1.25;
-        const price = formatPrice(priceExVat);
+        const price = formatCurrency(priceExVat);
 
         ensureSpace(6);
         doc.text(name, 20, y);
-        doc.text(price + ' kr', 190, y, { align: 'right' });
+        doc.text(price, 190, y, { align: 'right' });
         y += 6;
       });
 
@@ -276,58 +284,75 @@
         y = renderTotalPartiesLine(doc, totalPartiesResolved, 20, y, 6);
         y += 6;
         doc.setFontSize(12);
-        doc.setFont(undefined, 'normal');
+        doc.setFont(undefined, 'bold');
         doc.text('Pris exkl. moms:', 20, y);
-        doc.text(formatPrice(calc.total_excl_vat) + ' kr', 190, y, { align: 'right' });
+        doc.text(formatCurrency(calc.total_excl_vat), 190, y, { align: 'right' });
+        doc.setFont(undefined, 'normal');
         y += 12;
       } else {
         // PDF: PRICE BLOCK – PRIVATKUND (exkl. moms, moms, inkl. moms, ROT, KUNDEN BETALAR)
         ensureSpace(40);
         const blockTop = y;
+        const boxX = 20;
+        const boxWidth = 170;
+        const lineHeight = 6;
 
+        // Beräkna boxhöjd baserat på om vi har antal partier
+        const boxHeight = totalPartiesResolved > 0 ? 36 : 30;
         doc.setFillColor(240, 240, 240);
-        doc.rect(20, blockTop, 170, 30, 'F');
+        doc.rect(boxX, blockTop, boxWidth, boxHeight, 'F');
 
+        // Text inuti boxen
+        let boxTextY = blockTop + 10;
+
+        // Rubrik "Totalpris"
         doc.setFontSize(14);
         doc.setFont(undefined, 'bold');
-        doc.text('Totalpris', 30, blockTop + 10);
+        doc.text('Totalpris', boxX + 10, boxTextY);
 
-        doc.setFontSize(16);
-        doc.text(formatPrice(calc.total_excl_vat) + ' kr', 190, blockTop + 10, { align: 'right' });
+        // "Antal partier" om det finns
+        if (totalPartiesResolved > 0) {
+          boxTextY += lineHeight;
+          doc.setFontSize(11);
+          doc.setFont(undefined, 'normal');
+          doc.text(`Antal partier: ${totalPartiesResolved} st`, boxX + 10, boxTextY);
+        }
 
+        // "ex. moms" och belopp på samma rad
+        boxTextY += lineHeight;
         doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
-        doc.text('ex. moms', 30, blockTop + 16);
+        doc.text('ex. moms', boxX + 10, boxTextY);
+        doc.setFontSize(16);
+        doc.text(formatCurrency(calc.total_excl_vat), boxX + boxWidth - 10, boxTextY, { align: 'right' });
 
-        y = blockTop + 38;
-        y += 4;
+        y = blockTop + boxHeight + 4;
 
         doc.setFontSize(11);
 
-        // PDF: ANTAL PARTIER – rad placeras här i privatkundsgrenen
-        y = renderTotalPartiesLine(doc, totalPartiesResolved, 20, y, 6);
-
         doc.text('Pris exkl. moms:', 20, y);
-        doc.text(formatPrice(calc.total_excl_vat) + ' kr', 190, y, { align: 'right' });
+        doc.text(formatCurrency(calc.total_excl_vat), 190, y, { align: 'right' });
         y += 7;
 
         doc.text('Moms:', 20, y);
-        doc.text(formatPrice(calc.vat_amount) + ' kr', 190, y, { align: 'right' });
+        doc.text(formatCurrency(calc.vat_amount), 190, y, { align: 'right' });
         y += 7;
 
         doc.text('Totalpris inkl. moms:', 20, y);
-        doc.text(formatPrice(calc.total_incl_vat) + ' kr', 190, y, { align: 'right' });
+        doc.text(formatCurrency(calc.total_incl_vat), 190, y, { align: 'right' });
         y += 7;
 
         if (calc.rot_applicable) {
           doc.text('ROT-avdrag:', 20, y);
-          doc.text('-' + formatPrice(calc.rot_deduction) + ' kr', 190, y, { align: 'right' });
+          doc.text('-' + formatCurrency(calc.rot_deduction), 190, y, { align: 'right' });
           y += 7;
         }
 
         doc.setFont(undefined, 'bold');
-        doc.setFontSize(13);
-        doc.text('KUNDEN BETALAR: ' + formatPrice(calc.customer_pays) + ' kr', 20, y);
+        doc.setFontSize(11);
+        doc.text('Pris inkl. moms:', 20, y);
+        doc.text(formatCurrency(calc.customer_pays), 190, y, { align: 'right' });
+        doc.setFont(undefined, 'normal');
         y += 10;
       }
 
