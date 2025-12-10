@@ -102,8 +102,13 @@
         throw new Error('Ingen offertdata att generera PDF från');
       }
 
-      const today = new Date().toLocaleDateString('sv-SE');
-      let y = 50;
+      const today = new Date();
+      const todayFormatted = today.toLocaleDateString('sv-SE');
+      
+      // Beräkna giltig till-datum (30 dagar efter idag)
+      const validUntil = new Date(today);
+      validUntil.setDate(validUntil.getDate() + 30);
+      const validUntilFormatted = validUntil.toLocaleDateString('sv-SE');
 
       const ensureSpace = extra => {
         if (y + extra > 280) {
@@ -113,61 +118,82 @@
       };
 
       // ------------------------
-      // HEADER + logga
+      // HEADER – två kolumner
       // ------------------------
-      try {
-        const logo = new Image();
-        logo.src = 'assets/images/Sternbecks logotyp.png';
-        await new Promise(res => { logo.onload = res; logo.onerror = res; });
-        const logoX = 150;
-        const logoY = 10;
-        const logoDisplayWidth = 60; // större än tidigare (40)
-        const aspectRatio = logo.height > 0 ? logo.height / logo.width : 1;
-        const logoDisplayHeight = logoDisplayWidth * aspectRatio;
-        doc.addImage(logo, 'PNG', logoX, logoY, logoDisplayWidth, logoDisplayHeight);
-      } catch (e) {
-        console.warn('Kunde inte ladda logotyp i offert-PDF', e);
-      }
+      const marginLeft = 20;
+      const rightColumnX = 110; // Högerkolumnens startposition
+      let headerTop = 20;
 
+      // VÄNSTER KOLUMN – Företag + offertinfo
       doc.setFontSize(22);
       doc.setFont(undefined, 'bold');
-      doc.text('Offert', 20, 20);
+      doc.text('Offert', marginLeft, headerTop);
 
       doc.setFontSize(11);
       doc.setFont(undefined, 'normal');
-      doc.text('Sternbecks Måleri & Fönsterhantverk', 20, 30);
-      doc.text(today, 20, 36);
+      let leftY = headerTop + 10;
+      doc.text('Sternbecks Måleri & Fönsterhantverk', marginLeft, leftY);
+      leftY += 6;
+      doc.text('Lavendelstigen 7', marginLeft, leftY);
+      leftY += 6;
+      doc.text('77143 Ludvika', marginLeft, leftY);
+      leftY += 6;
+      doc.text('Org.nr 559389-0717', marginLeft, leftY);
+      leftY += 6;
+      doc.text('Tel.nr 076-846 52 79', marginLeft, leftY);
+      leftY += 8;
 
-      // ------------------------
-      // KUNDBLOCK
-      // ------------------------
+      // Offertnummer, Datum, Giltig till
+      doc.text('Offertnummer: –', marginLeft, leftY);
+      leftY += 6;
+      doc.text('Datum: ' + todayFormatted, marginLeft, leftY);
+      leftY += 6;
+      doc.text('Giltig till: ' + validUntilFormatted, marginLeft, leftY);
+
+      // HÖGER KOLUMN – Kunduppgifter
+      let rightY = headerTop;
       doc.setFontSize(13);
       doc.setFont(undefined, 'bold');
-      doc.text('Kund', 20, y);
-      y += 7;
+      doc.text('Kund', rightColumnX, rightY);
+      rightY += 7;
 
       doc.setFontSize(11);
       doc.setFont(undefined, 'normal');
-
-      const customerLines = [];
-      if (customer.company) customerLines.push(customer.company);
-      if (customer.contact) customerLines.push(customer.contact);
-      if (customer.personnummer) customerLines.push('Personnummer: ' + customer.personnummer);
-      if (customer.address) customerLines.push(customer.address);
-      if (customer.postal || customer.city) {
-        customerLines.push([customer.postal, customer.city].filter(Boolean).join(' '));
+      if (customer.company) {
+        doc.text(customer.company, rightColumnX, rightY);
+        rightY += 6;
       }
-      if (customer.fastighet) customerLines.push('Fastighetsbeteckning: ' + customer.fastighet);
-      if (customer.phone) customerLines.push('Telefon: ' + customer.phone);
-      if (customer.email) customerLines.push('E-post: ' + customer.email);
+      if (customer.contact) {
+        doc.text(customer.contact, rightColumnX, rightY);
+        rightY += 6;
+      }
+      if (customer.personnummer) {
+        doc.text('Personnummer: ' + customer.personnummer, rightColumnX, rightY);
+        rightY += 6;
+      }
+      if (customer.address) {
+        doc.text(customer.address, rightColumnX, rightY);
+        rightY += 6;
+      }
+      if (customer.postal || customer.city) {
+        doc.text([customer.postal, customer.city].filter(Boolean).join(' '), rightColumnX, rightY);
+        rightY += 6;
+      }
+      if (customer.fastighet) {
+        doc.text('Fastighetsbeteckning: ' + customer.fastighet, rightColumnX, rightY);
+        rightY += 6;
+      }
+      if (customer.phone) {
+        doc.text('Telefon: ' + customer.phone, rightColumnX, rightY);
+        rightY += 6;
+      }
+      if (customer.email) {
+        doc.text('E-post: ' + customer.email, rightColumnX, rightY);
+        rightY += 6;
+      }
 
-      customerLines.forEach(line => {
-        ensureSpace(6);
-        doc.text(line, 20, y);
-        y += 6;
-      });
-
-      y += 6;
+      // Start-Y för brödtexten (efter header)
+      y = Math.max(leftY, rightY) + 20;
 
       // ------------------------
       // ANBUDSTEXT (brödtext)
@@ -202,6 +228,12 @@
           if (row.startsWith('PRIS VID GODKÄNT ROTAVDRAG:')) return false;
           if (row.startsWith('Totalt inkl. moms:')) return false;
           if (row.startsWith('ROT-avdrag')) return false;
+
+          // Ta bort datumrader (t.ex. "Ludvika 2025-12-10" eller liknande)
+          const city = customer.city || 'Ludvika';
+          if (row.includes(city) && /^\d{4}-\d{2}-\d{2}/.test(row)) return false;
+          if (row.match(/^\d{4}-\d{2}-\d{2}/)) return false; // Datum i början av raden
+          if (row.match(/\d{4}-\d{2}-\d{2}/) && row.includes(city)) return false; // Stad + datum
 
           // Kund-relaterade rader som aldrig ska in i ANBUD-brödtexten
           if (customer.company && row.includes(customer.company)) return false;
@@ -248,7 +280,6 @@
       doc.setFontSize(12);
       doc.setFont(undefined, 'bold');
       doc.text('Arbete enligt bifogad arbetsbeskrivning', 20, y);
-      doc.text('ex. moms', 190, y, { align: 'right' });
 
       y += 5;
       doc.setLineWidth(0.3);
@@ -277,19 +308,22 @@
       // TOTALPRISBLOCK / EX / MOMS / INKL / ROT / KUNDEN BETALAR
       // ------------------------
       const totalPartiesResolved = totalParties || (Array.isArray(partis) ? partis.length : 0);
-      // PDF: PRICE BLOCK – FÖRETAGSKUND (bara exkl. moms)
+        // PDF: PRICE BLOCK – FÖRETAGSKUND (bara exkl. moms)
       if (isBusinessCustomer) {
         ensureSpace(30);
+        const boxX = 20;
+        const boxWidth = 170;
+        const amountX = boxX + boxWidth - 20; // Dra in 10 px från kanten
         doc.setFontSize(12);
         doc.setFont(undefined, 'bold');
-        doc.text('Totalpris exkl. moms:', 20, y);
+        doc.text('Prisöversikt', 20, y);
         // PDF: ANTAL PARTIER – rad placeras här i företagskundsgrenen
         y = renderTotalPartiesLine(doc, totalPartiesResolved, 20, y, 6);
         y += 6;
         doc.setFontSize(12);
         doc.setFont(undefined, 'bold');
         doc.text('Pris exkl. moms:', 20, y);
-        doc.text(formatCurrency(calc.total_excl_vat), 190, y, { align: 'right' });
+        doc.text(formatCurrency(calc.total_excl_vat), amountX, y, { align: 'right' });
         doc.setFont(undefined, 'normal');
         y += 12;
       } else {
@@ -307,12 +341,12 @@
 
         let lineY = blockTop + 10;
         const labelX = boxX + 10;
-        const valueX = boxX + boxWidth - 10;
+        const amountX = boxX + boxWidth - 20; // Dra in 10 px från kanten
 
         // Rubrik
         doc.setFontSize(14);
         doc.setFont(undefined, 'bold');
-        doc.text('Totalpris', labelX, lineY);
+        doc.text('Prisöversikt', labelX, lineY);
 
         // Antal partier
         if (totalPartiesResolved > 0) {
@@ -328,29 +362,34 @@
         doc.setFont(undefined, 'normal');
 
         doc.text('Pris exkl. moms:', labelX, lineY);
-        doc.text(formatCurrency(calc.total_excl_vat), valueX, lineY, { align: 'right' });
+        doc.text(formatCurrency(calc.total_excl_vat), amountX, lineY, { align: 'right' });
 
         lineY += lineHeight;
         doc.text('Moms:', labelX, lineY);
-        doc.text(formatCurrency(calc.vat_amount), valueX, lineY, { align: 'right' });
+        doc.text(formatCurrency(calc.vat_amount), amountX, lineY, { align: 'right' });
 
         lineY += lineHeight;
         doc.text('Totalpris inkl. moms:', labelX, lineY);
-        doc.text(formatCurrency(calc.total_incl_vat), valueX, lineY, { align: 'right' });
+        doc.text(formatCurrency(calc.total_incl_vat), amountX, lineY, { align: 'right' });
 
         lineY += lineHeight;
         if (calc.rot_applicable) {
           doc.text('ROT-avdrag:', labelX, lineY);
-          doc.text('-' + formatCurrency(calc.rot_deduction), valueX, lineY, { align: 'right' });
+          doc.text('-' + formatCurrency(calc.rot_deduction), amountX, lineY, { align: 'right' });
           lineY += lineHeight;
         }
 
-        // Slutrad – Kund betalar (fet och lite större + extra luft)
-        lineY += 8;
+        // Linje mellan ROT-avdrag och Kund betalar
+        const separatorY = lineY + 4;
+        doc.setLineWidth(0.2);
+        doc.line(labelX, separatorY, boxX + boxWidth - 20, separatorY);
+
+        // Slutrad – Kund betalar (fet, både etikett och belopp, tajtare spacing)
+        lineY = separatorY + 5; // Mindre spacing än tidigare
         doc.setFont(undefined, 'bold');
         doc.setFontSize(12);
         doc.text('Kund betalar:', labelX, lineY);
-        doc.text(formatCurrency(calc.customer_pays), valueX, lineY, { align: 'right' });
+        doc.text(formatCurrency(calc.customer_pays), amountX, lineY, { align: 'right' });
         doc.setFont(undefined, 'normal');
 
         y = blockTop + boxHeight + 4;
@@ -384,8 +423,6 @@
       // SIGNATURBLOCK
       // ------------------------
       ensureSpace(40);
-      const city = customer.city || 'Ludvika';
-      doc.text(`${city} ${today}`, 20, y); y += 6;
       doc.text('Johan Sternbeck', 20, y); y += 6;
       doc.text('Sternbecks Fönsterhantverk i Dalarna AB', 20, y); y += 6;
       doc.text('Lavendelstigen 7', 20, y); y += 6;
