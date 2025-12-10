@@ -143,9 +143,7 @@
       doc.text('Tel.nr 076-846 52 79', marginLeft, leftY);
       leftY += 8;
 
-      // Offertnummer, Datum, Giltig till
-      doc.text('Offertnummer: –', marginLeft, leftY);
-      leftY += 6;
+      // Datum, Giltig till
       doc.text('Datum: ' + todayFormatted, marginLeft, leftY);
       leftY += 6;
       doc.text('Giltig till: ' + validUntilFormatted, marginLeft, leftY);
@@ -271,15 +269,31 @@
       });
 
       // ------------------------
-      // PRISTABELL
+      // FÖR ANBUDET GÄLLER
       // ------------------------
       y += 8;
-      ensureSpace(20);
+      ensureSpace(30);
 
-      // PDF: SECTION HEADER – här byter vi texten till "Arbete enligt bifogad arbetsbeskrivning".
-      doc.setFontSize(12);
+      doc.setFontSize(11);
       doc.setFont(undefined, 'bold');
-      doc.text('Arbete enligt bifogad arbetsbeskrivning', 20, y);
+      doc.text('För anbudet gäller:', 20, y);
+      y += 7;
+
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'normal');
+      doc.text('1. Vi ansvarar för rengöring av fönsterglas efter renovering. Ej fönsterputs.', 20, y);
+      y += 6;
+      doc.text('2. Miljö- och kvalitetsansvarig: Johan Sternbeck', 20, y);
+      y += 6;
+      doc.text('3. Entreprenörens ombud: Johan Sternbeck', 20, y);
+      y += 6;
+      doc.text('4. Timtid vid tillkommande arbeten debiteras med 625 kr inkl moms.', 20, y);
+      y += 8;
+
+      // ------------------------
+      // PRISTABELL
+      // ------------------------
+      ensureSpace(20);
 
       y += 5;
       doc.setLineWidth(0.3);
@@ -394,41 +408,6 @@
 
         y = blockTop + boxHeight + 4;
       }
-
-      // ------------------------
-      // VILLKOR
-      // ------------------------
-      ensureSpace(30);
-      doc.setFontSize(13);
-      doc.setFont(undefined, 'bold');
-      doc.text('För anbudet gäller:', 20, y);
-      y += 7;
-
-      doc.setFontSize(11);
-      doc.setFont(undefined, 'normal');
-
-      const conditions = offerText
-        .split('\n')
-        .filter(row => row.match(/^\d\./));
-
-      conditions.forEach(c => {
-        ensureSpace(6);
-        doc.text(c, 20, y);
-        y += 6;
-      });
-
-      y += 8;
-
-      // ------------------------
-      // SIGNATURBLOCK
-      // ------------------------
-      ensureSpace(40);
-      doc.text('Johan Sternbeck', 20, y); y += 6;
-      doc.text('Sternbecks Fönsterhantverk i Dalarna AB', 20, y); y += 6;
-      doc.text('Lavendelstigen 7', 20, y); y += 6;
-      doc.text('77143 Ludvika', 20, y); y += 6;
-      doc.text('Org.nr 559389-0717', 20, y); y += 6;
-      doc.text('Tel.nr 076-846 52 79 – Företaget innehar F-skatt', 20, y);
 
       return doc.output('blob');
     };
