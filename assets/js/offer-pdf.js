@@ -30,9 +30,12 @@
 
     // PDF: CURRENCY FORMATTER – formaterar med svenskt tusentals-mellanslag och "kr"
     function formatCurrency(value) {
-      const number = Number(value) || 0;
-      // sv-SE ger "15 812" (NBSP), vilket är ok i PDF
-      const formatted = number.toLocaleString('sv-SE');
+      const number = Math.round(Number(value) || 0);
+      // sv-SE ger "15 812" (NBSP) utan decimaler med dessa options
+      const formatted = number.toLocaleString('sv-SE', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      });
       return `${formatted} kr`;
     }
 
@@ -298,7 +301,7 @@
         const lineHeight = 6;
 
         // Boxhöjd – extra utrymme för alla rader + slutpris
-        const boxHeight = totalPartiesResolved > 0 ? 96 : 90;
+        const boxHeight = totalPartiesResolved > 0 ? 82 : 76;
         doc.setFillColor(240, 240, 240);
         doc.rect(boxX, blockTop, boxWidth, boxHeight, 'F');
 
@@ -319,14 +322,8 @@
           doc.text(`Antal partier: ${totalPartiesResolved} st`, labelX, lineY);
         }
 
-        // inkl. moms (liten rad)
-        lineY += lineHeight;
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'normal');
-        doc.text('inkl. moms', labelX, lineY);
-
-        // Prisrader
-        lineY += 8;
+        // Prisrader (direkt efter antal partier/rubrik)
+        lineY += totalPartiesResolved > 0 ? 8 : 12;
         doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
 
