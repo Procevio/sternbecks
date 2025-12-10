@@ -290,74 +290,73 @@
         doc.setFont(undefined, 'normal');
         y += 12;
       } else {
-        // PDF: PRICE BLOCK – PRIVATKUND (exkl. moms, moms, inkl. moms, ROT, KUNDEN BETALAR)
+        // PDF: PRICE BLOCK – PRIVATKUND (hela prisdelen i boxen, slutpris efter ROT är störst)
         ensureSpace(40);
         const blockTop = y;
         const boxX = 20;
         const boxWidth = 170;
         const lineHeight = 6;
 
-        // Beräkna boxhöjd baserat på om vi har antal partier
-        const boxHeight = totalPartiesResolved > 0 ? 36 : 30;
+        // Boxhöjd – extra utrymme för alla rader + slutpris
+        const boxHeight = totalPartiesResolved > 0 ? 96 : 90;
         doc.setFillColor(240, 240, 240);
         doc.rect(boxX, blockTop, boxWidth, boxHeight, 'F');
 
-        // Text inuti boxen
-        let boxTextY = blockTop + 10;
+        let lineY = blockTop + 10;
+        const labelX = boxX + 10;
+        const valueX = boxX + boxWidth - 10;
 
-        // För privatkund: visa "inkl. moms" och belopp inkl. moms i boxen
-        const mainLabel = 'inkl. moms';
-        const mainAmount = calc.total_incl_vat;
-
-        // Rubrik "Totalpris"
+        // Rubrik
         doc.setFontSize(14);
         doc.setFont(undefined, 'bold');
-        doc.text('Totalpris', boxX + 10, boxTextY);
+        doc.text('Totalpris', labelX, lineY);
 
-        // "Antal partier" om det finns
+        // Antal partier
         if (totalPartiesResolved > 0) {
-          boxTextY += lineHeight;
+          lineY += lineHeight;
           doc.setFontSize(11);
           doc.setFont(undefined, 'normal');
-          doc.text(`Antal partier: ${totalPartiesResolved} st`, boxX + 10, boxTextY);
+          doc.text(`Antal partier: ${totalPartiesResolved} st`, labelX, lineY);
         }
 
-        // Label och belopp på samma rad
-        boxTextY += lineHeight;
+        // inkl. moms (liten rad)
+        lineY += lineHeight;
         doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
-        doc.text(mainLabel, boxX + 10, boxTextY);
-        doc.setFontSize(16);
-        doc.text(formatCurrency(mainAmount), boxX + boxWidth - 10, boxTextY, { align: 'right' });
+        doc.text('inkl. moms', labelX, lineY);
 
-        y = blockTop + boxHeight + 4;
+        // Prisrader
+        lineY += 8;
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
 
-        doc.setFontSize(11);
+        doc.text('Pris exkl. moms:', labelX, lineY);
+        doc.text(formatCurrency(calc.total_excl_vat), valueX, lineY, { align: 'right' });
 
-        doc.text('Pris exkl. moms:', 20, y);
-        doc.text(formatCurrency(calc.total_excl_vat), 190, y, { align: 'right' });
-        y += 7;
+        lineY += lineHeight;
+        doc.text('Moms:', labelX, lineY);
+        doc.text(formatCurrency(calc.vat_amount), valueX, lineY, { align: 'right' });
 
-        doc.text('Moms:', 20, y);
-        doc.text(formatCurrency(calc.vat_amount), 190, y, { align: 'right' });
-        y += 7;
+        lineY += lineHeight;
+        doc.text('Totalpris inkl. moms:', labelX, lineY);
+        doc.text(formatCurrency(calc.total_incl_vat), valueX, lineY, { align: 'right' });
 
-        doc.text('Totalpris inkl. moms:', 20, y);
-        doc.text(formatCurrency(calc.total_incl_vat), 190, y, { align: 'right' });
-        y += 7;
-
+        lineY += lineHeight;
         if (calc.rot_applicable) {
-          doc.text('ROT-avdrag:', 20, y);
-          doc.text('-' + formatCurrency(calc.rot_deduction), 190, y, { align: 'right' });
-          y += 7;
+          doc.text('ROT-avdrag:', labelX, lineY);
+          doc.text('-' + formatCurrency(calc.rot_deduction), valueX, lineY, { align: 'right' });
+          lineY += lineHeight;
         }
 
+        // Slutrad – Kund betalar (fet och lite större + extra luft)
+        lineY += 8;
         doc.setFont(undefined, 'bold');
-        doc.setFontSize(11);
-        doc.text('Pris inkl. moms:', 20, y);
-        doc.text(formatCurrency(calc.customer_pays), 190, y, { align: 'right' });
+        doc.setFontSize(12);
+        doc.text('Kund betalar:', labelX, lineY);
+        doc.text(formatCurrency(calc.customer_pays), valueX, lineY, { align: 'right' });
         doc.setFont(undefined, 'normal');
-        y += 10;
+
+        y = blockTop + boxHeight + 4;
       }
 
       // ------------------------
