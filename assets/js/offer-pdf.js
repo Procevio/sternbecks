@@ -121,7 +121,7 @@
       // HEADER – två kolumner
       // ------------------------
       const marginLeft = 20;
-      const rightColumnX = 110; // Högerkolumnens startposition
+      const rightColumnX = 120; // Högerkolumnens startposition
       let headerTop = 20;
 
       // VÄNSTER KOLUMN – Företag + offertinfo

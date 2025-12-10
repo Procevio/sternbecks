@@ -3293,6 +3293,54 @@ body.dark .info-text {
   align-items: center;
 }
 
+.preview-header-two-columns {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 40px;
+}
+
+.preview-header-left {
+  flex: 1;
+}
+
+.preview-header-left h1 {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.preview-company-info {
+  font-size: 11px;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.preview-company-info > div {
+  margin: 2px 0;
+}
+
+.preview-offer-info {
+  font-size: 11px;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.preview-offer-info > div {
+  margin: 2px 0;
+}
+
+.preview-header-right {
+  flex: 1;
+  margin-left: 40px;
+}
+
+.preview-header-right h2 {
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 7px;
+}
+
 .preview-logo {
   max-width: 160px;
   width: 100%;
@@ -3319,6 +3367,25 @@ body.dark .info-text {
 .preview-kund > div {
   margin: 4px 0;
   line-height: 1.5;
+}
+
+.preview-conditions-block {
+  margin: 20px 0;
+}
+
+.preview-conditions-title {
+  font-size: 11px;
+  font-weight: bold;
+  margin-bottom: 7px;
+}
+
+.preview-conditions-list {
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.preview-conditions-list > div {
+  margin: 6px 0;
 }
 
 .preview-summary {
