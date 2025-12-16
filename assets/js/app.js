@@ -759,7 +759,7 @@ const CONFIG = {
         SPROJS_THRESHOLD: 3,        // Gräns för prisökning
         E_GLASS_PER_SQM: 2500,      // 2500kr/kvm (exkl. moms)
         VAT_RATE: 0.25,             // 25% moms
-        ROT_DEDUCTION: 0.5          // 50% ROT-avdrag
+        ROT_DEDUCTION: 0.3          // 30% ROT-avdrag
     },
     
     // WEBHOOK BORTTAGEN - exponerad säkerhetsrisk
@@ -1906,13 +1906,13 @@ class QuoteCalculator {
         // ROT-avdrag beräkning med maxbelopp
         let rotDeduction = 0;
         if (data.hasRotDeduction) {
-            const calculatedRotDeduction = workCostForRot * CONFIG.EXTRAS.ROT_DEDUCTION; // 50%
+            const calculatedRotDeduction = workCostForRot * CONFIG.EXTRAS.ROT_DEDUCTION; // 30%
             const maxRotAmount = data.isSharedRotDeduction ? 100000 : 50000; // 100k för två personer, 50k för en
             rotDeduction = Math.min(calculatedRotDeduction, maxRotAmount);
             
             console.log('ROT calculation details:');
             console.log('- Work cost for ROT:', workCostForRot);
-            console.log('- 50% of work cost:', calculatedRotDeduction);
+            console.log('- 30% of work cost:', calculatedRotDeduction);
             console.log('- Max ROT amount:', maxRotAmount, data.isSharedRotDeduction ? '(två personer)' : '(en person)');
             console.log('- Final ROT deduction:', rotDeduction);
         }
@@ -2246,7 +2246,7 @@ class QuoteCalculator {
                 const persons = data.isSharedRotDeduction ? 'två personer' : 'en person';
                 rotLabel.textContent = `ROT-avdrag (max ${maxText} för ${persons}):`;
             } else {
-                rotLabel.textContent = 'ROT-avdrag (50% på arbetskostnad):';
+                rotLabel.textContent = 'ROT-avdrag (30% på arbetskostnad):';
             }
         } else {
             this.rotRowElement.style.display = 'none';
@@ -2616,7 +2616,7 @@ Totalt inkl. moms: ${this.formatPrice(totalInclVat)}
 ROT-AVDRAG INFORMATION:
 - Fastighet berättigad: ${data.propertyRotEligible}
 - Kund berättigad: ${data.customerRotEligible}
-${data.hasRotDeduction ? `- Materialkostnad (${data.materialPercentage}%): ${this.formatPrice(materialCostForRot)}\n- Arbetskostnad: ${this.formatPrice(workCostForRot)}\n- ROT-avdrag (50% på arbetskostnad): -${this.formatPrice(rotDeduction)}` : '- ROT-avdrag: Ej tillämpligt'}
+${data.hasRotDeduction ? `- Materialkostnad (${data.materialPercentage}%): ${this.formatPrice(materialCostForRot)}\n- Arbetskostnad: ${this.formatPrice(workCostForRot)}\n- ROT-avdrag (30% på arbetskostnad): -${this.formatPrice(rotDeduction)}` : '- ROT-avdrag: Ej tillämpligt'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
@@ -3673,7 +3673,7 @@ KUNDEN BETALAR: ${this.formatPrice(finalCustomerPrice)}
         // Visa även totalsumma inkl. moms och ROT-avdrag i offerten
         const totalInclText = `Totalt inkl. moms: ${this.formatPrice(calc.total_incl_vat)}`;
         const rotText = calc.rot_applicable
-            ? `ROT-avdrag (50% på arbetskostnad): -${this.formatPrice(calc.rot_deduction)}`
+            ? `ROT-avdrag (30% på arbetskostnad): -${this.formatPrice(calc.rot_deduction)}`
             : 'ROT-avdrag: Ej tillämpligt';
 
         const today = new Date();
